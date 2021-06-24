@@ -13,14 +13,14 @@ using Nuke.Common;
 partial class Build : NukeBuild
 {
     [Parameter("Shows help for the target", Name = "?")] public static bool HelpParameter = false;
-    protected override void OnTargetRunning(string target)
+    protected override void OnTargetStart(string target)
     {
         if (HelpParameter)
         {
             Logger.Info(GetHelpForTarget(target));
             Environment.Exit(0);
         }
-        else base.OnTargetRunning(target);
+        else base.OnTargetStart(target);
     }
 
     private string GetHelpForTarget(string target)

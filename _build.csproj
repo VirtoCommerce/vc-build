@@ -20,9 +20,6 @@
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    </PropertyGroup>
-
-	<PropertyGroup>
 		<NukeTelemetryVersion>1</NukeTelemetryVersion>
 		<AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
 	</PropertyGroup>
@@ -35,7 +32,7 @@
         <PackageReference Include="Octokit" Version="0.50.0" />
         <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
         <PackageReference Include="Virtocommerce.Platform.Core" Version="3.66.0" />
-        <PackageReference Include="Nuke.Common" Version="5.2.1" />
+        <PackageReference Include="Nuke.Common" Version="5.0.2" />
     </ItemGroup>
 
     <ItemGroup>
@@ -51,7 +48,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <NukeSpecificationFiles Include="**\*.json" Exclude="bin\**;obj\**;GrabMigrator\**;global.json" />
+        <NukeSpecificationFiles Include="**\*.json" Exclude="bin\**;obj\**;GrabMigrator\**;global.json;.nuke\parameters.json" />
         <NukeExternalFiles Include="**\*.*.ext" Exclude="bin\**;obj\**" />
         <Compile Remove="Properties\**" />
         <EmbeddedResource Remove="Properties\**" />
