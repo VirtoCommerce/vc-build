@@ -106,7 +106,8 @@ vc-build PublishPackages -ApiKey %SomeApiKey%
 ## QuickRelease
 Creates a release branch from dev. Merges it into master. Increments version in dev branch and removes release/* branch.
 ```console
-vc-build uninstall -Module VirtoCommerce.Cart VirtoCommerce.Catalog
+vc-build QuickRelease
+vc-build QuickRelease -Force
 ```
 :::
 :::
