@@ -12,6 +12,7 @@ using Nuke.Common.IO;
 using Newtonsoft.Json.Linq;
 using Microsoft.Extensions.Configuration;
 using PlatformTools;
+using VirtoCommerce.Platform.DistributedLock;
 
 partial class Build: NukeBuild
 {
@@ -29,8 +30,9 @@ partial class Build: NukeBuild
             ProbingPath = ProbingPath
         };
         var options = Microsoft.Extensions.Options.Options.Create<LocalStorageModuleCatalogOptions>(moduleCatalogOptions);
-        var logger = new LoggerFactory().CreateLogger<LocalStorageModuleCatalog>();
-        var moduleCatalog = new LocalStorageModuleCatalog(options, logger);
+        var logger = new LoggerFactory().CreateLogger<LocalStorageModuleCatalog>(); 
+        var distributedLock = new NoLockDistributedLockProvider(new LoggerFactory().CreateLogger<NoLockDistributedLockProvider>());
+        var moduleCatalog = new LocalStorageModuleCatalog(options, distributedLock, logger);
         moduleCatalog.Load();
     });
 }
