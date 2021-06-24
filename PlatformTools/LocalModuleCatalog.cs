@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using VirtoCommerce.Platform.Core.Modularity;
+using VirtoCommerce.Platform.DistributedLock;
 using VirtoCommerce.Platform.Modules;
 
 namespace PlatformTools
@@ -23,7 +24,8 @@ namespace PlatformTools
             if (_catalog == null)
             {
                 var logger = new LoggerFactory().CreateLogger<LocalStorageModuleCatalog>();
-                _catalog = new LocalStorageModuleCatalog(options, logger);
+                var distributedLock = new NoLockDistributedLockProvider(new LoggerFactory().CreateLogger<NoLockDistributedLockProvider>());
+                _catalog = new LocalStorageModuleCatalog(options, distributedLock, logger);
                 _catalog.Load();
             }
             else _catalog.Reload();

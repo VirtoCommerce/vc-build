@@ -42,10 +42,10 @@ partial class Build : NukeBuild
     ///   - Microsoft VisualStudio     https://nuke.build/visualstudio
     ///   - Microsoft VSCode           https://nuke.build/vscode
 
-    public Build()
-    {
-        ToolPathResolver.ExecutingAssemblyDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-    }
+    //public Build()
+    //{
+    //    ToolPathResolver.ExecutingAssemblyDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+    //}
 
     public static int Main()
     {
@@ -71,8 +71,8 @@ partial class Build : NukeBuild
     private new static int? ExitCode = null;
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
-    readonly string Configuration = IsLocalBuild ? "Debug" : "Release";
-    
+    readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
+
 
     private static string[] ModuleContentFolders = new[] { "dist", "Localizations", "Scripts", "Content" };
 
