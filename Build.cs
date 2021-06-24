@@ -406,8 +406,9 @@ partial class Build : NukeBuild
                     ControlFlow.Fail("Aborted");
                 }
             }
-            var forceArg = Force ? "--force" : "";
-            GitTasks.Git($"checkout dev {forceArg}");
+            var checkoutCommand = new StringBuilder("checkout dev");
+            if (Force) checkoutCommand.Append(" --force");
+            GitTasks.Git(checkoutCommand.ToString());
             GitTasks.Git("pull");
             string version;
             if (IsTheme)
