@@ -144,6 +144,8 @@ partial class Build : NukeBuild
 
     [Parameter("Modules.json repo url")] readonly string ModulesJsonRepoUrl = "https://github.com/VirtoCommerce/vc-modules.git";
 
+    [Parameter("Force parameter for git checkout")] readonly bool Force = false;
+
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath TestsDirectory => RootDirectory / "tests";
     [Parameter("Path to Artifacts Directory")] AbsolutePath ArtifactsDirectory = RootDirectory / "artifacts";
@@ -395,7 +397,7 @@ partial class Build : NukeBuild
         {
             GitTasks.GitLogger = GitLogger;
             var disableApprove = Environment.GetEnvironmentVariable("VCBUILD_DISABLE_RELEASE_APPROVEMENT");
-            if (disableApprove.IsNullOrEmpty())
+            if (disableApprove.IsNullOrEmpty() && !Force)
             {
                 Console.Write($"Are you sure want to release {GitRepository.Identifier}? (y/N): ");
                 var response = Console.ReadLine();
@@ -404,7 +406,9 @@ partial class Build : NukeBuild
                     ControlFlow.Fail("Aborted");
                 }
             }
-            GitTasks.Git("checkout dev");
+            var checkoutCommand = new StringBuilder("checkout dev");
+            if (Force) checkoutCommand.Append(" --force");
+            GitTasks.Git(checkoutCommand.ToString());
             GitTasks.Git("pull");
             string version;
             if (IsTheme)
