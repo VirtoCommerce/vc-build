@@ -152,14 +152,14 @@ partial class Build : NukeBuild
 
     [Parameter("Directory containing modules.json")] string ModulesJsonDirectoryName = "vc-modules";
     AbsolutePath ModulesLocalDirectory => ArtifactsDirectory / ModulesJsonDirectoryName;
-    Project WebProject => Solution.AllProjects.FirstOrDefault(x => (x.Name.EndsWith(".Web") && !x.Path.ToString().Contains("samples")) || x.Name.EndsWith("VirtoCommerce.Storefront"));
+    Project WebProject => Solution?.AllProjects.FirstOrDefault(x => (x.Name.EndsWith(".Web") && !x.Path.ToString().Contains("samples")) || x.Name.EndsWith("VirtoCommerce.Storefront"));
     AbsolutePath ModuleManifestFile => WebProject.Directory / "module.manifest";
     AbsolutePath ModuleIgnoreFile => RootDirectory / "module.ignore";
 
-    Microsoft.Build.Evaluation.Project MSBuildProject => WebProject.GetMSBuildProject();
+    Microsoft.Build.Evaluation.Project MSBuildProject => WebProject?.GetMSBuildProject();
     string VersionPrefix => IsTheme ? GetThemeVersion(PackageJsonPath) : MSBuildProject.GetProperty("VersionPrefix")?.EvaluatedValue;
-    string VersionSuffix => MSBuildProject.GetProperty("VersionSuffix")?.EvaluatedValue;
-    string ReleaseVersion => MSBuildProject.GetProperty("PackageVersion")?.EvaluatedValue ?? WebProject.GetProperty("Version");
+    string VersionSuffix => MSBuildProject?.GetProperty("VersionSuffix")?.EvaluatedValue;
+    string ReleaseVersion => MSBuildProject?.GetProperty("PackageVersion")?.EvaluatedValue ?? WebProject.GetProperty("Version");
 
     bool IsTheme => Solution == null;
 
@@ -371,7 +371,6 @@ partial class Build : NukeBuild
     }
 
     Target ChangeVersion => _ => _
-        .Requires(() => !CustomVersionPrefix.IsNullOrEmpty() || !CustomVersionSuffix.IsNullOrEmpty())
         .Executes(() =>
         {
             if ((String.IsNullOrEmpty(VersionSuffix) && !CustomVersionSuffix.IsNullOrEmpty()) || !CustomVersionPrefix.IsNullOrEmpty())
