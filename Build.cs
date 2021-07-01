@@ -65,6 +65,7 @@ partial class Build : NukeBuild
             }
         }
         var exitCode = Execute<Build>(x => x.Compile);
+        FileSystemTasks.DeleteDirectory(TemporaryDirectory);
         return ExitCode ?? exitCode;
     }
 
