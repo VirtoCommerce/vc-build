@@ -162,3 +162,10 @@ Gets parameters: GitHubUser, GitHubToken, ReleaseBranch
 vc-build release -GitHubUser VirtoCommerce -GitHubToken %token% 
 ```
 :::
+:::
+## ClearTemp
+Removes .tmp directory
+```console
+vc-build ClearTemp 
+```
+:::

@@ -46,45 +46,25 @@ partial class Build: NukeBuild
         var externalCatalog = ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, packageManifest.ModuleSources);
         if (Module?.Length > 0 && !InstallPlatformParam)
         {
-            foreach(var module in Module)
+            foreach(var module in ParseModuleParameter(Module))
             {
-                string moduleId, moduleVersion;
-                if (module.Contains(":"))
+                var externalModule = externalCatalog.Items.OfType<ManifestModuleInfo>().Where(m => String.Compare(m.Id, module.Id, StringComparison.InvariantCultureIgnoreCase) == 0).FirstOrDefault();
+                module.Id = externalModule.Id;
+                if (string.IsNullOrEmpty(module.Version)) module.Version = externalModule.Version.ToString();
+                var existedModule = packageManifest.Modules.Where(m => m.Id == module.Id).FirstOrDefault();
+                if (existedModule == null)
                 {
-                    var splitedModule = module.Split(":");
-                    moduleId = splitedModule.First();
-                    moduleVersion = splitedModule.Last();
-                }
-                else if (Module.Length == 1 && !string.IsNullOrEmpty(VersionToInstall))
-                {
-                    moduleId = module;
-                    moduleVersion = VersionToInstall;
-                }
-                else
-                {
-                    moduleId = module;
-                    var moduleInfo = externalCatalog.Items.OfType<ManifestModuleInfo>().Where(m => m.Id == moduleId).FirstOrDefault(m => m.Ref.Contains("github.com"));
-                    if (moduleInfo == null)
-                    {
-                        ControlFlow.Fail($"No module {moduleId} found");
-                    }
-                    moduleVersion = moduleInfo.Version.ToString();
-                }
-                var moduleItem = new ModuleItem(moduleId, moduleVersion);
-                var existedModule = packageManifest.Modules.Where(m => m.Id == moduleItem.Id).FirstOrDefault();
-                if(existedModule == null)
-                {
-                    Logger.Info($"Add {moduleItem.Id}:{moduleItem.Version}");
-                    packageManifest.Modules.Add(moduleItem);
+                    Logger.Info($"Add {module.Id}:{module.Version}");
+                    packageManifest.Modules.Add(module);
                 } else
                 {
-                    if(new Version(existedModule.Version) >  new Version(moduleItem.Version))
+                    if(new Version(existedModule.Version) >  new Version(module.Version))
                     {
-                        Logger.Error($"{moduleItem.Id}: Module downgrading isn't supported");
+                        Logger.Error($"{module.Id}: Module downgrading isn't supported");
                         continue;
                     }
-                    Logger.Info($"Change version: {existedModule.Version} -> {moduleItem.Version}");
-                    existedModule.Version = moduleItem.Version;
+                    Logger.Info($"Change version: {existedModule.Version} -> {module.Version}");
+                    existedModule.Version = module.Version;
                 }
             }
         }
@@ -102,6 +82,31 @@ partial class Build: NukeBuild
         }
         PackageManager.ToFile(packageManifest);
     });
+
+    private IEnumerable<ModuleItem> ParseModuleParameter(string[] Module)
+    {
+        foreach(var module in Module)
+        {
+            string moduleId;
+            string moduleVersion = string.Empty;
+            if (module.Contains(":"))
+            {
+                var splitedModule = module.Split(":");
+                moduleId = splitedModule.First();
+                moduleVersion = splitedModule.Last();
+            }
+            else if (Module.Length == 1 && !string.IsNullOrEmpty(VersionToInstall))
+            {
+                moduleId = module;
+                moduleVersion = VersionToInstall;
+            }
+            else
+            {
+                moduleId = module;
+            }
+            yield return new ModuleItem(moduleId, moduleVersion);
+        }
+    }
 
     Target InstallPlatform => _ => _
     .Executes(async () =>
