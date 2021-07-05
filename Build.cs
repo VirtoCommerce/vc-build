@@ -65,7 +65,6 @@ partial class Build : NukeBuild
             }
         }
         var exitCode = Execute<Build>(x => x.Compile);
-        FileSystemTasks.DeleteDirectory(TemporaryDirectory);
         return ExitCode ?? exitCode;
     }
 
@@ -948,4 +947,10 @@ partial class Build : NukeBuild
         //Git($"branch -D {GitRepository.Branch}");
         //Git($"push origin {MasterBranch} {DevelopBranch} {tag}");
     }
+
+    Target ClearTemp => _ => _
+        .Executes(() =>
+        {
+            FileSystemTasks.DeleteDirectory(TemporaryDirectory);
+        });
 }
