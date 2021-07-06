@@ -420,7 +420,7 @@ partial class Build : NukeBuild
             }
             var releaseBranchName = $"release/{version}";
             Logger.Info(Directory.GetCurrentDirectory());
-            GitTasks.Git($"checkout -b {releaseBranchName}");
+            GitTasks.Git($"checkout -B {releaseBranchName}");
             GitTasks.Git($"push -u origin {releaseBranchName}");
         });
 
