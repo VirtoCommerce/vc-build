@@ -214,6 +214,9 @@ partial class Build: NukeBuild
             modulesToInstall.AddRange(missingModules);
         }
         moduleInstaller.Install(modulesToInstall.Where(m => !m.IsInstalled), progress);
+        AbsolutePath discoveryAbsolutePath = (AbsolutePath) Path.GetFullPath(discoveryPath);
+        var zipFiles = discoveryAbsolutePath.GlobFiles("*/*.zip");
+        zipFiles.ForEach(path => FileSystemTasks.DeleteFile(path));
         localModuleCatalog.Reload();
     });
 
