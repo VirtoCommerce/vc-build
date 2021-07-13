@@ -47,6 +47,9 @@ partial class Build : NukeBuild
     //    ToolPathResolver.ExecutingAssemblyDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
     //}
 
+
+    private static bool ClearTempBeforeExit { get; set; } = false;
+
     public static int Main()
     {
         var nukeFile = Directory.GetFiles(Directory.GetCurrentDirectory(), ".nuke");
@@ -64,7 +67,13 @@ partial class Build : NukeBuild
                 File.CreateText(Path.Combine(Directory.GetCurrentDirectory(), ".nuke")).Close();
             }
         }
+
         var exitCode = Execute<Build>(x => x.Compile);
+        if (ClearTempBeforeExit)
+        {
+            FileSystemTasks.DeleteDirectory(TemporaryDirectory);
+        }
+
         return ExitCode ?? exitCode;
     }
 
@@ -951,6 +960,7 @@ partial class Build : NukeBuild
     Target ClearTemp => _ => _
         .Executes(() =>
         {
-            FileSystemTasks.DeleteDirectory(TemporaryDirectory);
+            ClearTempBeforeExit = true;
         });
+
 }
