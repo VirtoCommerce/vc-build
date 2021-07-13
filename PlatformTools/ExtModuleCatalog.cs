@@ -15,13 +15,13 @@ namespace PlatformTools
     {
         private static ExternalModuleCatalog _catalog;
 
-        public static ExternalModuleCatalog GetCatalog(string authToken, LocalStorageModuleCatalog localCatalog, IEnumerable<string> manifestUrls)
+        public static ExternalModuleCatalog GetCatalog(string authToken, ILocalModuleCatalog localCatalog, IEnumerable<string> manifestUrls)
         {
             var options = GetOptions(authToken, manifestUrls);
             return GetCatalog(options, localCatalog);
         }
 
-        public static ExternalModuleCatalog GetCatalog(IOptions<ExternalModuleCatalogOptions> options, LocalStorageModuleCatalog localCatalog)
+        public static ExternalModuleCatalog GetCatalog(IOptions<ExternalModuleCatalogOptions> options, ILocalModuleCatalog localCatalog)
         {
             if (_catalog == null)
             {

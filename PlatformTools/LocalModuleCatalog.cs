@@ -11,21 +11,21 @@ namespace PlatformTools
 {
     class LocalModuleCatalog
     {
-        private static LocalStorageModuleCatalog _catalog;
+        private static LocalCatalog _catalog;
 
-        public static LocalStorageModuleCatalog GetCatalog(string discoveryPath, string probingPath)
+        public static ILocalModuleCatalog GetCatalog(string discoveryPath, string probingPath)
         {
             var options = GetOptions(discoveryPath, probingPath);
             return GetCatalog(options);
         }
 
-        public static LocalStorageModuleCatalog GetCatalog(IOptions<LocalStorageModuleCatalogOptions> options)
+        public static ILocalModuleCatalog GetCatalog(IOptions<LocalStorageModuleCatalogOptions> options)
         {
             if (_catalog == null)
             {
                 var logger = new LoggerFactory().CreateLogger<LocalStorageModuleCatalog>();
                 var distributedLock = new NoLockDistributedLockProvider(new LoggerFactory().CreateLogger<NoLockDistributedLockProvider>());
-                _catalog = new LocalStorageModuleCatalog(options, distributedLock, logger);
+                _catalog = new LocalCatalog(options, distributedLock, logger);
                 _catalog.Load();
             }
             else _catalog.Reload();
