@@ -13,7 +13,7 @@ using Nuke.Common;
 internal partial class Build
 {
     [Parameter("Shows help for the target", Name = "?")]
-    public static bool HelpParameter;
+    public static bool HelpParameter { get; set; }
 
     protected override void OnTargetStart(string target)
     {

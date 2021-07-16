@@ -13,19 +13,19 @@ using VirtoCommerce.Platform.Core.Modularity;
 internal partial class Build
 {
     [Parameter("Platform or Module version to install", Name = "Version")]
-    public static string VersionToInstall;
+    public static string VersionToInstall { get; set; }
 
     [Parameter("vc-package.json path")]
-    public static string PackageManifestPath = "./vc-package.json";
+    public static string PackageManifestPath { get; set; } = "./vc-package.json";
 
     [Parameter("Install params (install -module VirtoCommerce.Core:1.2.3)")]
-    public static string[] Module;
+    public static string[] Module { get; set; }
 
     [Parameter("Skip dependency solving")]
-    public static bool SkipDependencySolving;
+    public static bool SkipDependencySolving { get; set; }
 
     [Parameter("Install the platform", Name = "Platform")]
-    public static bool InstallPlatformParam;
+    public static bool InstallPlatformParam { get; set; }
 
     private Target Init => _ => _
         .Executes(async () =>

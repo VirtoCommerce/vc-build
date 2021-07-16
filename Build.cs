@@ -74,13 +74,13 @@ internal partial class Build : NukeBuild
     private new static int? ExitCode;
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
-    private readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
+    public static Configuration Configuration { get; set; } = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
 
     private static readonly string[] ModuleContentFolders = { "dist", "Localizations", "Scripts", "Content" };
 
     [Solution]
-    private readonly Solution Solution;
+    public static Solution Solution { get; set; }
 
     private GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
 
@@ -97,115 +97,115 @@ internal partial class Build : NukeBuild
     private static readonly HttpClient httpClient = new HttpClient();
 
     [Parameter("ApiKey for the specified source")]
-    private readonly string ApiKey;
+    public static string ApiKey { get; set; }
 
     [Parameter]
-    private readonly string Source = @"https://api.nuget.org/v3/index.json";
+    public static string Source { get; set; } = @"https://api.nuget.org/v3/index.json";
 
     [Parameter]
-    private static string GlobalModuleIgnoreFileUrl = @"https://raw.githubusercontent.com/VirtoCommerce/vc-platform/dev/module.ignore";
+    public static string GlobalModuleIgnoreFileUrl { get; set; } = @"https://raw.githubusercontent.com/VirtoCommerce/vc-platform/dev/module.ignore";
 
     [Parameter]
-    private readonly string SonarAuthToken = "";
+    public static string SonarAuthToken { get; set; } = "";
 
     [Parameter]
-    private readonly string SonarUrl = "https://sonarcloud.io";
+    public static string SonarUrl { get; set; } = "https://sonarcloud.io";
 
     [Parameter]
-    private readonly AbsolutePath CoverageReportPath = RootDirectory / ".tmp" / "coverage.xml";
+    public static AbsolutePath CoverageReportPath { get; set; } = RootDirectory / ".tmp" / "coverage.xml";
 
     [Parameter]
-    private readonly string TestsFilter = "Category!=IntegrationTest";
+    public static string TestsFilter { get; set; } = "Category!=IntegrationTest";
 
     [Parameter("Url to Swagger Validation Api")]
-    private readonly string SwaggerValidatorUri = "https://validator.swagger.io/validator/debug";
+    public static string SwaggerValidatorUri { get; set; } = "https://validator.swagger.io/validator/debug";
 
     [Parameter("GitHub user for release creation")]
-    private readonly string GitHubUser;
+    public static string GitHubUser { get; set; }
 
     [Parameter("GitHub user security token for release creation")]
-    private readonly string GitHubToken;
+    public static string GitHubToken { get; set; }
 
     [Parameter("True - prerelease, False - release")]
-    private readonly bool PreRelease;
+    public static bool PreRelease { get; set; }
 
     [Parameter("True - Pull Request")]
-    private readonly bool PullRequest;
+    public static bool PullRequest { get; set; }
 
     [Parameter("Path to folder with  git clones of modules repositories")]
-    private readonly AbsolutePath ModulesFolderPath;
+    public static AbsolutePath ModulesFolderPath { get; set; }
 
     [Parameter("Repo Organization/User")]
-    private readonly string RepoOrg = "VirtoCommerce";
+    public static string RepoOrg { get; set; } = "VirtoCommerce";
 
     [Parameter("Repo Name")]
-    private string RepoName;
+    public static string RepoName { get; set; }
 
     [Parameter("Sonar Organization (\"virto-commerce\" by default)")]
-    private readonly string SonarOrg = "virto-commerce";
+    public static string SonarOrg { get; set; } = "virto-commerce";
 
     [Parameter("Path to nuget config")]
-    private readonly AbsolutePath NugetConfig;
+    public static AbsolutePath NugetConfig { get; set; }
 
     [Parameter("Swagger schema path")]
-    private readonly AbsolutePath SwaggerSchemaPath;
+    public static AbsolutePath SwaggerSchemaPath { get; set; }
 
     [Parameter("Path to modules.json")]
-    private readonly string ModulesJsonName = "modules_v3.json";
+    public static string ModulesJsonName { get; set; } = "modules_v3.json";
 
     [Parameter("Full uri to module artifact")]
-    private readonly string CustomModulePackageUri;
+    public static string CustomModulePackageUri { get; set; }
 
     [Parameter("Path to packageJson")]
-    private readonly string PackageJsonPath = "package.json";
+    public static string PackageJsonPath { get; set; } = "package.json";
 
     [Parameter("Path to Release Notes File")]
-    private readonly AbsolutePath ReleaseNotes;
+    public static AbsolutePath ReleaseNotes { get; set; }
 
     [Parameter("VersionTag for module.manifest and Directory.Build.props")]
-    private string CustomVersionPrefix;
+    public static string CustomVersionPrefix { get; set; }
 
     [Parameter("VersionSuffix for module.manifest and Directory.Build.props")]
-    private string CustomVersionSuffix;
+    public static string CustomVersionSuffix { get; set; }
 
     [Parameter("Release branch")]
-    private readonly string ReleaseBranch;
+    public static string ReleaseBranch { get; set; }
 
     [Parameter("Branch Name for SonarQube")]
-    private readonly string SonarBranchName;
+    public static string SonarBranchName { get; set; }
 
     [Parameter("Target Branch Name for SonarQube")]
-    private readonly string SonarBranchNameTarget = "dev";
+    public static string SonarBranchNameTarget { get; set; } = "dev";
 
     [Parameter("PR Base for SonarQube")]
-    private readonly string SonarPRBase;
+    public static string SonarPRBase { get; set; }
 
     [Parameter("PR Branch for SonarQube")]
-    private readonly string SonarPRBranch;
+    public static string SonarPRBranch { get; set; }
 
     [Parameter("PR Number for SonarQube")]
-    private readonly string SonarPRNumber;
+    public static string SonarPRNumber { get; set; }
 
     [Parameter("Github Repository for SonarQube")]
-    private readonly string SonarGithubRepo;
+    public static string SonarGithubRepo { get; set; }
 
     [Parameter("PR Provider for SonarQube")]
-    private readonly string SonarPRProvider;
+    public static string SonarPRProvider { get; set; }
 
     [Parameter("Modules.json repo url")]
-    private readonly string ModulesJsonRepoUrl = "https://github.com/VirtoCommerce/vc-modules.git";
+    public static string ModulesJsonRepoUrl { get; set; } = "https://github.com/VirtoCommerce/vc-modules.git";
 
     [Parameter("Force parameter for git checkout")]
-    private readonly bool Force;
+    public static bool Force { get; set; }
 
     private AbsolutePath SourceDirectory => RootDirectory / "src";
     private AbsolutePath TestsDirectory => RootDirectory / "tests";
 
     [Parameter("Path to Artifacts Directory")]
-    private AbsolutePath ArtifactsDirectory = RootDirectory / "artifacts";
+    public static AbsolutePath ArtifactsDirectory { get; set; } = RootDirectory / "artifacts";
 
     [Parameter("Directory containing modules.json")]
-    private string ModulesJsonDirectoryName = "vc-modules";
+    public static string ModulesJsonDirectoryName { get; set; } = "vc-modules";
 
     private AbsolutePath ModulesLocalDirectory => ArtifactsDirectory / ModulesJsonDirectoryName;
     private Project WebProject => Solution?.AllProjects.FirstOrDefault(x => x.Name.EndsWith(".Web") && !x.Path.ToString().Contains("samples") || x.Name.EndsWith("VirtoCommerce.Storefront"));

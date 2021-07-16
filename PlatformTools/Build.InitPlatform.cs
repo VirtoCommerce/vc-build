@@ -9,13 +9,13 @@ using VirtoCommerce.Platform.Modules;
 internal partial class Build
 {
     [Parameter("Modules discovery path")]
-    public static string DiscoveryPath;
+    public static string DiscoveryPath { get; set; }
 
     [Parameter("Probing path")]
-    public static string ProbingPath = RootDirectory / "app_data" / "modules";
+    public static string ProbingPath { get; set; } = RootDirectory / "app_data" / "modules";
 
     [Parameter("appsettings.json path")]
-    public static string AppsettingsPath = RootDirectory / "appsettings.json";
+    public static string AppsettingsPath { get; set; } = RootDirectory / "appsettings.json";
 
     private Target InitPlatform => _ => _
         .Executes(() =>
