@@ -10,7 +10,7 @@ using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 using Nuke.Common;
 
-internal partial class Build : NukeBuild
+internal partial class Build
 {
     [Parameter("Shows help for the target", Name = "?")]
     public static bool HelpParameter;

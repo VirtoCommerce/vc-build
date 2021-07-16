@@ -10,7 +10,7 @@ using Nuke.Common.Utilities.Collections;
 using PlatformTools;
 using VirtoCommerce.Platform.Core.Modularity;
 
-internal partial class Build : NukeBuild
+internal partial class Build
 {
     [Parameter("Platform or Module version to install", Name = "Version")]
     public static string VersionToInstall;

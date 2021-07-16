@@ -6,7 +6,7 @@ using VirtoCommerce.Platform.Core.Modularity;
 using VirtoCommerce.Platform.DistributedLock;
 using VirtoCommerce.Platform.Modules;
 
-internal partial class Build : NukeBuild
+internal partial class Build
 {
     [Parameter("Modules discovery path")]
     public static string DiscoveryPath;

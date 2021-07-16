@@ -1,6 +1,6 @@
 using Nuke.Common;
 
-internal partial class Build : NukeBuild
+internal partial class Build
 {
     [Parameter("Grab-migrator config file")]
     private readonly string GrabMigratorConfig;
