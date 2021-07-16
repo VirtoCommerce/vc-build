@@ -10,7 +10,7 @@ using VirtoCommerce.Platform.Modules.External;
 
 namespace PlatformTools
 {
-    class ExtModuleCatalog
+    internal class ExtModuleCatalog
     {
         private static ExternalModuleCatalog _catalog;
 
@@ -32,21 +32,25 @@ namespace PlatformTools
                 _catalog.Load();
             }
             else
+            {
                 _catalog.Reload();
+            }
+
             return _catalog;
         }
 
         public static IOptions<ExternalModuleCatalogOptions> GetOptions(string authToken, IEnumerable<string> manifestUrls)
         {
-            var extCatalogOptions = new ExternalModuleCatalogOptions()
+            var extCatalogOptions = new ExternalModuleCatalogOptions
             {
                 ModulesManifestUrl = new Uri(manifestUrls.First()),
                 AuthorizationToken = authToken,
                 IncludePrerelease = false,
                 AutoInstallModuleBundles = new string[] { },
-                ExtraModulesManifestUrls = manifestUrls.Select(m => new Uri(m)).ToArray()
+                ExtraModulesManifestUrls = manifestUrls.Select(m => new Uri(m)).ToArray(),
             };
-            return Options.Create<ExternalModuleCatalogOptions>(extCatalogOptions);
+
+            return Options.Create(extCatalogOptions);
         }
     }
 }

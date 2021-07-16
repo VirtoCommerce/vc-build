@@ -12,38 +12,42 @@ using Nuke.Common;
 namespace GrabMigrator
 {
     /// <summary>
-    /// Grab-migrator target implementation
+    ///     Grab-migrator target implementation
     /// </summary>
     internal class GrabMigrator
     {
         public void Do(string configFilePath)
         {
-            OutBox($@"VirtoCommerce EF-migration grabbing and applying tool.");
+            OutBox(@"VirtoCommerce EF-migration grabbing and applying tool.");
+
             if (!string.IsNullOrEmpty(configFilePath))
             {
                 if (File.Exists(configFilePath))
                 {
                     try
                     {
-                        Out($@"Read config file...");
+                        Out(@"Read config file...");
 
                         var config = (Config)JsonSerializer.Deserialize(File.ReadAllText(configFilePath), typeof(Config));
 
                         Dictionary<string, List<string>> sqlStatements = null;
+
                         if (config.Grab)
                         {
                             OutBox("Grab mode");
 
-                            Out($@"Refresh connection strings references...");
+                            Out(@"Refresh connection strings references...");
                             config.ConnectionStringsRefs = new Dictionary<string, List<string>>();
+
                             foreach (var migrationDirectory in config.MigrationDirectories)
                             {
                                 Out($@"Looking in {migrationDirectory}...");
                                 GrabConnectionStringsRefsFromModules(config.ConnectionStringsRefs, migrationDirectory);
                             }
-                            File.WriteAllText(configFilePath, JsonSerializer.Serialize(config, new JsonSerializerOptions() { WriteIndented = true }));
 
-                            Out($@"Looking for migrations in migration directories recursively...");
+                            File.WriteAllText(configFilePath, JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true }));
+
+                            Out(@"Looking for migrations in migration directories recursively...");
                             sqlStatements = GrabSQLStatements(config);
                         }
 
@@ -58,8 +62,7 @@ namespace GrabMigrator
 
                             if (sqlStatements != null)
                             {
-
-                                Out($@"Read platform config file...");
+                                Out(@"Read platform config file...");
 
                                 var connStrings = GrabConnectionStrings(config.PlatformConfigFile);
 
@@ -76,12 +79,18 @@ namespace GrabMigrator
                                     var connString = string.Empty;
 
                                     if (config.ConnectionStringsRefs.ContainsKey(module))
+                                    {
                                         foreach (var moduleConnStringKey in config.ConnectionStringsRefs[module])
                                         {
                                             connString = connStrings.ContainsKey(moduleConnStringKey) ? connStrings[moduleConnStringKey] : string.Empty;
+
                                             if (!string.IsNullOrEmpty(connString))
+                                            {
                                                 break;
+                                            }
                                         }
+                                    }
+
                                     // Fallback connection string key is always "VirtoCommerce"
                                     connString = string.IsNullOrEmpty(connString) ? connStrings["VirtoCommerce"] : connString;
 
@@ -90,6 +99,7 @@ namespace GrabMigrator
                                         // One connection and transaction per each module
                                         conn.Open();
                                         var tran = conn.BeginTransaction();
+
                                         try
                                         {
                                             foreach (var commandText in sqlStatements[module])
@@ -101,6 +111,7 @@ namespace GrabMigrator
                                                 cmd.CommandText = commandText;
                                                 cmd.ExecuteNonQuery();
                                             }
+
                                             tran.Commit();
                                             Out($@"Successfully applied for module: {module}!");
                                         }
@@ -114,7 +125,8 @@ namespace GrabMigrator
                                 }
                             }
                         }
-                        OutBox($@"Complete!");
+
+                        OutBox(@"Complete!");
                     }
                     catch (Exception exc)
                     {
@@ -138,9 +150,13 @@ namespace GrabMigrator
         {
             var result = new Dictionary<string, string>();
 
-            var platformConfigJson = JsonDocument.Parse(File.ReadAllText(platformConfigFile), new JsonDocumentOptions() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
+            var platformConfigJson = JsonDocument.Parse(File.ReadAllText(platformConfigFile), new JsonDocumentOptions
+            {
+                CommentHandling = JsonCommentHandling.Skip,
+                AllowTrailingCommas = true,
+            });
 
-            foreach (JsonProperty property in platformConfigJson.RootElement.GetProperty("ConnectionStrings").EnumerateObject())
+            foreach (var property in platformConfigJson.RootElement.GetProperty("ConnectionStrings").EnumerateObject())
             {
                 result.Add(property.Name, property.Value.ToString());
             }
@@ -161,10 +177,12 @@ namespace GrabMigrator
                 var content = File.ReadAllText(moduleFile);
                 var matches = connKeyRegex.Matches(content);
                 var listRefs = new List<string>();
+
                 foreach (Match match in matches)
                 {
                     listRefs.Add(match.Groups["connkey"].Value);
                 }
+
                 if (listRefs.Count > 0)
                 {
                     refs.Add(moduleName, listRefs);
@@ -190,6 +208,7 @@ namespace GrabMigrator
             var moduleRegex = new Regex(@"[\\\w^\.-]*\\(?<module>.+)\\Migrations");
             var migrationNameRegex = new Regex(@"\[Migration\(""(?<migration>.+)""\)\]");
             string[] migrationFiles;
+
             if (config.GrabMode == GrabMode.V2V3)
             {
                 // Look for upgrade migrations
@@ -203,9 +222,11 @@ namespace GrabMigrator
             }
 
             Out($@"Found {migrationFiles.Count()} migrations in directory {migrationDirectory}");
+
             foreach (var migrationFile in migrationFiles)
             {
                 var moduleName = moduleRegex.Match(migrationFile).Groups["module"].Value;
+
                 if (moduleName.EndsWith(@".Data"))
                 {
                     var moduleRegexData = new Regex(@"(?<module>.+)\.Data");
@@ -213,9 +234,9 @@ namespace GrabMigrator
                 }
 
                 // Set migrations range to extract. Leave it empty for all migrations
-                var migrationName = config.GrabMode == GrabMode.V2V3 ?
-                    $@"0 {migrationNameRegex.Match(File.ReadAllText(migrationFile)).Groups["migration"].Value}" :
-                    string.Empty;
+                var migrationName = config.GrabMode == GrabMode.V2V3
+                    ? $@"0 {migrationNameRegex.Match(File.ReadAllText(migrationFile)).Groups["migration"].Value}"
+                    : string.Empty;
 
                 var tempfile = Path.Combine(new DirectoryInfo(config.StatementsDirectory).FullName, $@"{moduleName}.sql");
 
@@ -223,12 +244,19 @@ namespace GrabMigrator
 
                 // Run dotnet-ef to extract migrations in idempotent manner
                 var fi = new FileInfo(migrationFile);
-                var efTool = Process.Start(new ProcessStartInfo() { WorkingDirectory = fi.Directory.Parent.FullName, FileName = "dotnet", Arguments = $@"ef migrations script {migrationName} -o {tempfile} -i {(config.VerboseEFTool ? "-v" : "")}" });
+
+                var efTool = Process.Start(new ProcessStartInfo
+                {
+                    WorkingDirectory = fi.Directory.Parent.FullName,
+                    FileName = "dotnet",
+                    Arguments = $@"ef migrations script {migrationName} -o {tempfile} -i {(config.VerboseEFTool ? "-v" : "")}",
+                });
+
                 efTool.WaitForExit();
 
                 sqlStatements.Add(moduleName, SplitStatements(File.ReadAllText(tempfile)));
 
-                Out($@"OK.");
+                Out(@"OK.");
             }
         }
 
@@ -236,6 +264,7 @@ namespace GrabMigrator
         {
             var result = new Dictionary<string, List<string>>();
             var migrationFiles = Directory.GetFiles(statementsDirectory, @"*.sql");
+
             foreach (var migrationFile in migrationFiles)
             {
                 var migrationFileInfo = new FileInfo(migrationFile);
@@ -253,6 +282,7 @@ namespace GrabMigrator
             var statementsMatches = statementsSplitRegex.Matches(statements);
 
             var result = new List<string>();
+
             foreach (Match statement in statementsMatches)
             {
                 result.Add(statement.Groups["statement"].Value);

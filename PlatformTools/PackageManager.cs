@@ -3,18 +3,20 @@ using Nuke.Common.IO;
 
 namespace PlatformTools
 {
-    class PackageManager
+    internal class PackageManager
     {
-        private static string _defaultModuleManifest = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/modules_v3.json";
+        private static readonly string _defaultModuleManifest = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/modules_v3.json";
+
         public static PackageManifest CreatePackageManifest(string platformVersion, string PlatformAssetUrl)
         {
-            var manifest = new PackageManifest()
+            var manifest = new PackageManifest
             {
                 PlatformVersion = platformVersion,
                 PlatformAssetUrl = PlatformAssetUrl,
                 Modules = new List<ModuleItem>(),
-                ModuleSources = new List<string>()
+                ModuleSources = new List<string>(),
             };
+
             manifest.ModuleSources.Add(_defaultModuleManifest);
             return manifest;
         }

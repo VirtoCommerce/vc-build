@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO.Abstractions;
 using VirtoCommerce.Platform.Data.TransactionFileManager;
 using VirtoCommerce.Platform.Data.ZipFile;
 using VirtoCommerce.Platform.Modules;
@@ -6,7 +7,7 @@ using VirtoCommerce.Platform.Modules.External;
 
 namespace PlatformTools
 {
-    class ModuleInstallerFacade
+    internal class ModuleInstallerFacade
     {
         private static ModuleInstaller _moduleInstaller;
 
@@ -15,7 +16,7 @@ namespace PlatformTools
             if (_moduleInstaller == null)
             {
                 var fileManager = new TransactionFileManager();
-                var fileSystem = new System.IO.Abstractions.FileSystem();
+                var fileSystem = new FileSystem();
                 var zipFileWrapper = new ZipFileWrapper(fileSystem, fileManager);
                 var localCatalogOptions = LocalModuleCatalog.GetOptions(discoveryPath, probingPath);
                 var extCatalogOptions = ExtModuleCatalog.GetOptions(authToken, manifestUrls);
@@ -24,6 +25,7 @@ namespace PlatformTools
                 var modulesClient = new ExternalModulesClient(extCatalogOptions);
                 _moduleInstaller = new ModuleInstaller(externalModuleCatalog, modulesClient, fileManager, localCatalogOptions, fileSystem, zipFileWrapper);
             }
+
             return _moduleInstaller;
         }
     }

@@ -1,14 +1,14 @@
 using Nuke.Common;
 
-partial class Build : NukeBuild
+internal partial class Build : NukeBuild
 {
-    [Parameter("Grab-migrator config file")] readonly string GrabMigratorConfig;
+    [Parameter("Grab-migrator config file")]
+    private readonly string GrabMigratorConfig;
 
-    Target GrabMigrator => _ => _
-     .Requires(() => GrabMigratorConfig)
-     .Executes(() =>
-     {
-         new GrabMigrator.GrabMigrator().Do(GrabMigratorConfig);
-     });
-
+    private Target GrabMigrator => _ => _
+        .Requires(() => GrabMigratorConfig)
+        .Executes(() =>
+        {
+            new GrabMigrator.GrabMigrator().Do(GrabMigratorConfig);
+        });
 }

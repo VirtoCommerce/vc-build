@@ -6,7 +6,7 @@ using VirtoCommerce.Platform.Modules;
 
 namespace PlatformTools
 {
-    class LocalModuleCatalog
+    internal class LocalModuleCatalog
     {
         private static LocalStorageModuleCatalog _catalog;
 
@@ -26,19 +26,23 @@ namespace PlatformTools
                 _catalog.Load();
             }
             else
+            {
                 _catalog.Reload();
+            }
+
             return _catalog;
         }
 
         public static IOptions<LocalStorageModuleCatalogOptions> GetOptions(string discoveryPath, string probingPath)
         {
-            var moduleCatalogOptions = new LocalStorageModuleCatalogOptions()
+            var moduleCatalogOptions = new LocalStorageModuleCatalogOptions
             {
                 RefreshProbingFolderOnStart = true,
                 DiscoveryPath = discoveryPath,
                 ProbingPath = probingPath,
             };
-            return Options.Create<LocalStorageModuleCatalogOptions>(moduleCatalogOptions);
+
+            return Options.Create(moduleCatalogOptions);
         }
     }
 }
