@@ -3,16 +3,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Utilities.Collections;
 using PlatformTools;
 using VirtoCommerce.Platform.Core.Modularity;
-using VirtoCommerce.Platform.Modules;
 
-partial class Build: NukeBuild
+partial class Build : NukeBuild
 {
     [Parameter("Platform or Module version to install", Name = "Version")] public static string VersionToInstall;
     [Parameter("vc-package.json path")] public static string PackageManifestPath = "./vc-package.json";
@@ -29,7 +27,8 @@ partial class Build: NukeBuild
 
     Target Install => _ => _
     .Triggers(InstallPlatform, InstallModules)
-    .Executes(async () => {
+    .Executes(async () =>
+    {
         PackageManifest packageManifest;
         if (!File.Exists(PackageManifestPath))
         {
@@ -46,19 +45,21 @@ partial class Build: NukeBuild
         var externalCatalog = ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, packageManifest.ModuleSources);
         if (Module?.Length > 0 && !InstallPlatformParam)
         {
-            foreach(var module in ParseModuleParameter(Module))
+            foreach (var module in ParseModuleParameter(Module))
             {
                 var externalModule = externalCatalog.Items.OfType<ManifestModuleInfo>().Where(m => String.Compare(m.Id, module.Id, StringComparison.InvariantCultureIgnoreCase) == 0).FirstOrDefault();
                 module.Id = externalModule.Id;
-                if (string.IsNullOrEmpty(module.Version)) module.Version = externalModule.Version.ToString();
+                if (string.IsNullOrEmpty(module.Version))
+                    module.Version = externalModule.Version.ToString();
                 var existedModule = packageManifest.Modules.Where(m => m.Id == module.Id).FirstOrDefault();
                 if (existedModule == null)
                 {
                     Logger.Info($"Add {module.Id}:{module.Version}");
                     packageManifest.Modules.Add(module);
-                } else
+                }
+                else
                 {
-                    if(new Version(existedModule.Version) >  new Version(module.Version))
+                    if (new Version(existedModule.Version) > new Version(module.Version))
                     {
                         Logger.Error($"{module.Id}: Module downgrading isn't supported");
                         continue;
@@ -68,7 +69,7 @@ partial class Build: NukeBuild
                 }
             }
         }
-        else if(!InstallPlatformParam && !packageManifest.Modules.Any())
+        else if (!InstallPlatformParam && !packageManifest.Modules.Any())
         {
             Logger.Info("Add group: commerce");
             var commerce = externalCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.Groups.Contains("commerce")).Select(m => new ModuleItem(m.ModuleName, m.Version.ToString()));
@@ -85,7 +86,7 @@ partial class Build: NukeBuild
 
     private IEnumerable<ModuleItem> ParseModuleParameter(string[] Module)
     {
-        foreach(var module in Module)
+        foreach (var module in Module)
         {
             string moduleId;
             string moduleVersion = string.Empty;
@@ -147,7 +148,7 @@ partial class Build: NukeBuild
         {
             var versionInfo = FileVersionInfo.GetVersionInfo(platformWeb);
             var currentProductVersion = Version.Parse(versionInfo.ProductVersion);
-            if(newVersion <= currentProductVersion)
+            if (newVersion <= currentProductVersion)
             {
                 result = false;
             }
@@ -156,7 +157,8 @@ partial class Build: NukeBuild
     }
     Target InstallModules => _ => _
     .After(InstallPlatform)
-    .Executes(() => {
+    .Executes(() =>
+    {
         var packageManifest = PackageManager.FromFile(PackageManifestPath);
         var discoveryPath = GetDiscoveryPath();
         var localModuleCatalog = LocalModuleCatalog.GetCatalog(discoveryPath, ProbingPath);
@@ -244,7 +246,7 @@ partial class Build: NukeBuild
         foreach (var module in packageManifest.Modules)
         {
             var moduleInfo = externalCatalog.Items.OfType<ManifestModuleInfo>().Where(m => m.Id == module.Id).FirstOrDefault(m => m.Ref.Contains("github.com"));
-            if(moduleInfo == null)
+            if (moduleInfo == null)
             {
                 ControlFlow.Fail($"No module {module.Id} found");
             }

@@ -1,9 +1,5 @@
-using System;
 using System.Collections.Generic;
-using System.Text;
 using Nuke.Common.IO;
-using VirtoCommerce.Platform.Core.Common;
-using VirtoCommerce.Platform.Core.Modularity;
 
 namespace PlatformTools
 {

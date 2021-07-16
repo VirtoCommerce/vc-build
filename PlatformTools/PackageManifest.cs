@@ -1,7 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Text;
-using VirtoCommerce.Platform.Core.Modularity;
 
 namespace PlatformTools
 {

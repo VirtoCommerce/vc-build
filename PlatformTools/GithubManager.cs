@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Octokit;
@@ -27,13 +25,13 @@ namespace PlatformTools
         }
         public static void SetAuthToken(string token)
         {
-            if(!string.IsNullOrEmpty(token))
+            if (!string.IsNullOrEmpty(token))
                 Client.Credentials = new Credentials(token);
         }
 
         private static async Task<Release> GetLatestReleaseAsync(string repoUser, string repoName)
         {
-            var releases = await Client.Repository.Release.GetAll(repoUser, repoName, new ApiOptions() { PageSize = 5, PageCount = 1});
+            var releases = await Client.Repository.Release.GetAll(repoUser, repoName, new ApiOptions() { PageSize = 5, PageCount = 1 });
             var release = releases.OrderByDescending(r => r.TagName.Trim()).FirstOrDefault();
             return release;
         }

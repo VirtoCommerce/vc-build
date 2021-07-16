@@ -79,7 +79,8 @@ namespace GrabMigrator
                                         foreach (var moduleConnStringKey in config.ConnectionStringsRefs[module])
                                         {
                                             connString = connStrings.ContainsKey(moduleConnStringKey) ? connStrings[moduleConnStringKey] : string.Empty;
-                                            if (!string.IsNullOrEmpty(connString)) break;
+                                            if (!string.IsNullOrEmpty(connString))
+                                                break;
                                         }
                                     // Fallback connection string key is always "VirtoCommerce"
                                     connString = string.IsNullOrEmpty(connString) ? connStrings["VirtoCommerce"] : connString;

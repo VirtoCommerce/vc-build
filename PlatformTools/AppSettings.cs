@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Microsoft.Extensions.Configuration;
 
 namespace PlatformTools
@@ -11,7 +8,7 @@ namespace PlatformTools
 
         public static IConfiguration GetConfiguration(string basePath, string appsettingsPath)
         {
-            if(_configuration == null && System.IO.File.Exists(appsettingsPath))
+            if (_configuration == null && System.IO.File.Exists(appsettingsPath))
             {
                 var builder = new ConfigurationBuilder().SetBasePath(basePath).AddJsonFile(appsettingsPath);
                 _configuration = builder.Build();

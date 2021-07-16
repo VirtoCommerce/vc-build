@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -18,18 +17,13 @@ using Nuke.Common.Git;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
-using Nuke.Common.Tools.CloudFoundry;
-using Nuke.Common.Tools.Coverlet;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.Git;
 using Nuke.Common.Tools.Npm;
-using Nuke.Common.Tools.NuGet;
 using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
-using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.Platform.Core.Modularity;
 using static Nuke.Common.IO.FileSystemTasks;
-using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 [CheckBuildProjectConfigurations]
@@ -59,7 +53,8 @@ partial class Build : NukeBuild
                 var solutionFileName = Path.GetFileName(solutions.First());
                 Logger.Info($"Solution found: {solutionFileName}");
                 File.WriteAllText(".nuke", solutionFileName);
-            } else if (solutions.Length < 1)
+            }
+            else if (solutions.Length < 1)
             {
                 File.CreateText(Path.Combine(Directory.GetCurrentDirectory(), ".nuke")).Close();
             }
@@ -78,8 +73,8 @@ partial class Build : NukeBuild
 
     [Solution] readonly Solution Solution;
     GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
-        
-            
+
+
 
     readonly Tool Git;
 
@@ -320,12 +315,12 @@ partial class Build : NukeBuild
     public void ChangeProjectVersion(string prefix = null, string suffix = null)
     {
         //theme
-        if(IsTheme)
+        if (IsTheme)
         {
             //var json = JsonDocument.Parse(File.ReadAllText(PackageJsonPath));
             //json.RootElement.GetProperty("version")
             var json = SerializationTasks.JsonDeserializeFromFile<JObject>(PackageJsonPath);
-            json["version"] = prefix;            
+            json["version"] = prefix;
             SerializationTasks.JsonSerializeToFile(json, Path.GetFullPath(PackageJsonPath));
         }
         else
@@ -383,7 +378,7 @@ partial class Build : NukeBuild
     {
         var json = JsonDocument.Parse(File.ReadAllText(packageJsonPath));
         JsonElement version;
-        if(json.RootElement.TryGetProperty("version", out version))
+        if (json.RootElement.TryGetProperty("version", out version))
         {
             return version.GetString();
         }
@@ -406,7 +401,8 @@ partial class Build : NukeBuild
                 }
             }
             var checkoutCommand = new StringBuilder("checkout dev");
-            if (Force) checkoutCommand.Append(" --force");
+            if (Force)
+                checkoutCommand.Append(" --force");
             GitTasks.Git(checkoutCommand.ToString());
             GitTasks.Git("pull");
             string version;
@@ -440,7 +436,7 @@ partial class Build : NukeBuild
             IncrementVersionMinor();
             ChangeProjectVersion(prefix: CustomVersionPrefix);
             var addFiles = "";
-            if(IsTheme)
+            if (IsTheme)
             {
                 addFiles = $"{PackageJsonPath}";
             }
@@ -449,7 +445,7 @@ partial class Build : NukeBuild
                 var manifestArg = IsModule ? RootDirectory.GetRelativePathTo(ModuleManifestFile) : "";
                 addFiles = $"Directory.Build.props {manifestArg}";
             }
-            
+
             GitTasks.Git($"add {addFiles}");
             GitTasks.Git($"commit -m \"{CustomVersionPrefix}\"");
             GitTasks.Git($"push origin dev");
@@ -479,7 +475,7 @@ partial class Build : NukeBuild
 
     Target CompleteHotfix => _ => _
         .After(StartHotfix)
-           
+
         .Executes(() =>
         {
             //workaround for run from sources
@@ -689,7 +685,7 @@ partial class Build : NukeBuild
           .Requires(() => !IsModule)
           .Executes(async () =>
           {
-              var swashbuckle = ToolResolver.GetPackageTool("Swashbuckle.AspNetCore.Cli", "dotnet-swagger.dll", framework:"netcoreapp3.0");
+              var swashbuckle = ToolResolver.GetPackageTool("Swashbuckle.AspNetCore.Cli", "dotnet-swagger.dll", framework: "netcoreapp3.0");
               var projectPublishPath = ArtifactsDirectory / "publish" / $"{WebProject.Name}.dll";
               var swaggerJson = ArtifactsDirectory / "swagger.json";
               var currentDir = Directory.GetCurrentDirectory();
@@ -720,7 +716,7 @@ partial class Build : NukeBuild
                 {
                     Logger.Normal(msg);
                 }
-            
+
                 if (validationMessages.Where(t => (string)t["level"] == "error").Any())
                     ControlFlow.Fail("Schema Validation Messages contains error");
             }
@@ -818,7 +814,7 @@ partial class Build : NukeBuild
             var processEnd = ProcessTasks.StartProcess(dotNetPath, endCmd, customLogger: SonarLogger, logInvocation: false)
                 .AssertWaitForExit().AssertZeroExitCode();
             var errors = processEnd.Output.Where(o => !o.Text.Contains(@"The 'files' list in config file 'tsconfig.json' is empty") && o.Type == OutputType.Err).ToList();
-            if(errors.Any())
+            if (errors.Any())
             {
                 ControlFlow.Fail(errors.Select(e => e.Text).Join(Environment.NewLine));
             }
@@ -912,7 +908,7 @@ partial class Build : NukeBuild
              {
                  PublishRelease(GitHubUser, GitRepositoryName, GitHubToken, tag, descr, ZipFilePath, PreRelease).Wait();
              }
-             catch(AggregateException ex)
+             catch (AggregateException ex)
              {
                  var responseRaw = ((Octokit.ApiValidationException)ex.InnerException)?.HttpResponse?.Body.ToString() ?? "";
                  var response = JsonDocument.Parse(responseRaw);
@@ -926,11 +922,11 @@ partial class Build : NukeBuild
                          alreadyExistsError = errors.EnumerateArray().Where(e => e.GetProperty("code").GetString() == "already_exists").Count() > 0;
                      }
                  }
-                 if(alreadyExistsError)
+                 if (alreadyExistsError)
                  {
                      ExitCode = 422;
                  }
-                  ControlFlow.Fail(ex.Message);
+                 ControlFlow.Fail(ex.Message);
              }
          });
 

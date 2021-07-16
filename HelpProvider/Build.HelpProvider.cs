@@ -20,7 +20,8 @@ partial class Build : NukeBuild
             Logger.Info(GetHelpForTarget(target));
             Environment.Exit(0);
         }
-        else base.OnTargetStart(target);
+        else
+            base.OnTargetStart(target);
     }
 
     private string GetHelpForTarget(string target)

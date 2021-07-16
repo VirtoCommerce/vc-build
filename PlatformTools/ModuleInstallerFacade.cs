@@ -1,13 +1,8 @@
-using System;
 using System.Collections.Generic;
-using System.Text;
-using Microsoft.Extensions.Options;
-using VirtoCommerce.Platform.Core.Modularity;
-using VirtoCommerce.Platform.Core.TransactionFileManager;
-using VirtoCommerce.Platform.Modules;
-using VirtoCommerce.Platform.Modules.External;
 using VirtoCommerce.Platform.Data.TransactionFileManager;
 using VirtoCommerce.Platform.Data.ZipFile;
+using VirtoCommerce.Platform.Modules;
+using VirtoCommerce.Platform.Modules.External;
 
 namespace PlatformTools
 {
@@ -17,7 +12,7 @@ namespace PlatformTools
 
         public static ModuleInstaller GetModuleInstaller(string discoveryPath, string probingPath, string authToken, IEnumerable<string> manifestUrls)
         {
-            if(_moduleInstaller == null)
+            if (_moduleInstaller == null)
             {
                 var fileManager = new TransactionFileManager();
                 var fileSystem = new System.IO.Abstractions.FileSystem();

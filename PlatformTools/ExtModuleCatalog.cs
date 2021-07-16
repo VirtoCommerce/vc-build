@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using VirtoCommerce.Platform.Core.Common;
@@ -32,13 +31,14 @@ namespace PlatformTools
                 _catalog = new ExternalModuleCatalog(localCatalog, client, options, logger);
                 _catalog.Load();
             }
-            else _catalog.Reload();
+            else
+                _catalog.Reload();
             return _catalog;
         }
 
         public static IOptions<ExternalModuleCatalogOptions> GetOptions(string authToken, IEnumerable<string> manifestUrls)
         {
-            var extCatalogOptions =  new ExternalModuleCatalogOptions()
+            var extCatalogOptions = new ExternalModuleCatalogOptions()
             {
                 ModulesManifestUrl = new Uri(manifestUrls.First()),
                 AuthorizationToken = authToken,

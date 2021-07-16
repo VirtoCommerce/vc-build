@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using VirtoCommerce.Platform.Core.Modularity;
@@ -28,7 +25,8 @@ namespace PlatformTools
                 _catalog = new LocalStorageModuleCatalog(options, distributedLock, logger);
                 _catalog.Load();
             }
-            else _catalog.Reload();
+            else
+                _catalog.Reload();
             return _catalog;
         }
 
