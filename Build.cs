@@ -85,12 +85,12 @@ internal partial class Build : NukeBuild
     private GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
 
 
-    private readonly Tool Git;
+    //private readonly Tool Git;
 
-    private readonly string MasterBranch = "master";
-    private readonly string DevelopBranch = "develop";
-    private readonly string ReleaseBranchPrefix = "release";
-    private readonly string HotfixBranchPrefix = "hotfix";
+    //private readonly string MasterBranch = "master";
+    //private readonly string DevelopBranch = "develop";
+    //private readonly string ReleaseBranchPrefix = "release";
+    //private readonly string HotfixBranchPrefix = "hotfix";
     private readonly string SonarLongLiveBranches = "master;develop";
 
 
@@ -1058,19 +1058,19 @@ internal partial class Build : NukeBuild
             }
         });
 
-    private void FinishReleaseOrHotfix(string tag)
-    {
-        Git($"checkout {MasterBranch}");
-        Git($"merge --no-ff --no-edit {GitRepository.Branch}");
-        Git($"tag {tag}");
+    //private void FinishReleaseOrHotfix(string tag)
+    //{
+    //    Git($"checkout {MasterBranch}");
+    //    Git($"merge --no-ff --no-edit {GitRepository.Branch}");
+    //    Git($"tag {tag}");
 
-        Git($"checkout {DevelopBranch}");
-        Git($"merge --no-ff --no-edit {GitRepository.Branch}");
+    //    Git($"checkout {DevelopBranch}");
+    //    Git($"merge --no-ff --no-edit {GitRepository.Branch}");
 
-        //Uncomment to switch on armed mode 
-        //Git($"branch -D {GitRepository.Branch}");
-        //Git($"push origin {MasterBranch} {DevelopBranch} {tag}");
-    }
+    //    //Uncomment to switch on armed mode 
+    //    //Git($"branch -D {GitRepository.Branch}");
+    //    //Git($"push origin {MasterBranch} {DevelopBranch} {tag}");
+    //}
 
     private Target ClearTemp => _ => _
         .Executes(() =>
