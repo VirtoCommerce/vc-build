@@ -130,7 +130,7 @@ namespace GrabMigrator
                     }
                     catch (Exception exc)
                     {
-                        Fail($@"An exception occured: {exc}");
+                        Fail($@"An exception occurred: {exc}");
                     }
                 }
                 else
@@ -141,7 +141,7 @@ namespace GrabMigrator
             else
             {
                 Out("Usage:");
-                Out("vc-build GrabMigrator --grab-migrator-config <configfile>");
+                Out("vc-build GrabMigrator --grab-migrator-config <ConfigFile>");
                 Fail("Configuration file required!");
             }
         }

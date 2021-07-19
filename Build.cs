@@ -479,11 +479,11 @@ internal partial class Build : NukeBuild
         .Executes(() =>
         {
             GitTasks.GitLogger = GitLogger;
-            var disableApprove = Environment.GetEnvironmentVariable("VCBUILD_DISABLE_RELEASE_APPROVEMENT");
+            var disableApprove = Environment.GetEnvironmentVariable("VCBUILD_DISABLE_RELEASE_APPROVAL");
 
             if (disableApprove.IsNullOrEmpty() && !Force)
             {
-                Console.Write($"Are you sure want to release {GitRepository.Identifier}? (y/N): ");
+                Console.Write($"Are you sure you want to release {GitRepository.Identifier}? (Y/N): ");
                 var response = Console.ReadLine();
 
                 if (response.ToLower().CompareTo("y") != 0)
@@ -835,7 +835,7 @@ internal partial class Build : NukeBuild
             }
             else
             {
-                Logger.Warn("There is no validation messages from validator");
+                Logger.Warn("There are no validation messages from validator");
             }
         });
 
