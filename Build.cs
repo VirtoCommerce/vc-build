@@ -82,7 +82,7 @@ internal partial class Build : NukeBuild
     [Solution]
     public static Solution Solution { get; set; }
 
-    private GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
+    protected GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
 
 
     //private readonly Tool Git;
@@ -198,8 +198,8 @@ internal partial class Build : NukeBuild
     [Parameter("Force parameter for git checkout")]
     public static bool Force { get; set; }
 
-    private AbsolutePath SourceDirectory => RootDirectory / "src";
-    private AbsolutePath TestsDirectory => RootDirectory / "tests";
+    protected AbsolutePath SourceDirectory => RootDirectory / "src";
+    protected AbsolutePath TestsDirectory => RootDirectory / "tests";
 
     [Parameter("Path to Artifacts Directory")]
     public static AbsolutePath ArtifactsDirectory { get; set; } = RootDirectory / "artifacts";
@@ -207,35 +207,35 @@ internal partial class Build : NukeBuild
     [Parameter("Directory containing modules.json")]
     public static string ModulesJsonDirectoryName { get; set; } = "vc-modules";
 
-    private AbsolutePath ModulesLocalDirectory => ArtifactsDirectory / ModulesJsonDirectoryName;
-    private Project WebProject => Solution?.AllProjects.FirstOrDefault(x => x.Name.EndsWith(".Web") && !x.Path.ToString().Contains("samples") || x.Name.EndsWith("VirtoCommerce.Storefront"));
-    private AbsolutePath ModuleManifestFile => WebProject.Directory / "module.manifest";
-    private AbsolutePath ModuleIgnoreFile => RootDirectory / "module.ignore";
+    protected AbsolutePath ModulesLocalDirectory => ArtifactsDirectory / ModulesJsonDirectoryName;
+    protected Project WebProject => Solution?.AllProjects.FirstOrDefault(x => x.Name.EndsWith(".Web") && !x.Path.ToString().Contains("samples") || x.Name.EndsWith("VirtoCommerce.Storefront"));
+    protected AbsolutePath ModuleManifestFile => WebProject.Directory / "module.manifest";
+    protected AbsolutePath ModuleIgnoreFile => RootDirectory / "module.ignore";
 
-    private Microsoft.Build.Evaluation.Project MSBuildProject => WebProject?.GetMSBuildProject();
-    private string VersionPrefix => IsTheme ? GetThemeVersion(PackageJsonPath) : MSBuildProject.GetProperty("VersionPrefix")?.EvaluatedValue;
-    private string VersionSuffix => MSBuildProject?.GetProperty("VersionSuffix")?.EvaluatedValue;
-    private string ReleaseVersion => MSBuildProject?.GetProperty("PackageVersion")?.EvaluatedValue ?? WebProject.GetProperty("Version");
+    protected Microsoft.Build.Evaluation.Project MSBuildProject => WebProject?.GetMSBuildProject();
+    protected string VersionPrefix => IsTheme ? GetThemeVersion(PackageJsonPath) : MSBuildProject.GetProperty("VersionPrefix")?.EvaluatedValue;
+    protected string VersionSuffix => MSBuildProject?.GetProperty("VersionSuffix")?.EvaluatedValue;
+    protected string ReleaseVersion => MSBuildProject?.GetProperty("PackageVersion")?.EvaluatedValue ?? WebProject.GetProperty("Version");
 
-    private bool IsTheme => Solution == null;
+    protected bool IsTheme => Solution == null;
 
-    private ModuleManifest ModuleManifest => ManifestReader.Read(ModuleManifestFile);
+    protected ModuleManifest ModuleManifest => ManifestReader.Read(ModuleManifestFile);
 
-    private AbsolutePath ModuleOutputDirectory => ArtifactsDirectory / ModuleManifest.Id;
+    protected AbsolutePath ModuleOutputDirectory => ArtifactsDirectory / ModuleManifest.Id;
 
-    private AbsolutePath DirectoryBuildPropsPath => Solution.Directory / "Directory.Build.props";
+    protected AbsolutePath DirectoryBuildPropsPath => Solution.Directory / "Directory.Build.props";
 
-    private string ZipFileName => IsModule ? $"{ModuleManifest.Id}_{ReleaseVersion}.zip" : $"{WebProject.Solution.Name}.{ReleaseVersion}.zip";
-    private string ZipFilePath => ArtifactsDirectory / ZipFileName;
-    private string GitRepositoryName => GitRepository.Identifier.Split('/')[1];
+    protected string ZipFileName => IsModule ? $"{ModuleManifest.Id}_{ReleaseVersion}.zip" : $"{WebProject.Solution.Name}.{ReleaseVersion}.zip";
+    protected string ZipFilePath => ArtifactsDirectory / ZipFileName;
+    protected string GitRepositoryName => GitRepository.Identifier.Split('/')[1];
 
-    private string ModulePackageUrl => CustomModulePackageUri.IsNullOrEmpty()
+    protected string ModulePackageUrl => CustomModulePackageUri.IsNullOrEmpty()
         ? $"https://github.com/VirtoCommerce/{GitRepositoryName}/releases/download/{ReleaseVersion}/{ModuleManifest.Id}_{ReleaseVersion}.zip"
         : CustomModulePackageUri;
 
-    private GitRepository ModulesRepository => GitRepository.FromUrl(ModulesJsonRepoUrl);
+    protected GitRepository ModulesRepository => GitRepository.FromUrl(ModulesJsonRepoUrl);
 
-    private bool IsModule => FileExists(ModuleManifestFile);
+    protected bool IsModule => FileExists(ModuleManifestFile);
 
     private void SonarLogger(OutputType type, string text)
     {
