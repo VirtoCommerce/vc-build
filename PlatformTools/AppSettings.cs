@@ -7,11 +7,11 @@ namespace PlatformTools
     {
         private static IConfiguration _configuration;
 
-        public static IConfiguration GetConfiguration(string basePath, string appsettingsPath)
+        public static IConfiguration GetConfiguration(string basePath, string appSettingsPath)
         {
-            if (_configuration == null && File.Exists(appsettingsPath))
+            if (_configuration == null && File.Exists(appSettingsPath))
             {
-                var builder = new ConfigurationBuilder().SetBasePath(basePath).AddJsonFile(appsettingsPath);
+                var builder = new ConfigurationBuilder().SetBasePath(basePath).AddJsonFile(appSettingsPath);
                 _configuration = builder.Build();
             }
 

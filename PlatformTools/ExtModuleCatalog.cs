@@ -41,7 +41,7 @@ namespace PlatformTools
 
         public static IOptions<ExternalModuleCatalogOptions> GetOptions(string authToken, IEnumerable<string> manifestUrls)
         {
-            var extCatalogOptions = new ExternalModuleCatalogOptions
+            var options = new ExternalModuleCatalogOptions
             {
                 ModulesManifestUrl = new Uri(manifestUrls.First()),
                 AuthorizationToken = authToken,
@@ -50,7 +50,7 @@ namespace PlatformTools
                 ExtraModulesManifestUrls = manifestUrls.Select(m => new Uri(m)).ToArray(),
             };
 
-            return Options.Create(extCatalogOptions);
+            return Options.Create(options);
         }
     }
 }

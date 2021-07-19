@@ -7,12 +7,12 @@ namespace PlatformTools
     {
         private static readonly string _defaultModuleManifest = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/modules_v3.json";
 
-        public static PackageManifest CreatePackageManifest(string platformVersion, string PlatformAssetUrl)
+        public static PackageManifest CreatePackageManifest(string platformVersion, string platformAssetUrl)
         {
             var manifest = new PackageManifest
             {
                 PlatformVersion = platformVersion,
-                PlatformAssetUrl = PlatformAssetUrl,
+                PlatformAssetUrl = platformAssetUrl,
                 Modules = new List<ModuleItem>(),
                 ModuleSources = new List<string>(),
             };

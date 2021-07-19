@@ -48,9 +48,9 @@ internal partial class Build : NukeBuild
 
     public static int Main()
     {
-        var nukeFile = Directory.GetFiles(Directory.GetCurrentDirectory(), ".nuke");
+        var nukeFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), ".nuke");
 
-        if (!nukeFile.Any())
+        if (!nukeFiles.Any())
         {
             Logger.Info("No .nuke file found!");
             var solutions = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.sln");
@@ -77,7 +77,7 @@ internal partial class Build : NukeBuild
     public static Configuration Configuration { get; set; } = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
 
-    private static readonly string[] ModuleContentFolders = { "dist", "Localizations", "Scripts", "Content" };
+    private static readonly string[] _moduleContentFolders = { "dist", "Localizations", "Scripts", "Content" };
 
     [Solution]
     public static Solution Solution { get; set; }
@@ -94,7 +94,7 @@ internal partial class Build : NukeBuild
     private readonly string SonarLongLiveBranches = "master;develop";
 
 
-    private static readonly HttpClient httpClient = new HttpClient();
+    private static readonly HttpClient _httpClient = new HttpClient();
 
     [Parameter("ApiKey for the specified source")]
     public static string ApiKey { get; set; }
@@ -271,7 +271,7 @@ internal partial class Build : NukeBuild
     private Target Restore => _ => _
         .Executes(() =>
         {
-            DotNetRestore(s => s
+            DotNetRestore(settings => settings
                 .SetProjectFile(Solution)
                 .When(NugetConfig != null, c => c
                     .SetConfigFile(NugetConfig))
@@ -313,7 +313,7 @@ internal partial class Build : NukeBuild
         {
             var dotnetPath = ToolPathResolver.GetPathExecutable("dotnet");
             var testProjects = Solution.GetProjects("*.Test|*.Tests|*.Testing");
-            var OutPath = RootDirectory / ".tmp";
+            var outPath = RootDirectory / ".tmp";
 
             testProjects.ForEach((testProject, index) =>
             {
@@ -325,19 +325,19 @@ internal partial class Build : NukeBuild
                     .SetFilter(TestsFilter)
                     .SetNoBuild(true)
                     .SetProcessLogOutput(true)
-                    .SetResultsDirectory(OutPath)
+                    .SetResultsDirectory(outPath)
                     .SetDataCollector("XPlat Code Coverage");
 
                 DotNetTest(testSetting);
             });
 
-            var coberturaReports = OutPath.GlobFiles("**/coverage.cobertura.xml");
+            var coberturaReports = outPath.GlobFiles("**/coverage.cobertura.xml");
 
             if (coberturaReports.Count > 0)
             {
                 var reportGenerator = ToolResolver.GetPackageTool("dotnet-reportgenerator-globaltool", "ReportGenerator.dll", "4.8.8", "netcoreapp3.0");
-                reportGenerator.Invoke($"-reports:{OutPath / "**/coverage.cobertura.xml"} -targetdir:{OutPath} -reporttypes:SonarQube");
-                var sonarCoverageReportPath = OutPath.GlobFiles("SonarQube.xml").FirstOrDefault();
+                reportGenerator.Invoke($"-reports:{outPath / "**/coverage.cobertura.xml"} -targetdir:{outPath} -reporttypes:SonarQube");
+                var sonarCoverageReportPath = outPath.GlobFiles("SonarQube.xml").FirstOrDefault();
 
                 if (sonarCoverageReportPath == null)
                 {
@@ -371,7 +371,7 @@ internal partial class Build : NukeBuild
 
             DotNetLogger = CustomDotnetLogger;
 
-            DotNetNuGetPush(s => s
+            DotNetNuGetPush(settings => settings
                     .SetSource(Source)
                     .SetApiKey(ApiKey)
                     .SetSkipDuplicate(true)
@@ -388,16 +388,16 @@ internal partial class Build : NukeBuild
         public override Encoding Encoding => new UTF8Encoding(false);
     }
 
-    public void ChangeProjectVersion(string prefix = null, string suffix = null)
+    public void ChangeProjectVersion(string versionPrefix = null, string versionSuffix = null)
     {
         //theme
         if (IsTheme)
         {
             //var json = JsonDocument.Parse(File.ReadAllText(PackageJsonPath));
             //json.RootElement.GetProperty("version")
-            var json = SerializationTasks.JsonDeserializeFromFile<JObject>(PackageJsonPath);
-            json["version"] = prefix;
-            SerializationTasks.JsonSerializeToFile(json, Path.GetFullPath(PackageJsonPath));
+            var jObject = SerializationTasks.JsonDeserializeFromFile<JObject>(PackageJsonPath);
+            jObject["version"] = versionPrefix;
+            SerializationTasks.JsonSerializeToFile(jObject, Path.GetFullPath(PackageJsonPath));
         }
         else
         {
@@ -406,47 +406,47 @@ internal partial class Build : NukeBuild
             {
                 var manifest = ModuleManifest.Clone();
 
-                if (!string.IsNullOrEmpty(prefix))
+                if (!string.IsNullOrEmpty(versionPrefix))
                 {
-                    manifest.Version = prefix;
+                    manifest.Version = versionPrefix;
                 }
 
-                if (!string.IsNullOrEmpty(suffix))
+                if (!string.IsNullOrEmpty(versionSuffix))
                 {
-                    manifest.VersionTag = suffix;
+                    manifest.VersionTag = versionSuffix;
                 }
 
                 using (var writer = new Utf8StringWriter())
                 {
-                    var xml = new XmlSerializer(typeof(ModuleManifest));
-                    xml.Serialize(writer, manifest);
+                    var xmlSerializer = new XmlSerializer(typeof(ModuleManifest));
+                    xmlSerializer.Serialize(writer, manifest);
                     File.WriteAllText(ModuleManifestFile, writer.ToString(), Encoding.UTF8);
                 }
             }
 
             //Directory.Build.props
-            var xmlDoc = new XmlDocument
+            var xmlDocument = new XmlDocument
             {
                 PreserveWhitespace = true,
             };
 
-            xmlDoc.LoadXml(File.ReadAllText(DirectoryBuildPropsPath));
+            xmlDocument.LoadXml(File.ReadAllText(DirectoryBuildPropsPath));
 
-            if (!string.IsNullOrEmpty(prefix))
+            if (!string.IsNullOrEmpty(versionPrefix))
             {
-                var prefixNodex = xmlDoc.GetElementsByTagName("VersionPrefix");
-                prefixNodex[0].InnerText = prefix;
+                var prefixNodes = xmlDocument.GetElementsByTagName("VersionPrefix");
+                prefixNodes[0].InnerText = versionPrefix;
             }
 
-            if (string.IsNullOrEmpty(VersionSuffix) && !string.IsNullOrEmpty(suffix))
+            if (string.IsNullOrEmpty(VersionSuffix) && !string.IsNullOrEmpty(versionSuffix))
             {
-                var suffixNodes = xmlDoc.GetElementsByTagName("VersionSuffix");
-                suffixNodes[0].InnerText = suffix;
+                var suffixNodes = xmlDocument.GetElementsByTagName("VersionSuffix");
+                suffixNodes[0].InnerText = versionSuffix;
             }
 
             using (var writer = new Utf8StringWriter())
             {
-                xmlDoc.Save(writer);
+                xmlDocument.Save(writer);
                 File.WriteAllText(DirectoryBuildPropsPath, writer.ToString());
             }
         }
@@ -479,9 +479,9 @@ internal partial class Build : NukeBuild
         .Executes(() =>
         {
             GitTasks.GitLogger = GitLogger;
-            var disableApprove = Environment.GetEnvironmentVariable("VCBUILD_DISABLE_RELEASE_APPROVAL");
+            var disableApproval = Environment.GetEnvironmentVariable("VCBUILD_DISABLE_RELEASE_APPROVAL");
 
-            if (disableApprove.IsNullOrEmpty() && !Force)
+            if (disableApproval.IsNullOrEmpty() && !Force)
             {
                 Console.Write($"Are you sure you want to release {GitRepository.Identifier}? (Y/N): ");
                 var response = Console.ReadLine();
@@ -533,19 +533,19 @@ internal partial class Build : NukeBuild
             GitTasks.Git($"merge {currentBranch}");
             IncrementVersionMinor();
             ChangeProjectVersion(CustomVersionPrefix);
-            var addFiles = "";
+            var filesToAdd = "";
 
             if (IsTheme)
             {
-                addFiles = $"{PackageJsonPath}";
+                filesToAdd = $"{PackageJsonPath}";
             }
             else
             {
-                var manifestArg = IsModule ? RootDirectory.GetRelativePathTo(ModuleManifestFile) : "";
-                addFiles = $"Directory.Build.props {manifestArg}";
+                var manifestPath = IsModule ? RootDirectory.GetRelativePathTo(ModuleManifestFile) : "";
+                filesToAdd = $"Directory.Build.props {manifestPath}";
             }
 
-            GitTasks.Git($"add {addFiles}");
+            GitTasks.Git($"add {filesToAdd}");
             GitTasks.Git($"commit -m \"{CustomVersionPrefix}\"");
             GitTasks.Git("push origin dev");
             //remove release branch
@@ -566,8 +566,8 @@ internal partial class Build : NukeBuild
             Logger.Info(Directory.GetCurrentDirectory());
             GitTasks.Git($"checkout -b {hotfixBranchName}");
             ChangeProjectVersion(CustomVersionPrefix);
-            var manifestArg = IsModule ? RootDirectory.GetRelativePathTo(ModuleManifestFile) : "";
-            GitTasks.Git($"add Directory.Build.props {manifestArg}");
+            var manifestPath = IsModule ? RootDirectory.GetRelativePathTo(ModuleManifestFile) : "";
+            GitTasks.Git($"add Directory.Build.props {manifestPath}");
             GitTasks.Git($"commit -m \"{CustomVersionPrefix}\"");
             GitTasks.Git($"push -u origin {hotfixBranchName}");
         });
@@ -590,15 +590,15 @@ internal partial class Build : NukeBuild
 
     public void IncrementVersionMinor()
     {
-        var v = new Version(VersionPrefix);
-        var newPrefix = $"{v.Major}.{v.Minor + 1}.{v.Build}";
+        var version = new Version(VersionPrefix);
+        var newPrefix = $"{version.Major}.{version.Minor + 1}.{version.Build}";
         CustomVersionPrefix = newPrefix;
     }
 
     public void IncrementVersionPatch()
     {
-        var v = new Version(VersionPrefix);
-        var newPrefix = $"{v.Major}.{v.Minor}.{v.Build + 1}";
+        var version = new Version(VersionPrefix);
+        var newPrefix = $"{version.Major}.{version.Minor}.{version.Build + 1}";
         CustomVersionPrefix = newPrefix;
     }
 
@@ -621,7 +621,7 @@ internal partial class Build : NukeBuild
         .After(WebPackBuild, Test)
         .Executes(() =>
         {
-            DotNetPublish(s => s
+            DotNetPublish(settings => settings
                 .SetProcessWorkingDirectory(WebProject.Directory)
                 .EnableNoRestore()
                 .SetOutput(IsModule ? ModuleOutputDirectory / "bin" : ArtifactsDirectory / "publish")
@@ -634,7 +634,7 @@ internal partial class Build : NukeBuild
             if (FileExists(WebProject.Directory / "package.json"))
             {
                 NpmTasks.Npm("ci", WebProject.Directory);
-                NpmTasks.NpmRun(s => s.SetProcessWorkingDirectory(WebProject.Directory).SetCommand("webpack:build"));
+                NpmTasks.NpmRun(settings => settings.SetProcessWorkingDirectory(WebProject.Directory).SetCommand("webpack:build"));
             }
             else
             {
@@ -646,7 +646,7 @@ internal partial class Build : NukeBuild
         .DependsOn(Restore)
         .Executes(() =>
         {
-            DotNetBuild(s => s
+            DotNetBuild(settings => settings
                 .SetProjectFile(Solution)
                 .SetConfiguration(Configuration)
                 .EnableNoRestore());
@@ -661,13 +661,13 @@ internal partial class Build : NukeBuild
                 //Copy module.manifest and all content directories into a module output folder
                 CopyFileToDirectory(ModuleManifestFile, ModuleOutputDirectory, FileExistsPolicy.Overwrite);
 
-                foreach (var moduleFolder in ModuleContentFolders)
+                foreach (var folderName in _moduleContentFolders)
                 {
-                    var srcModuleFolder = WebProject.Directory / moduleFolder;
+                    var sourcePath = WebProject.Directory / folderName;
 
-                    if (DirectoryExists(srcModuleFolder))
+                    if (DirectoryExists(sourcePath))
                     {
-                        CopyDirectoryRecursively(srcModuleFolder, ModuleOutputDirectory / moduleFolder, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                        CopyDirectoryRecursively(sourcePath, ModuleOutputDirectory / folderName, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
                     }
                 }
 
@@ -682,10 +682,10 @@ internal partial class Build : NukeBuild
 
                 DeleteFile(ZipFilePath);
                 //TODO: Exclude all ignored files and *module files not related to compressed module
-                var ignoreModulesFilesRegex = new Regex(@".+Module\..*", RegexOptions.IgnoreCase);
+                var ignoreModuleFilesRegex = new Regex(@".+Module\..*", RegexOptions.IgnoreCase);
                 var includeModuleFilesRegex = new Regex(@$".*{ModuleManifest.Id}(Module)?\..*", RegexOptions.IgnoreCase);
 
-                CompressionTasks.CompressZip(ModuleOutputDirectory, ZipFilePath, x => !ignoredFiles.Contains(x.Name, StringComparer.OrdinalIgnoreCase) && !ignoreModulesFilesRegex.IsMatch(x.Name)
+                CompressionTasks.CompressZip(ModuleOutputDirectory, ZipFilePath, x => !ignoredFiles.Contains(x.Name, StringComparer.OrdinalIgnoreCase) && !ignoreModuleFilesRegex.IsMatch(x.Name)
                                                                                       || includeModuleFilesRegex.IsMatch(x.Name));
             }
             else
@@ -717,24 +717,24 @@ internal partial class Build : NukeBuild
         .After(GetManifestGit)
         .Executes(() =>
         {
-            var modulesJsonFile = ModulesLocalDirectory / ModulesJsonName;
+            var modulesJsonFilePath = ModulesLocalDirectory / ModulesJsonName;
             var manifest = ModuleManifest;
 
-            var modulesExternalManifests = JsonConvert.DeserializeObject<List<ExternalModuleManifest>>(TextTasks.ReadAllText(modulesJsonFile));
+            var externalManifests = JsonConvert.DeserializeObject<List<ExternalModuleManifest>>(TextTasks.ReadAllText(modulesJsonFilePath));
             manifest.PackageUrl = ModulePackageUrl;
-            var existExternalManifest = modulesExternalManifests.FirstOrDefault(x => x.Id == manifest.Id);
+            var externalManifest = externalManifests.FirstOrDefault(x => x.Id == manifest.Id);
 
-            if (existExternalManifest != null)
+            if (externalManifest != null)
             {
                 if (!manifest.VersionTag.IsNullOrEmpty() || !CustomVersionSuffix.IsNullOrEmpty())
                 {
                     var tag = manifest.VersionTag.IsNullOrEmpty() ? CustomVersionSuffix : manifest.VersionTag;
                     manifest.VersionTag = tag;
-                    var existPrereleaseVersions = existExternalManifest.Versions.Where(v => !v.VersionTag.IsNullOrEmpty());
+                    var externalPrereleaseVersions = externalManifest.Versions.Where(v => !v.VersionTag.IsNullOrEmpty());
 
-                    if (existPrereleaseVersions.Any())
+                    if (externalPrereleaseVersions.Any())
                     {
-                        var prereleaseVersion = existPrereleaseVersions.First();
+                        var prereleaseVersion = externalPrereleaseVersions.First();
                         prereleaseVersion.Dependencies = manifest.Dependencies;
                         prereleaseVersion.Incompatibilities = manifest.Incompatibilities;
                         prereleaseVersion.PlatformVersion = manifest.PlatformVersion;
@@ -745,33 +745,33 @@ internal partial class Build : NukeBuild
                     }
                     else
                     {
-                        existExternalManifest.Versions.Add(ExternalModuleManifestVersion.FromManifest(manifest));
+                        externalManifest.Versions.Add(ExternalModuleManifestVersion.FromManifest(manifest));
                     }
                 }
                 else
                 {
-                    existExternalManifest.PublishNewVersion(manifest);
+                    externalManifest.PublishNewVersion(manifest);
                 }
 
-                existExternalManifest.Title = manifest.Title;
-                existExternalManifest.Description = manifest.Description;
-                existExternalManifest.Authors = manifest.Authors;
-                existExternalManifest.Copyright = manifest.Copyright;
-                existExternalManifest.Groups = manifest.Groups;
-                existExternalManifest.IconUrl = manifest.IconUrl;
-                existExternalManifest.Id = manifest.Id;
-                existExternalManifest.LicenseUrl = manifest.LicenseUrl;
-                existExternalManifest.Owners = manifest.Owners;
-                existExternalManifest.ProjectUrl = manifest.ProjectUrl;
-                existExternalManifest.RequireLicenseAcceptance = manifest.RequireLicenseAcceptance;
-                existExternalManifest.Tags = manifest.Tags;
+                externalManifest.Title = manifest.Title;
+                externalManifest.Description = manifest.Description;
+                externalManifest.Authors = manifest.Authors;
+                externalManifest.Copyright = manifest.Copyright;
+                externalManifest.Groups = manifest.Groups;
+                externalManifest.IconUrl = manifest.IconUrl;
+                externalManifest.Id = manifest.Id;
+                externalManifest.LicenseUrl = manifest.LicenseUrl;
+                externalManifest.Owners = manifest.Owners;
+                externalManifest.ProjectUrl = manifest.ProjectUrl;
+                externalManifest.RequireLicenseAcceptance = manifest.RequireLicenseAcceptance;
+                externalManifest.Tags = manifest.Tags;
             }
             else
             {
-                modulesExternalManifests.Add(ExternalModuleManifest.FromManifest(manifest));
+                externalManifests.Add(ExternalModuleManifest.FromManifest(manifest));
             }
 
-            TextTasks.WriteAllText(modulesJsonFile, JsonConvert.SerializeObject(modulesExternalManifests, Formatting.Indented));
+            TextTasks.WriteAllText(modulesJsonFilePath, JsonConvert.SerializeObject(externalManifests, Formatting.Indented));
         });
 
     private Target PublishManifestGit => _ => _
@@ -793,21 +793,21 @@ internal partial class Build : NukeBuild
         {
             var swashbuckle = ToolResolver.GetPackageTool("Swashbuckle.AspNetCore.Cli", "dotnet-swagger.dll", framework: "netcoreapp3.0");
             var projectPublishPath = ArtifactsDirectory / "publish" / $"{WebProject.Name}.dll";
-            var swaggerJson = ArtifactsDirectory / "swagger.json";
-            var currentDir = Directory.GetCurrentDirectory();
+            var swaggerJsonPath = ArtifactsDirectory / "swagger.json";
+            var currentDirectory = Directory.GetCurrentDirectory();
             Directory.SetCurrentDirectory(RootDirectory / "src" / "VirtoCommerce.Platform.Web");
-            swashbuckle.Invoke($"tofile --output {swaggerJson} {projectPublishPath} VirtoCommerce.Platform");
-            Directory.SetCurrentDirectory(currentDir);
+            swashbuckle.Invoke($"tofile --output {swaggerJsonPath} {projectPublishPath} VirtoCommerce.Platform");
+            Directory.SetCurrentDirectory(currentDirectory);
 
-            var responseContent = await SendSwaggerSchemaToValidator(httpClient, swaggerJson, SwaggerValidatorUri);
-            var jsonObj = JObject.Parse(responseContent);
+            var responseContent = await SendSwaggerSchemaToValidator(_httpClient, swaggerJsonPath, SwaggerValidatorUri);
+            var responseObject = JObject.Parse(responseContent);
 
-            foreach (var msg in jsonObj["schemaValidationMessages"])
+            foreach (var message in responseObject["schemaValidationMessages"])
             {
-                Logger.Normal(msg);
+                Logger.Normal(message);
             }
 
-            if (jsonObj["schemaValidationMessages"].Where(t => (string)t["level"] == "error").Any())
+            if (responseObject["schemaValidationMessages"].Where(t => (string)t["level"] == "error").Any())
             {
                 ControlFlow.Fail("Schema Validation Messages contains error");
             }
@@ -817,15 +817,15 @@ internal partial class Build : NukeBuild
         .Requires(() => SwaggerSchemaPath != null)
         .Executes(async () =>
         {
-            var responseContent = await SendSwaggerSchemaToValidator(httpClient, SwaggerSchemaPath, SwaggerValidatorUri);
-            var jsonObj = JObject.Parse(responseContent);
+            var responseContent = await SendSwaggerSchemaToValidator(_httpClient, SwaggerSchemaPath, SwaggerValidatorUri);
+            var responseObject = JObject.Parse(responseContent);
             JToken validationMessages;
 
-            if (jsonObj.TryGetValue("schemaValidationMessages", out validationMessages))
+            if (responseObject.TryGetValue("schemaValidationMessages", out validationMessages))
             {
-                foreach (var msg in validationMessages)
+                foreach (var message in validationMessages)
                 {
-                    Logger.Normal(msg);
+                    Logger.Normal(message);
                 }
 
                 if (validationMessages.Where(t => (string)t["level"] == "error").Any())
@@ -868,10 +868,10 @@ internal partial class Build : NukeBuild
             var prBaseParam = "";
             var prBranchParam = "";
             var prKeyParam = "";
-            var ghRepoArg = "";
-            var prProviderArg = "";
+            var prRepoParam = "";
+            var prProviderParam = "";
             var prBase = "";
-            var branchParam = "";
+            var branchNameParam = "";
             var branchTargetParam = "";
 
             if (PullRequest)
@@ -885,13 +885,13 @@ internal partial class Build : NukeBuild
                 var prNumber = string.IsNullOrEmpty(SonarPRNumber) ? Environment.GetEnvironmentVariable("CHANGE_ID") : SonarPRNumber;
                 prKeyParam = $"/d:sonar.pullrequest.key={prNumber}";
 
-                ghRepoArg = string.IsNullOrEmpty(SonarGithubRepo) ? "" : $"/d:sonar.pullrequest.github.repository={SonarGithubRepo}";
+                prRepoParam = string.IsNullOrEmpty(SonarGithubRepo) ? "" : $"/d:sonar.pullrequest.github.repository={SonarGithubRepo}";
 
-                prProviderArg = string.IsNullOrEmpty(SonarPRProvider) ? "" : $"/d:sonar.pullrequest.provider={SonarPRProvider}";
+                prProviderParam = string.IsNullOrEmpty(SonarPRProvider) ? "" : $"/d:sonar.pullrequest.provider={SonarPRProvider}";
             }
             else
             {
-                branchParam = $"/d:\"sonar.branch.name={branchName}\"";
+                branchNameParam = $"/d:\"sonar.branch.name={branchName}\"";
                 branchTargetParam = SonarLongLiveBranches.Contains(branchName) ? "" : $"/d:\"sonar.branch.target={branchNameTarget}\"";
             }
 
@@ -901,16 +901,16 @@ internal partial class Build : NukeBuild
             var hostParam = $"/d:sonar.host.url={SonarUrl}";
             var tokenParam = $"/d:sonar.login={SonarAuthToken}";
             var sonarReportPathParam = $"/d:sonar.coverageReportPaths={CoverageReportPath}";
-            var orgParam = $"/o:{SonarOrg}";
+            var organizationParam = $"/o:{SonarOrg}";
 
-            var startCmd = $"sonarscanner begin {orgParam} {branchParam} {branchTargetParam} {projectKeyParam} {projectNameParam} {projectVersionParam} {hostParam} {tokenParam} {sonarReportPathParam} {prBaseParam} {prBranchParam} {prKeyParam} {ghRepoArg} {prProviderArg}";
+            var dotNetArguments = $"sonarscanner begin {organizationParam} {branchNameParam} {branchTargetParam} {projectKeyParam} {projectNameParam} {projectVersionParam} {hostParam} {tokenParam} {sonarReportPathParam} {prBaseParam} {prBranchParam} {prKeyParam} {prRepoParam} {prProviderParam}";
 
-            Logger.Normal($"Execute: {startCmd.Replace(SonarAuthToken, "{IS HIDDEN}")}");
+            Logger.Normal($"Execute: {dotNetArguments.Replace(SonarAuthToken, "{IS HIDDEN}")}");
 
-            var processStart = ProcessTasks.StartProcess(dotNetPath, startCmd, customLogger: SonarLogger, logInvocation: false)
+            var process = ProcessTasks.StartProcess(dotNetPath, dotNetArguments, customLogger: SonarLogger, logInvocation: false)
                 .AssertWaitForExit().AssertZeroExitCode();
 
-            processStart.Output.EnsureOnlyStd();
+            process.Output.EnsureOnlyStd();
         });
 
     private Target SonarQubeEnd => _ => _
@@ -920,14 +920,14 @@ internal partial class Build : NukeBuild
         {
             var dotNetPath = ToolPathResolver.TryGetEnvironmentExecutable("DOTNET_EXE") ?? ToolPathResolver.GetPathExecutable("dotnet");
             var tokenParam = $"/d:sonar.login={SonarAuthToken}";
-            var endCmd = $"sonarscanner end {tokenParam}";
+            var dotNetArguments = $"sonarscanner end {tokenParam}";
 
-            Logger.Normal($"Execute: {endCmd.Replace(SonarAuthToken, "{IS HIDDEN}")}");
+            Logger.Normal($"Execute: {dotNetArguments.Replace(SonarAuthToken, "{IS HIDDEN}")}");
 
-            var processEnd = ProcessTasks.StartProcess(dotNetPath, endCmd, customLogger: SonarLogger, logInvocation: false)
+            var process = ProcessTasks.StartProcess(dotNetPath, dotNetArguments, customLogger: SonarLogger, logInvocation: false)
                 .AssertWaitForExit().AssertZeroExitCode();
 
-            var errors = processEnd.Output.Where(o => !o.Text.Contains(@"The 'files' list in config file 'tsconfig.json' is empty") && o.Type == OutputType.Err).ToList();
+            var errors = process.Output.Where(o => !o.Text.Contains(@"The 'files' list in config file 'tsconfig.json' is empty") && o.Type == OutputType.Err).ToList();
 
             if (errors.Any())
             {
@@ -1026,20 +1026,20 @@ internal partial class Build : NukeBuild
         {
             var tag = ReleaseVersion;
             var targetBranchArg = ReleaseBranch.IsNullOrEmpty() ? "" : $"--target \"{ReleaseBranch}\"";
-            var descr = File.Exists(ReleaseNotes) ? File.ReadAllText(ReleaseNotes) : "";
+            var description = File.Exists(ReleaseNotes) ? File.ReadAllText(ReleaseNotes) : "";
 
             try
             {
-                PublishRelease(GitHubUser, GitRepositoryName, GitHubToken, tag, descr, ZipFilePath, PreRelease).Wait();
+                PublishRelease(GitHubUser, GitRepositoryName, GitHubToken, tag, description, ZipFilePath, PreRelease).Wait();
             }
             catch (AggregateException ex)
             {
-                var responseRaw = ((ApiValidationException)ex.InnerException)?.HttpResponse?.Body.ToString() ?? "";
-                var response = JsonDocument.Parse(responseRaw);
+                var responseString = ((ApiValidationException)ex.InnerException)?.HttpResponse?.Body.ToString() ?? "";
+                var responseDocument = JsonDocument.Parse(responseString);
                 var alreadyExistsError = false;
                 JsonElement errors;
 
-                if (response.RootElement.TryGetProperty("errors", out errors))
+                if (responseDocument.RootElement.TryGetProperty("errors", out errors))
                 {
                     var errorCount = errors.GetArrayLength();
 

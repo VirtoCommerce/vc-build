@@ -48,7 +48,7 @@ namespace GrabMigrator
                             File.WriteAllText(configFilePath, JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true }));
 
                             Out(@"Looking for migrations in migration directories recursively...");
-                            sqlStatements = GrabSQLStatements(config);
+                            sqlStatements = GrabSqlStatements(config);
                         }
 
                         if (config.Apply)
@@ -64,7 +64,7 @@ namespace GrabMigrator
                             {
                                 Out(@"Read platform config file...");
 
-                                var connStrings = GrabConnectionStrings(config.PlatformConfigFile);
+                                var connectionStrings = GrabConnectionStrings(config.PlatformConfigFile);
 
                                 foreach (var module in config.ApplyingOrder)
                                 {
@@ -76,15 +76,15 @@ namespace GrabMigrator
                                         continue;
                                     }
 
-                                    var connString = string.Empty;
+                                    var connectionString = string.Empty;
 
                                     if (config.ConnectionStringsRefs.ContainsKey(module))
                                     {
                                         foreach (var moduleConnStringKey in config.ConnectionStringsRefs[module])
                                         {
-                                            connString = connStrings.ContainsKey(moduleConnStringKey) ? connStrings[moduleConnStringKey] : string.Empty;
+                                            connectionString = connectionStrings.ContainsKey(moduleConnStringKey) ? connectionStrings[moduleConnStringKey] : string.Empty;
 
-                                            if (!string.IsNullOrEmpty(connString))
+                                            if (!string.IsNullOrEmpty(connectionString))
                                             {
                                                 break;
                                             }
@@ -92,32 +92,32 @@ namespace GrabMigrator
                                     }
 
                                     // Fallback connection string key is always "VirtoCommerce"
-                                    connString = string.IsNullOrEmpty(connString) ? connStrings["VirtoCommerce"] : connString;
+                                    connectionString = string.IsNullOrEmpty(connectionString) ? connectionStrings["VirtoCommerce"] : connectionString;
 
-                                    using (var conn = (IDbConnection)new SqlConnection(connString))
+                                    using (var connection = (IDbConnection)new SqlConnection(connectionString))
                                     {
                                         // One connection and transaction per each module
-                                        conn.Open();
-                                        var tran = conn.BeginTransaction();
+                                        connection.Open();
+                                        var transaction = connection.BeginTransaction();
 
                                         try
                                         {
                                             foreach (var commandText in sqlStatements[module])
                                             {
                                                 Out($@"Run SQL statement:{Environment.NewLine}{commandText}");
-                                                var cmd = conn.CreateCommand();
-                                                cmd.Transaction = tran;
-                                                cmd.CommandTimeout = config.CommandTimeout;
-                                                cmd.CommandText = commandText;
-                                                cmd.ExecuteNonQuery();
+                                                var command = connection.CreateCommand();
+                                                command.Transaction = transaction;
+                                                command.CommandTimeout = config.CommandTimeout;
+                                                command.CommandText = commandText;
+                                                command.ExecuteNonQuery();
                                             }
 
-                                            tran.Commit();
+                                            transaction.Commit();
                                             Out($@"Successfully applied for module: {module}!");
                                         }
                                         catch
                                         {
-                                            tran.Rollback();
+                                            transaction.Rollback();
                                             Out($@"Statement not executed. Transaction for module {module} rolled back.");
                                             throw;
                                         }
@@ -190,19 +190,19 @@ namespace GrabMigrator
             }
         }
 
-        private Dictionary<string, List<string>> GrabSQLStatements(Config config)
+        private Dictionary<string, List<string>> GrabSqlStatements(Config config)
         {
             var result = new Dictionary<string, List<string>>();
 
             foreach (var migrationDirectory in config.MigrationDirectories)
             {
-                GrabSQLStatementsWithEFTool(result, migrationDirectory, config);
+                GrabSqlStatementsWithEFTool(result, migrationDirectory, config);
             }
 
             return result;
         }
 
-        private void GrabSQLStatementsWithEFTool(Dictionary<string, List<string>> sqlStatements, string migrationDirectory, Config config)
+        private void GrabSqlStatementsWithEFTool(Dictionary<string, List<string>> sqlStatements, string migrationDirectory, Config config)
         {
             Directory.CreateDirectory(config.StatementsDirectory);
             var moduleRegex = new Regex(@"[\\\w^\.-]*\\(?<module>.+)\\Migrations");
@@ -238,23 +238,23 @@ namespace GrabMigrator
                     ? $@"0 {migrationNameRegex.Match(File.ReadAllText(migrationFile)).Groups["migration"].Value}"
                     : string.Empty;
 
-                var tempfile = Path.Combine(new DirectoryInfo(config.StatementsDirectory).FullName, $@"{moduleName}.sql");
+                var statementsFilePath = Path.Combine(new DirectoryInfo(config.StatementsDirectory).FullName, $@"{moduleName}.sql");
 
                 Out($@"Extract migrations for module {moduleName}...");
 
                 // Run dotnet-ef to extract migrations in idempotent manner
-                var fi = new FileInfo(migrationFile);
+                var fileInfo = new FileInfo(migrationFile);
 
                 var efTool = Process.Start(new ProcessStartInfo
                 {
-                    WorkingDirectory = fi.Directory.Parent.FullName,
+                    WorkingDirectory = fileInfo.Directory.Parent.FullName,
                     FileName = "dotnet",
-                    Arguments = $@"ef migrations script {migrationName} -o {tempfile} -i {(config.VerboseEFTool ? "-v" : "")}",
+                    Arguments = $@"ef migrations script {migrationName} -o {statementsFilePath} -i {(config.VerboseEFTool ? "-v" : "")}",
                 });
 
                 efTool.WaitForExit();
 
-                sqlStatements.Add(moduleName, SplitStatements(File.ReadAllText(tempfile)));
+                sqlStatements.Add(moduleName, SplitStatements(File.ReadAllText(statementsFilePath)));
 
                 Out(@"OK.");
             }

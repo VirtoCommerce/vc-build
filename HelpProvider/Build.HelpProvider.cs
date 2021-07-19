@@ -31,10 +31,10 @@ internal partial class Build
     private string GetHelpForTarget(string target)
     {
         var pipeline = new MarkdownPipelineBuilder().UseCustomContainers().Build();
-        var vcbuildRoot = AppDomain.CurrentDomain.BaseDirectory;
-        var docsPath = Path.Combine(vcbuildRoot, "docs", "targets.md");
-        var md = Markdown.Parse(File.ReadAllText(docsPath), pipeline);
-        var containers = md.Descendants<CustomContainer>();
+        var rootDirectory = AppDomain.CurrentDomain.BaseDirectory;
+        var helpFilePath = Path.Combine(rootDirectory, "docs", "targets.md");
+        var markdownDocument = Markdown.Parse(File.ReadAllText(helpFilePath), pipeline);
+        var containers = markdownDocument.Descendants<CustomContainer>();
 
         var container = containers.FirstOrDefault(c =>
         {
@@ -77,11 +77,11 @@ internal partial class Build
         {
             switch (inline)
             {
-                case LiteralInline li:
-                    var inlineContent = li.Content;
+                case LiteralInline literal:
+                    var inlineContent = literal.Content;
                     result.Append(inlineContent.Text.Substring(inlineContent.Start, inlineContent.Length));
                     break;
-                case LineBreakInline _:
+                case LineBreakInline:
                     result.Append(Environment.NewLine);
                     break;
             }
@@ -100,16 +100,16 @@ internal partial class Build
             return string.Empty;
         }
 
-        var lines = fencedCodeBlock.Lines.Lines.Select(l =>
+        var lines = fencedCodeBlock.Lines.Lines.Select(line =>
         {
-            var slice = l.Slice;
+            var slice = line.Slice;
 
             if (EqualityComparer<StringSlice>.Default.Equals(slice, default))
             {
                 return string.Empty;
             }
 
-            return slice.Text?.Substring(l.Slice.Start, l.Slice.Length) ?? string.Empty;
+            return slice.Text?.Substring(line.Slice.Start, line.Slice.Length) ?? string.Empty;
         });
 
         return string.Join(Environment.NewLine, lines);

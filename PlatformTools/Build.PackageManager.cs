@@ -54,13 +54,13 @@ internal partial class Build
             }
 
             var localModuleCatalog = LocalModuleCatalog.GetCatalog(GetDiscoveryPath(), ProbingPath);
-            var externalCatalog = ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, packageManifest.ModuleSources);
+            var externalModuleCatalog = ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, packageManifest.ModuleSources);
 
             if (Module?.Length > 0 && !InstallPlatformParam)
             {
                 foreach (var module in ParseModuleParameter(Module))
                 {
-                    var externalModule = externalCatalog.Items.OfType<ManifestModuleInfo>().Where(m => string.Compare(m.Id, module.Id, StringComparison.InvariantCultureIgnoreCase) == 0).FirstOrDefault();
+                    var externalModule = externalModuleCatalog.Items.OfType<ManifestModuleInfo>().Where(m => string.Compare(m.Id, module.Id, StringComparison.InvariantCultureIgnoreCase) == 0).FirstOrDefault();
                     module.Id = externalModule.Id;
 
                     if (string.IsNullOrEmpty(module.Version))
@@ -68,31 +68,31 @@ internal partial class Build
                         module.Version = externalModule.Version.ToString();
                     }
 
-                    var existedModule = packageManifest.Modules.Where(m => m.Id == module.Id).FirstOrDefault();
+                    var existingModule = packageManifest.Modules.Where(m => m.Id == module.Id).FirstOrDefault();
 
-                    if (existedModule == null)
+                    if (existingModule == null)
                     {
                         Logger.Info($"Add {module.Id}:{module.Version}");
                         packageManifest.Modules.Add(module);
                     }
                     else
                     {
-                        if (new Version(existedModule.Version) > new Version(module.Version))
+                        if (new Version(existingModule.Version) > new Version(module.Version))
                         {
                             Logger.Error($"{module.Id}: Module downgrading isn't supported");
                             continue;
                         }
 
-                        Logger.Info($"Change version: {existedModule.Version} -> {module.Version}");
-                        existedModule.Version = module.Version;
+                        Logger.Info($"Change version: {existingModule.Version} -> {module.Version}");
+                        existingModule.Version = module.Version;
                     }
                 }
             }
             else if (!InstallPlatformParam && !packageManifest.Modules.Any())
             {
                 Logger.Info("Add group: commerce");
-                var commerce = externalCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.Groups.Contains("commerce")).Select(m => new ModuleItem(m.ModuleName, m.Version.ToString()));
-                packageManifest.Modules.AddRange(commerce);
+                var commerceModules = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.Groups.Contains("commerce")).Select(m => new ModuleItem(m.ModuleName, m.Version.ToString()));
+                packageManifest.Modules.AddRange(commerceModules);
             }
             else if (InstallPlatformParam)
             {
@@ -104,27 +104,27 @@ internal partial class Build
             PackageManager.ToFile(packageManifest);
         });
 
-    private IEnumerable<ModuleItem> ParseModuleParameter(string[] Module)
+    private IEnumerable<ModuleItem> ParseModuleParameter(string[] moduleStrings)
     {
-        foreach (var module in Module)
+        foreach (var moduleString in moduleStrings)
         {
             string moduleId;
             var moduleVersion = string.Empty;
 
-            if (module.Contains(":"))
+            if (moduleString.Contains(":"))
             {
-                var splitedModule = module.Split(":");
-                moduleId = splitedModule.First();
-                moduleVersion = splitedModule.Last();
+                var parts = moduleString.Split(":");
+                moduleId = parts.First();
+                moduleVersion = parts.Last();
             }
-            else if (Module.Length == 1 && !string.IsNullOrEmpty(VersionToInstall))
+            else if (moduleStrings.Length == 1 && !string.IsNullOrEmpty(VersionToInstall))
             {
-                moduleId = module;
+                moduleId = moduleString;
                 moduleVersion = VersionToInstall;
             }
             else
             {
-                moduleId = module;
+                moduleId = moduleString;
             }
 
             yield return new ModuleItem(moduleId, moduleVersion);
@@ -166,12 +166,12 @@ internal partial class Build
     private bool NeedToInstallPlatform(string version)
     {
         var result = true;
-        var platformWeb = RootDirectory / "VirtoCommerce.Platform.Web.dll";
+        var platformWebDllPath = RootDirectory / "VirtoCommerce.Platform.Web.dll";
         var newVersion = new Version(version);
 
-        if (File.Exists(platformWeb))
+        if (File.Exists(platformWebDllPath))
         {
-            var versionInfo = FileVersionInfo.GetVersionInfo(platformWeb);
+            var versionInfo = FileVersionInfo.GetVersionInfo(platformWebDllPath);
             var currentProductVersion = Version.Parse(versionInfo.ProductVersion);
 
             if (newVersion <= currentProductVersion)
@@ -194,24 +194,24 @@ internal partial class Build
             var moduleInstaller = ModuleInstallerFacade.GetModuleInstaller(discoveryPath, ProbingPath, GitHubToken, packageManifest.ModuleSources);
             var modulesToInstall = new List<ManifestModuleInfo>();
 
-            foreach (var moduleInstall in packageManifest.Modules)
+            foreach (var module in packageManifest.Modules)
             {
-                var externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().FirstOrDefault(m => m.ModuleName == moduleInstall.Id);
+                var externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().FirstOrDefault(m => m.ModuleName == module.Id);
 
                 if (externalModule == null)
                 {
-                    ControlFlow.Fail($"No module {moduleInstall.Id} found");
+                    ControlFlow.Fail($"No module {module.Id} found");
                 }
 
-                if (externalModule.IsInstalled && externalModule.Version.ToString() == moduleInstall.Version)
+                if (externalModule.IsInstalled && externalModule.Version.ToString() == module.Version)
                 {
                     continue;
                 }
 
                 var currentModule = new ModuleManifest
                 {
-                    Id = moduleInstall.Id,
-                    Version = moduleInstall.Version,
+                    Id = module.Id,
+                    Version = module.Version,
                     Dependencies = SkipDependencySolving
                         ? null
                         : externalModule.Dependencies.Select(d => new ManifestDependency
@@ -219,7 +219,7 @@ internal partial class Build
                             Id = d.Id,
                             Version = d.Version.ToString(),
                         }).ToArray(),
-                    PackageUrl = externalModule.Ref.Replace(externalModule.Version.ToString(), moduleInstall.Version),
+                    PackageUrl = externalModule.Ref.Replace(externalModule.Version.ToString(), module.Version),
                     Authors = externalModule.Authors.ToArray(),
                     PlatformVersion = externalModule.PlatformVersion.ToString(),
                     Incompatibilities = externalModule.Incompatibilities.Select(d => new ManifestDependency
@@ -243,8 +243,8 @@ internal partial class Build
                     UseFullTypeNameInSwagger = externalModule.UseFullTypeNameInSwagger,
                 };
 
-                var tmp = new ManifestModuleInfo().LoadFromManifest(currentModule);
-                modulesToInstall.Add(tmp);
+                var moduleInfo = new ManifestModuleInfo().LoadFromManifest(currentModule);
+                modulesToInstall.Add(moduleInfo);
             }
 
             var progress = new Progress<ProgressMessage>(m => Logger.Info(m.Message));
@@ -282,18 +282,18 @@ internal partial class Build
             packageManifest.PlatformVersion = platformRelease.TagName;
             packageManifest.PlatformAssetUrl = platformRelease.Assets.First().BrowserDownloadUrl;
             var localModuleCatalog = LocalModuleCatalog.GetCatalog(GetDiscoveryPath(), ProbingPath);
-            var externalCatalog = ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, packageManifest.ModuleSources);
+            var externalModuleCatalog = ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, packageManifest.ModuleSources);
 
             foreach (var module in packageManifest.Modules)
             {
-                var moduleInfo = externalCatalog.Items.OfType<ManifestModuleInfo>().Where(m => m.Id == module.Id).FirstOrDefault(m => m.Ref.Contains("github.com"));
+                var externalModule = externalModuleCatalog.Items.OfType<ManifestModuleInfo>().Where(m => m.Id == module.Id).FirstOrDefault(m => m.Ref.Contains("github.com"));
 
-                if (moduleInfo == null)
+                if (externalModule == null)
                 {
                     ControlFlow.Fail($"No module {module.Id} found");
                 }
 
-                module.Version = moduleInfo.Version.ToString();
+                module.Version = externalModule.Version.ToString();
             }
 
             PackageManager.ToFile(packageManifest);
