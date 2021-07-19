@@ -17,7 +17,7 @@ internal partial class Build
     [Parameter("appsettings.json path")]
     public static string AppsettingsPath { get; set; } = RootDirectory / "appsettings.json";
 
-    private Target InitPlatform => _ => _
+    public Target InitPlatform => _ => _
         .Executes(() =>
         {
             var configuration = AppSettings.GetConfiguration(RootDirectory, AppsettingsPath);

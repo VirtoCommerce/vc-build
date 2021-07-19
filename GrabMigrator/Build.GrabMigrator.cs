@@ -5,7 +5,7 @@ internal partial class Build
     [Parameter("Grab-migrator config file")]
     public static string GrabMigratorConfig { get; set; }
 
-    private Target GrabMigrator => _ => _
+    public Target GrabMigrator => _ => _
         .Requires(() => GrabMigratorConfig)
         .Executes(() =>
         {

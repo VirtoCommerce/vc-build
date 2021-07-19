@@ -27,7 +27,7 @@ internal partial class Build
     [Parameter("Install the platform", Name = "Platform")]
     public static bool InstallPlatformParam { get; set; }
 
-    private Target Init => _ => _
+    public Target Init => _ => _
         .Executes(async () =>
         {
             var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
@@ -35,7 +35,7 @@ internal partial class Build
             PackageManager.ToFile(packageManifest, PackageManifestPath);
         });
 
-    private Target Install => _ => _
+    public Target Install => _ => _
         .Triggers(InstallPlatform, InstallModules)
         .Executes(async () =>
         {
@@ -131,7 +131,7 @@ internal partial class Build
         }
     }
 
-    private Target InstallPlatform => _ => _
+    public Target InstallPlatform => _ => _
         .Executes(async () =>
         {
             var packageManifest = PackageManager.FromFile(PackageManifestPath);
@@ -183,7 +183,7 @@ internal partial class Build
         return result;
     }
 
-    private Target InstallModules => _ => _
+    public Target InstallModules => _ => _
         .After(InstallPlatform)
         .Executes(() =>
         {
@@ -259,7 +259,7 @@ internal partial class Build
             localModuleCatalog.Reload();
         });
 
-    private Target Uninstall => _ => _
+    public Target Uninstall => _ => _
         .Executes(() =>
         {
             var discoveryPath = GetDiscoveryPath();
@@ -273,7 +273,7 @@ internal partial class Build
             localModulesCatalog.Load();
         });
 
-    private Target Update => _ => _
+    public Target Update => _ => _
         .Triggers(InstallPlatform, InstallModules)
         .Executes(async () =>
         {

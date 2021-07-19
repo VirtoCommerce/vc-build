@@ -250,7 +250,7 @@ internal partial class Build : NukeBuild
         }
     }
 
-    private Target Clean => _ => _
+    public Target Clean => _ => _
         .Before(Restore)
         .Executes(() =>
         {
@@ -268,7 +268,7 @@ internal partial class Build : NukeBuild
             EnsureCleanDirectory(ArtifactsDirectory);
         });
 
-    private Target Restore => _ => _
+    public Target Restore => _ => _
         .Executes(() =>
         {
             DotNetRestore(settings => settings
@@ -278,7 +278,7 @@ internal partial class Build : NukeBuild
             );
         });
 
-    private Target Pack => _ => _
+    public Target Pack => _ => _
         .DependsOn(Test)
         .Executes(() =>
         {
@@ -307,7 +307,7 @@ internal partial class Build : NukeBuild
             DotNetPack(settings);
         });
 
-    private Target Test => _ => _
+    public Target Test => _ => _
         .DependsOn(Compile)
         .Executes(() =>
         {
@@ -362,7 +362,7 @@ internal partial class Build : NukeBuild
         }
     }
 
-    private Target PublishPackages => _ => _
+    public Target PublishPackages => _ => _
         .DependsOn(Pack)
         .Requires(() => ApiKey)
         .Executes(() =>
@@ -452,7 +452,7 @@ internal partial class Build : NukeBuild
         }
     }
 
-    private Target ChangeVersion => _ => _
+    public Target ChangeVersion => _ => _
         .Executes(() =>
         {
             if (string.IsNullOrEmpty(VersionSuffix) && !CustomVersionSuffix.IsNullOrEmpty() || !CustomVersionPrefix.IsNullOrEmpty())
@@ -475,7 +475,7 @@ internal partial class Build : NukeBuild
         return "";
     }
 
-    private Target StartRelease => _ => _
+    public Target StartRelease => _ => _
         .Executes(() =>
         {
             GitTasks.GitLogger = GitLogger;
@@ -518,7 +518,7 @@ internal partial class Build : NukeBuild
             GitTasks.Git($"push -u origin {releaseBranchName}");
         });
 
-    private Target CompleteRelease => _ => _
+    public Target CompleteRelease => _ => _
         .After(StartRelease)
         .Executes(() =>
         {
@@ -553,10 +553,10 @@ internal partial class Build : NukeBuild
             GitTasks.Git($"push origin --delete {currentBranch}");
         });
 
-    private Target QuickRelease => _ => _
+    public Target QuickRelease => _ => _
         .DependsOn(StartRelease, CompleteRelease);
 
-    private Target StartHotfix => _ => _
+    public Target StartHotfix => _ => _
         .Executes(() =>
         {
             GitTasks.Git("checkout master");
@@ -572,7 +572,7 @@ internal partial class Build : NukeBuild
             GitTasks.Git($"push -u origin {hotfixBranchName}");
         });
 
-    private Target CompleteHotfix => _ => _
+    public Target CompleteHotfix => _ => _
         .After(StartHotfix)
         .Executes(() =>
         {
@@ -602,21 +602,21 @@ internal partial class Build : NukeBuild
         CustomVersionPrefix = newPrefix;
     }
 
-    private Target IncrementMinor => _ => _
+    public Target IncrementMinor => _ => _
         .Triggers(ChangeVersion)
         .Executes(() =>
         {
             IncrementVersionMinor();
         });
 
-    private Target IncrementPatch => _ => _
+    public Target IncrementPatch => _ => _
         .Triggers(ChangeVersion)
         .Executes(() =>
         {
             IncrementVersionPatch();
         });
 
-    private Target Publish => _ => _
+    public Target Publish => _ => _
         .DependsOn(Compile)
         .After(WebPackBuild, Test)
         .Executes(() =>
@@ -628,7 +628,7 @@ internal partial class Build : NukeBuild
                 .SetConfiguration(Configuration));
         });
 
-    private Target WebPackBuild => _ => _
+    public Target WebPackBuild => _ => _
         .Executes(() =>
         {
             if (FileExists(WebProject.Directory / "package.json"))
@@ -642,7 +642,7 @@ internal partial class Build : NukeBuild
             }
         });
 
-    private Target Compile => _ => _
+    public Target Compile => _ => _
         .DependsOn(Restore)
         .Executes(() =>
         {
@@ -652,7 +652,7 @@ internal partial class Build : NukeBuild
                 .EnableNoRestore());
         });
 
-    private Target Compress => _ => _
+    public Target Compress => _ => _
         .DependsOn(Clean, WebPackBuild, Test, Publish)
         .Executes(() =>
         {
@@ -695,7 +695,7 @@ internal partial class Build : NukeBuild
             }
         });
 
-    private Target GetManifestGit => _ => _
+    public Target GetManifestGit => _ => _
         .Before(UpdateManifest)
         .Executes(() =>
         {
@@ -712,7 +712,7 @@ internal partial class Build : NukeBuild
             }
         });
 
-    private Target UpdateManifest => _ => _
+    public Target UpdateManifest => _ => _
         .Before(PublishManifestGit)
         .After(GetManifestGit)
         .Executes(() =>
@@ -774,7 +774,7 @@ internal partial class Build : NukeBuild
             TextTasks.WriteAllText(modulesJsonFilePath, JsonConvert.SerializeObject(externalManifests, Formatting.Indented));
         });
 
-    private Target PublishManifestGit => _ => _
+    public Target PublishManifestGit => _ => _
         .After(UpdateManifest)
         .Executes(() =>
         {
@@ -783,10 +783,10 @@ internal partial class Build : NukeBuild
             GitTasks.Git("push origin HEAD:master -f", ModulesLocalDirectory);
         });
 
-    private Target PublishModuleManifest => _ => _
+    public Target PublishModuleManifest => _ => _
         .DependsOn(GetManifestGit, UpdateManifest, PublishManifestGit);
 
-    private Target SwaggerValidation => _ => _
+    public Target SwaggerValidation => _ => _
         .DependsOn(Publish)
         .Requires(() => !IsModule)
         .Executes(async () =>
@@ -813,7 +813,7 @@ internal partial class Build : NukeBuild
             }
         });
 
-    private Target ValidateSwaggerSchema => _ => _
+    public Target ValidateSwaggerSchema => _ => _
         .Requires(() => SwaggerSchemaPath != null)
         .Executes(async () =>
         {
@@ -856,7 +856,7 @@ internal partial class Build : NukeBuild
         return result;
     }
 
-    private Target SonarQubeStart => _ => _
+    public Target SonarQubeStart => _ => _
         .Executes(() =>
         {
             var dotNetPath = ToolPathResolver.TryGetEnvironmentExecutable("DOTNET_EXE") ?? ToolPathResolver.GetPathExecutable("dotnet");
@@ -913,7 +913,7 @@ internal partial class Build : NukeBuild
             process.Output.EnsureOnlyStd();
         });
 
-    private Target SonarQubeEnd => _ => _
+    public Target SonarQubeEnd => _ => _
         .After(SonarQubeStart)
         .DependsOn(Compile)
         .Executes(() =>
@@ -935,7 +935,7 @@ internal partial class Build : NukeBuild
             }
         });
 
-    private Target StartAnalyzer => _ => _
+    public Target StartAnalyzer => _ => _
         .DependsOn(SonarQubeStart, SonarQubeEnd)
         .Executes(() =>
         {
@@ -943,7 +943,7 @@ internal partial class Build : NukeBuild
         });
 
 
-    private Target MassPullAndBuild => _ => _
+    public Target MassPullAndBuild => _ => _
         .Requires(() => ModulesFolderPath)
         .Executes(() =>
         {
@@ -1019,7 +1019,7 @@ internal partial class Build : NukeBuild
         }
     }
 
-    private Target Release => _ => _
+    public Target Release => _ => _
         .DependsOn(Clean, Compress)
         .Requires(() => GitHubUser, () => GitHubToken)
         .Executes(() =>
@@ -1072,7 +1072,7 @@ internal partial class Build : NukeBuild
     //    //Git($"push origin {MasterBranch} {DevelopBranch} {tag}");
     //}
 
-    private Target ClearTemp => _ => _
+    public Target ClearTemp => _ => _
         .Executes(() =>
         {
             DeleteDirectory(TemporaryDirectory);
