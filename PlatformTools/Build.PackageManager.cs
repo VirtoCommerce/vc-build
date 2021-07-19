@@ -265,7 +265,6 @@ internal partial class Build
             var discoveryPath = GetDiscoveryPath();
             var packageManifest = PackageManager.FromFile(PackageManifestPath);
             var localModulesCatalog = LocalModuleCatalog.GetCatalog(discoveryPath, ProbingPath);
-            var externalModuleCatalog = ExtModuleCatalog.GetCatalog(GitHubToken, localModulesCatalog, packageManifest.ModuleSources);
             FileSystemTasks.DeleteDirectory(ProbingPath);
             Module.ForEach(m => FileSystemTasks.DeleteDirectory(Path.Combine(discoveryPath, m)));
             packageManifest.Modules.RemoveAll(m => Module.Contains(m.Id));

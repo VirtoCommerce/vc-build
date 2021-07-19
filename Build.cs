@@ -311,11 +311,10 @@ internal partial class Build : NukeBuild
         .DependsOn(Compile)
         .Executes(() =>
         {
-            var dotnetPath = ToolPathResolver.GetPathExecutable("dotnet");
             var testProjects = Solution.GetProjects("*.Test|*.Tests|*.Testing");
             var outPath = RootDirectory / ".tmp";
 
-            testProjects.ForEach((testProject, index) =>
+            foreach (var testProject in testProjects)
             {
                 DotNet($"add {testProject.Path} package coverlet.collector");
 
@@ -329,7 +328,7 @@ internal partial class Build : NukeBuild
                     .SetDataCollector("XPlat Code Coverage");
 
                 DotNetTest(testSetting);
-            });
+            }
 
             var coberturaReports = outPath.GlobFiles("**/coverage.cobertura.xml");
 
@@ -700,7 +699,6 @@ internal partial class Build : NukeBuild
         .Executes(() =>
         {
             GitTasks.GitLogger = GitLogger;
-            var modulesJsonFile = ModulesLocalDirectory / ModulesJsonName;
 
             if (!DirectoryExists(ModulesLocalDirectory))
             {
@@ -864,7 +862,6 @@ internal partial class Build : NukeBuild
             var branchName = string.IsNullOrEmpty(SonarBranchName) ? GitRepository.Branch : SonarBranchName;
             var branchNameTarget = string.IsNullOrEmpty(SonarBranchNameTarget) ? GitRepository.Branch : SonarBranchNameTarget;
             Logger.Info($"BRANCH_NAME = {branchName}");
-            var projectName = Solution.Name;
             var prBaseParam = "";
             var prBranchParam = "";
             var prKeyParam = "";
@@ -1015,7 +1012,7 @@ internal partial class Build : NukeBuild
                 RawData = artifactStream,
             };
 
-            var asset = await githubClient.Repository.Release.UploadAsset(release, assetUpload);
+            await githubClient.Repository.Release.UploadAsset(release, assetUpload);
         }
     }
 
@@ -1025,7 +1022,6 @@ internal partial class Build : NukeBuild
         .Executes(() =>
         {
             var tag = ReleaseVersion;
-            var targetBranchArg = ReleaseBranch.IsNullOrEmpty() ? "" : $"--target \"{ReleaseBranch}\"";
             var description = File.Exists(ReleaseNotes) ? File.ReadAllText(ReleaseNotes) : "";
 
             try
