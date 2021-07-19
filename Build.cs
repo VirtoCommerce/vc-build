@@ -295,7 +295,7 @@ internal partial class Build : NukeBuild
             if (IsModule)
             {
                 //For module take nuget package description from module manifest
-                settings.SetAuthors(ModuleManifest.Authors)
+                settings = settings.SetAuthors(ModuleManifest.Authors)
                     .SetPackageLicenseUrl(ModuleManifest.LicenseUrl)
                     .SetPackageProjectUrl(ModuleManifest.ProjectUrl)
                     .SetPackageIconUrl(ModuleManifest.IconUrl)
