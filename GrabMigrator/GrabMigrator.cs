@@ -33,7 +33,7 @@ namespace GrabMigrator
 
                         Dictionary<string, List<string>> sqlStatements = null;
 
-                        if (config.Grab)
+                        if (config?.Grab == true)
                         {
                             OutBox("Grab mode");
 
@@ -52,7 +52,7 @@ namespace GrabMigrator
                             sqlStatements = GrabSqlStatements(config);
                         }
 
-                        if (config.Apply)
+                        if (config?.Apply == true)
                         {
                             OutBox("Apply mode");
 
@@ -216,7 +216,7 @@ namespace GrabMigrator
             {
                 // look for at least one migration
                 migrationFiles = Directory.GetFiles(migrationDirectory, @"2*.Designer.cs", SearchOption.AllDirectories);
-                migrationFiles = migrationFiles.GroupBy(x => new FileInfo(x).Directory.FullName).Select(x => x.FirstOrDefault()).ToArray();
+                migrationFiles = migrationFiles.GroupBy(x => new FileInfo(x).Directory?.FullName).Select(x => x.FirstOrDefault()).ToArray();
             }
 
             Out($@"Found {migrationFiles.Length} migrations in directory {migrationDirectory}");
@@ -245,12 +245,12 @@ namespace GrabMigrator
 
                 var efTool = Process.Start(new ProcessStartInfo
                 {
-                    WorkingDirectory = fileInfo.Directory.Parent.FullName,
+                    WorkingDirectory = fileInfo.Directory?.Parent?.FullName ?? string.Empty,
                     FileName = "dotnet",
                     Arguments = $@"ef migrations script {migrationName} -o {statementsFilePath} -i {(config.VerboseEFTool ? "-v" : "")}",
                 });
 
-                efTool.WaitForExit();
+                efTool?.WaitForExit();
 
                 sqlStatements.Add(moduleName, SplitStatements(File.ReadAllText(statementsFilePath)));
 

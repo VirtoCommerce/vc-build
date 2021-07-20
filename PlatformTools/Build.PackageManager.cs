@@ -62,6 +62,13 @@ internal partial class Build
                 foreach (var module in ParseModuleParameter(Module))
                 {
                     var externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().FirstOrDefault(m => m.Id.EqualsInvariant(module.Id));
+
+                    if (externalModule == null)
+                    {
+                        Logger.Error($"Cannot find a module with ID '{module.Id}'");
+                        continue;
+                    }
+
                     module.Id = externalModule.Id;
                     module.Version = module.Version.EmptyToNull() ?? externalModule.Version.ToString();
 
@@ -95,7 +102,7 @@ internal partial class Build
             {
                 var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
                 packageManifest.PlatformVersion = platformRelease.TagName;
-                packageManifest.PlatformAssetUrl = platformRelease.Assets.FirstOrDefault().BrowserDownloadUrl;
+                packageManifest.PlatformAssetUrl = platformRelease.Assets.FirstOrDefault()?.BrowserDownloadUrl;
             }
 
             PackageManager.ToFile(packageManifest);
@@ -141,7 +148,7 @@ internal partial class Build
         {
             Logger.Info($"Installing platform {platformVersion}");
             var platformRelease = await GithubManager.GetPlatformRelease(platformVersion);
-            var platformAssetUrl = platformRelease.Assets.FirstOrDefault().BrowserDownloadUrl;
+            var platformAssetUrl = platformRelease.Assets.FirstOrDefault()?.BrowserDownloadUrl;
             var platformZip = TemporaryDirectory / "platform.zip";
 
             if (string.IsNullOrEmpty(platformAssetUrl))
@@ -169,9 +176,8 @@ internal partial class Build
         if (File.Exists(platformWebDllPath))
         {
             var versionInfo = FileVersionInfo.GetVersionInfo(platformWebDllPath);
-            var currentProductVersion = Version.Parse(versionInfo.ProductVersion);
 
-            if (newVersion <= currentProductVersion)
+            if (versionInfo.ProductVersion != null && newVersion <= Version.Parse(versionInfo.ProductVersion))
             {
                 result = false;
             }

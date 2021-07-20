@@ -435,14 +435,22 @@ internal partial class Build : NukeBuild
 
             if (!string.IsNullOrEmpty(versionPrefix))
             {
-                var prefixNodes = xmlDocument.GetElementsByTagName("VersionPrefix");
-                prefixNodes[0].InnerText = versionPrefix;
+                var prefixNode = xmlDocument.GetElementsByTagName("VersionPrefix")[0];
+
+                if (prefixNode != null)
+                {
+                    prefixNode.InnerText = versionPrefix;
+                }
             }
 
             if (string.IsNullOrEmpty(VersionSuffix) && !string.IsNullOrEmpty(versionSuffix))
             {
-                var suffixNodes = xmlDocument.GetElementsByTagName("VersionSuffix");
-                suffixNodes[0].InnerText = versionSuffix;
+                var suffixNode = xmlDocument.GetElementsByTagName("VersionSuffix")[0];
+
+                if (suffixNode != null)
+                {
+                    suffixNode.InnerText = versionSuffix;
+                }
             }
 
             using (var writer = new Utf8StringWriter())
@@ -709,7 +717,7 @@ internal partial class Build : NukeBuild
 
             var modulesJsonFilePath = ModulesLocalDirectory / ModulesJsonName;
             var externalManifests = JsonConvert.DeserializeObject<List<ExternalModuleManifest>>(TextTasks.ReadAllText(modulesJsonFilePath));
-            var externalManifest = externalManifests.FirstOrDefault(x => x.Id == manifest.Id);
+            var externalManifest = externalManifests?.FirstOrDefault(x => x.Id == manifest.Id);
 
             if (externalManifest != null)
             {
@@ -754,7 +762,7 @@ internal partial class Build : NukeBuild
             }
             else
             {
-                externalManifests.Add(ExternalModuleManifest.FromManifest(manifest));
+                externalManifests?.Add(ExternalModuleManifest.FromManifest(manifest));
             }
 
             TextTasks.WriteAllText(modulesJsonFilePath, JsonConvert.SerializeObject(externalManifests, Formatting.Indented));
@@ -787,15 +795,19 @@ internal partial class Build : NukeBuild
 
             var responseContent = await SendSwaggerSchemaToValidator(_httpClient, swaggerJsonPath, SwaggerValidatorUri);
             var responseObject = JObject.Parse(responseContent);
+            var schemaValidationMessages = responseObject["schemaValidationMessages"];
 
-            foreach (var message in responseObject["schemaValidationMessages"])
+            if (schemaValidationMessages != null)
             {
-                Logger.Normal(message);
-            }
+                foreach (var message in schemaValidationMessages)
+                {
+                    Logger.Normal(message);
+                }
 
-            if (responseObject["schemaValidationMessages"].Any(t => (string)t["level"] == "error"))
-            {
-                ControlFlow.Fail("Schema Validation Messages contains error");
+                if (schemaValidationMessages.Any(t => (string)t["level"] == "error"))
+                {
+                    ControlFlow.Fail("Schema Validation Messages contains error");
+                }
             }
         });
 
