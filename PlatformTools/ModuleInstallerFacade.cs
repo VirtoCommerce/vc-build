@@ -11,7 +11,7 @@ namespace PlatformTools
     {
         private static ModuleInstaller _moduleInstaller;
 
-        public static ModuleInstaller GetModuleInstaller(string discoveryPath, string probingPath, string authToken, IEnumerable<string> manifestUrls)
+        public static ModuleInstaller GetModuleInstaller(string discoveryPath, string probingPath, string authToken, IList<string> manifestUrls)
         {
             if (_moduleInstaller == null)
             {

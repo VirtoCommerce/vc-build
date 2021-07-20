@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Nuke.Common;
+using VirtoCommerce.Platform.Core.Common;
 
 namespace GrabMigrator
 {
@@ -55,10 +56,7 @@ namespace GrabMigrator
                         {
                             OutBox("Apply mode");
 
-                            if (sqlStatements == null)
-                            {
-                                sqlStatements = ReadSavedStatements(config.StatementsDirectory);
-                            }
+                            sqlStatements ??= ReadSavedStatements(config.StatementsDirectory);
 
                             if (sqlStatements != null)
                             {
@@ -92,7 +90,7 @@ namespace GrabMigrator
                                     }
 
                                     // Fallback connection string key is always "VirtoCommerce"
-                                    connectionString = string.IsNullOrEmpty(connectionString) ? connectionStrings["VirtoCommerce"] : connectionString;
+                                    connectionString = connectionString.EmptyToNull() ?? connectionStrings["VirtoCommerce"];
 
                                     using (var connection = (IDbConnection)new SqlConnection(connectionString))
                                     {
@@ -221,7 +219,7 @@ namespace GrabMigrator
                 migrationFiles = migrationFiles.GroupBy(x => new FileInfo(x).Directory.FullName).Select(x => x.FirstOrDefault()).ToArray();
             }
 
-            Out($@"Found {migrationFiles.Count()} migrations in directory {migrationDirectory}");
+            Out($@"Found {migrationFiles.Length} migrations in directory {migrationDirectory}");
 
             foreach (var migrationFile in migrationFiles)
             {

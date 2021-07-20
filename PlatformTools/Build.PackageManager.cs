@@ -8,6 +8,7 @@ using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Utilities.Collections;
 using PlatformTools;
+using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.Platform.Core.Modularity;
 
 internal partial class Build
@@ -60,15 +61,11 @@ internal partial class Build
             {
                 foreach (var module in ParseModuleParameter(Module))
                 {
-                    var externalModule = externalModuleCatalog.Items.OfType<ManifestModuleInfo>().Where(m => string.Compare(m.Id, module.Id, StringComparison.InvariantCultureIgnoreCase) == 0).FirstOrDefault();
+                    var externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().FirstOrDefault(m => m.Id.EqualsInvariant(module.Id));
                     module.Id = externalModule.Id;
+                    module.Version = module.Version.EmptyToNull() ?? externalModule.Version.ToString();
 
-                    if (string.IsNullOrEmpty(module.Version))
-                    {
-                        module.Version = externalModule.Version.ToString();
-                    }
-
-                    var existingModule = packageManifest.Modules.Where(m => m.Id == module.Id).FirstOrDefault();
+                    var existingModule = packageManifest.Modules.FirstOrDefault(m => m.Id == module.Id);
 
                     if (existingModule == null)
                     {
@@ -91,7 +88,7 @@ internal partial class Build
             else if (!InstallPlatformParam && !packageManifest.Modules.Any())
             {
                 Logger.Info("Add group: commerce");
-                var commerceModules = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.Groups.Contains("commerce")).Select(m => new ModuleItem(m.ModuleName, m.Version.ToString()));
+                var commerceModules = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.Groups.Contains("commerce")).Select(m => new ModuleItem(m.Id, m.Version.ToString()));
                 packageManifest.Modules.AddRange(commerceModules);
             }
             else if (InstallPlatformParam)
@@ -110,10 +107,10 @@ internal partial class Build
         {
             string moduleId;
             var moduleVersion = string.Empty;
+            var parts = moduleString.Split(":");
 
-            if (moduleString.Contains(":"))
+            if (parts.Length > 1)
             {
-                var parts = moduleString.Split(":");
                 moduleId = parts.First();
                 moduleVersion = parts.Last();
             }
@@ -160,7 +157,7 @@ internal partial class Build
     private string GetDiscoveryPath()
     {
         var configuration = AppSettings.GetConfiguration(RootDirectory, AppsettingsPath);
-        return string.IsNullOrEmpty(DiscoveryPath) ? configuration.GetModulesDiscoveryPath() : DiscoveryPath;
+        return DiscoveryPath.EmptyToNull() ?? configuration.GetModulesDiscoveryPath();
     }
 
     private bool NeedToInstallPlatform(string version)
@@ -196,7 +193,7 @@ internal partial class Build
 
             foreach (var module in packageManifest.Modules)
             {
-                var externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().FirstOrDefault(m => m.ModuleName == module.Id);
+                var externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().FirstOrDefault(m => m.Id == module.Id);
 
                 if (externalModule == null)
                 {
@@ -251,7 +248,12 @@ internal partial class Build
 
             if (!SkipDependencySolving)
             {
-                var missingModules = externalModuleCatalog.CompleteListWithDependencies(modulesToInstall.Where(m => !m.IsInstalled).OfType<ModuleInfo>()).Except(modulesToInstall).OfType<ManifestModuleInfo>().ToList();
+                var missingModules = externalModuleCatalog
+                    .CompleteListWithDependencies(modulesToInstall.Where(m => !m.IsInstalled))
+                    .Except(modulesToInstall)
+                    .OfType<ManifestModuleInfo>()
+                    .ToList();
+
                 modulesToInstall.AddRange(missingModules);
             }
 
@@ -285,7 +287,7 @@ internal partial class Build
 
             foreach (var module in packageManifest.Modules)
             {
-                var externalModule = externalModuleCatalog.Items.OfType<ManifestModuleInfo>().Where(m => m.Id == module.Id).FirstOrDefault(m => m.Ref.Contains("github.com"));
+                var externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.Id == module.Id).FirstOrDefault(m => m.Ref.Contains("github.com"));
 
                 if (externalModule == null)
                 {

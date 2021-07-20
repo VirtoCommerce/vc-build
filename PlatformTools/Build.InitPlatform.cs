@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nuke.Common;
 using PlatformTools;
+using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.Platform.Core.Modularity;
 using VirtoCommerce.Platform.DistributedLock;
 using VirtoCommerce.Platform.Modules;
@@ -24,7 +25,7 @@ internal partial class Build
 
             var moduleCatalogOptions = new LocalStorageModuleCatalogOptions
             {
-                DiscoveryPath = string.IsNullOrEmpty(DiscoveryPath) ? configuration.GetModulesDiscoveryPath() : DiscoveryPath,
+                DiscoveryPath = DiscoveryPath.EmptyToNull() ?? configuration.GetModulesDiscoveryPath(),
                 ProbingPath = ProbingPath,
             };
 

@@ -14,7 +14,7 @@ namespace PlatformTools
     {
         private static ExternalModuleCatalog _catalog;
 
-        public static ExternalModuleCatalog GetCatalog(string authToken, LocalStorageModuleCatalog localCatalog, IEnumerable<string> manifestUrls)
+        public static ExternalModuleCatalog GetCatalog(string authToken, LocalStorageModuleCatalog localCatalog, IList<string> manifestUrls)
         {
             var options = GetOptions(authToken, manifestUrls);
             return GetCatalog(options, localCatalog);
@@ -39,14 +39,14 @@ namespace PlatformTools
             return _catalog;
         }
 
-        public static IOptions<ExternalModuleCatalogOptions> GetOptions(string authToken, IEnumerable<string> manifestUrls)
+        public static IOptions<ExternalModuleCatalogOptions> GetOptions(string authToken, IList<string> manifestUrls)
         {
             var options = new ExternalModuleCatalogOptions
             {
                 ModulesManifestUrl = new Uri(manifestUrls.First()),
                 AuthorizationToken = authToken,
                 IncludePrerelease = false,
-                AutoInstallModuleBundles = new string[] { },
+                AutoInstallModuleBundles = Array.Empty<string>(),
                 ExtraModulesManifestUrls = manifestUrls.Select(m => new Uri(m)).ToArray(),
             };
 

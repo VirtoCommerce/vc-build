@@ -24,6 +24,7 @@ using Nuke.Common.Tools.Npm;
 using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
 using Octokit;
+using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.Platform.Core.Modularity;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
@@ -68,10 +69,10 @@ internal partial class Build : NukeBuild
         }
 
         var exitCode = Execute<Build>(x => x.Compile);
-        return ExitCode ?? exitCode;
+        return _exitCode ?? exitCode;
     }
 
-    private new static int? ExitCode;
+    private static int? _exitCode;
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     public static Configuration Configuration { get; set; } = IsLocalBuild ? Configuration.Debug : Configuration.Release;
@@ -82,6 +83,7 @@ internal partial class Build : NukeBuild
     [Solution]
     public static Solution Solution { get; set; }
 
+    // TODO: Convert to a method because GitRepository.FromLocalDirectory() is a heavy method and it should not be used as a property
     protected GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
 
 
@@ -91,7 +93,7 @@ internal partial class Build : NukeBuild
     //private readonly string DevelopBranch = "develop";
     //private readonly string ReleaseBranchPrefix = "release";
     //private readonly string HotfixBranchPrefix = "hotfix";
-    private readonly string SonarLongLiveBranches = "master;develop";
+    private static readonly string[] _sonarLongLiveBranches = { "master", "develop" };
 
 
     private static readonly HttpClient _httpClient = new HttpClient();
@@ -357,7 +359,7 @@ internal partial class Build : NukeBuild
 
         if (text.Contains("error: Response status code does not indicate success: 409"))
         {
-            ExitCode = 409;
+            _exitCode = 409;
         }
     }
 
@@ -463,9 +465,8 @@ internal partial class Build : NukeBuild
     private string GetThemeVersion(string packageJsonPath)
     {
         var json = JsonDocument.Parse(File.ReadAllText(packageJsonPath));
-        JsonElement version;
 
-        if (json.RootElement.TryGetProperty("version", out version))
+        if (json.RootElement.TryGetProperty("version", out var version))
         {
             return version.GetString();
         }
@@ -485,7 +486,7 @@ internal partial class Build : NukeBuild
                 Console.Write($"Are you sure you want to release {GitRepository.Identifier}? (Y/N): ");
                 var response = Console.ReadLine();
 
-                if (response.ToLower().CompareTo("y") != 0)
+                if (response.EqualsInvariant("y"))
                 {
                     ControlFlow.Fail("Aborted");
                 }
@@ -500,16 +501,10 @@ internal partial class Build : NukeBuild
 
             GitTasks.Git(checkoutCommand.ToString());
             GitTasks.Git("pull");
-            string version;
 
-            if (IsTheme)
-            {
-                version = GetThemeVersion(PackageJsonPath);
-            }
-            else
-            {
-                version = ReleaseVersion;
-            }
+            var version = IsTheme
+                ? GetThemeVersion(PackageJsonPath)
+                : ReleaseVersion;
 
             var releaseBranchName = $"release/{version}";
             Logger.Info(Directory.GetCurrentDirectory());
@@ -532,7 +527,7 @@ internal partial class Build : NukeBuild
             GitTasks.Git($"merge {currentBranch}");
             IncrementVersionMinor();
             ChangeProjectVersion(CustomVersionPrefix);
-            var filesToAdd = "";
+            string filesToAdd;
 
             if (IsTheme)
             {
@@ -603,17 +598,11 @@ internal partial class Build : NukeBuild
 
     public Target IncrementMinor => _ => _
         .Triggers(ChangeVersion)
-        .Executes(() =>
-        {
-            IncrementVersionMinor();
-        });
+        .Executes(IncrementVersionMinor);
 
     public Target IncrementPatch => _ => _
         .Triggers(ChangeVersion)
-        .Executes(() =>
-        {
-            IncrementVersionPatch();
-        });
+        .Executes(IncrementVersionPatch);
 
     public Target Publish => _ => _
         .DependsOn(Compile)
@@ -715,31 +704,30 @@ internal partial class Build : NukeBuild
         .After(GetManifestGit)
         .Executes(() =>
         {
-            var modulesJsonFilePath = ModulesLocalDirectory / ModulesJsonName;
             var manifest = ModuleManifest;
-
-            var externalManifests = JsonConvert.DeserializeObject<List<ExternalModuleManifest>>(TextTasks.ReadAllText(modulesJsonFilePath));
             manifest.PackageUrl = ModulePackageUrl;
+
+            var modulesJsonFilePath = ModulesLocalDirectory / ModulesJsonName;
+            var externalManifests = JsonConvert.DeserializeObject<List<ExternalModuleManifest>>(TextTasks.ReadAllText(modulesJsonFilePath));
             var externalManifest = externalManifests.FirstOrDefault(x => x.Id == manifest.Id);
 
             if (externalManifest != null)
             {
                 if (!manifest.VersionTag.IsNullOrEmpty() || !CustomVersionSuffix.IsNullOrEmpty())
                 {
-                    var tag = manifest.VersionTag.IsNullOrEmpty() ? CustomVersionSuffix : manifest.VersionTag;
-                    manifest.VersionTag = tag;
-                    var externalPrereleaseVersions = externalManifest.Versions.Where(v => !v.VersionTag.IsNullOrEmpty());
+                    manifest.VersionTag = manifest.VersionTag.EmptyToNull() ?? CustomVersionSuffix;
 
-                    if (externalPrereleaseVersions.Any())
+                    var externalPrereleaseVersion = externalManifest.Versions.FirstOrDefault(v => !v.VersionTag.IsNullOrEmpty());
+
+                    if (externalPrereleaseVersion != null)
                     {
-                        var prereleaseVersion = externalPrereleaseVersions.First();
-                        prereleaseVersion.Dependencies = manifest.Dependencies;
-                        prereleaseVersion.Incompatibilities = manifest.Incompatibilities;
-                        prereleaseVersion.PlatformVersion = manifest.PlatformVersion;
-                        prereleaseVersion.ReleaseNotes = manifest.ReleaseNotes;
-                        prereleaseVersion.Version = manifest.Version;
-                        prereleaseVersion.VersionTag = manifest.VersionTag;
-                        prereleaseVersion.PackageUrl = manifest.PackageUrl;
+                        externalPrereleaseVersion.Dependencies = manifest.Dependencies;
+                        externalPrereleaseVersion.Incompatibilities = manifest.Incompatibilities;
+                        externalPrereleaseVersion.PlatformVersion = manifest.PlatformVersion;
+                        externalPrereleaseVersion.ReleaseNotes = manifest.ReleaseNotes;
+                        externalPrereleaseVersion.Version = manifest.Version;
+                        externalPrereleaseVersion.VersionTag = manifest.VersionTag;
+                        externalPrereleaseVersion.PackageUrl = manifest.PackageUrl;
                     }
                     else
                     {
@@ -805,7 +793,7 @@ internal partial class Build : NukeBuild
                 Logger.Normal(message);
             }
 
-            if (responseObject["schemaValidationMessages"].Where(t => (string)t["level"] == "error").Any())
+            if (responseObject["schemaValidationMessages"].Any(t => (string)t["level"] == "error"))
             {
                 ControlFlow.Fail("Schema Validation Messages contains error");
             }
@@ -817,16 +805,15 @@ internal partial class Build : NukeBuild
         {
             var responseContent = await SendSwaggerSchemaToValidator(_httpClient, SwaggerSchemaPath, SwaggerValidatorUri);
             var responseObject = JObject.Parse(responseContent);
-            JToken validationMessages;
 
-            if (responseObject.TryGetValue("schemaValidationMessages", out validationMessages))
+            if (responseObject.TryGetValue("schemaValidationMessages", out var validationMessages))
             {
                 foreach (var message in validationMessages)
                 {
                     Logger.Normal(message);
                 }
 
-                if (validationMessages.Where(t => (string)t["level"] == "error").Any())
+                if (validationMessages.Any(t => (string)t["level"] == "error"))
                 {
                     ControlFlow.Fail("Schema Validation Messages contains error");
                 }
@@ -839,7 +826,7 @@ internal partial class Build : NukeBuild
 
     private async Task<string> SendSwaggerSchemaToValidator(HttpClient httpClient, string schemaPath, string validatorUri)
     {
-        var swaggerSchema = File.ReadAllText(schemaPath);
+        var swaggerSchema = await File.ReadAllTextAsync(schemaPath);
         Logger.Normal($"Swagger schema length: {swaggerSchema.Length}");
         var requestContent = new StringContent(swaggerSchema, Encoding.UTF8, "application/json");
         Logger.Normal("Request content created");
@@ -849,7 +836,7 @@ internal partial class Build : NukeBuild
         request.Content = requestContent;
         var response = await httpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();
-        var result = await response.Content?.ReadAsStringAsync();
+        var result = await response.Content.ReadAsStringAsync();
         Logger.Normal($"Response from Validator: {result}");
         return result;
     }
@@ -867,13 +854,12 @@ internal partial class Build : NukeBuild
             var prKeyParam = "";
             var prRepoParam = "";
             var prProviderParam = "";
-            var prBase = "";
             var branchNameParam = "";
             var branchTargetParam = "";
 
             if (PullRequest)
             {
-                prBase = string.IsNullOrEmpty(SonarPRBase) ? Environment.GetEnvironmentVariable("CHANGE_TARGET") : SonarPRBase;
+                var prBase = string.IsNullOrEmpty(SonarPRBase) ? Environment.GetEnvironmentVariable("CHANGE_TARGET") : SonarPRBase;
                 prBaseParam = $"/d:sonar.pullrequest.base=\"{prBase}\"";
 
                 var changeTitle = string.IsNullOrEmpty(SonarPRBranch) ? Environment.GetEnvironmentVariable("CHANGE_TITLE") : SonarPRBranch;
@@ -889,7 +875,7 @@ internal partial class Build : NukeBuild
             else
             {
                 branchNameParam = $"/d:\"sonar.branch.name={branchName}\"";
-                branchTargetParam = SonarLongLiveBranches.Contains(branchName) ? "" : $"/d:\"sonar.branch.target={branchNameTarget}\"";
+                branchTargetParam = _sonarLongLiveBranches.Contains(branchName) ? "" : $"/d:\"sonar.branch.target={branchNameTarget}\"";
             }
 
             var projectNameParam = $"/n:\"{RepoName}\"";
@@ -964,12 +950,12 @@ internal partial class Build : NukeBuild
     {
         if (text.Contains("github returned 422 Unprocessable Entity") && text.Contains("already_exists"))
         {
-            ExitCode = 422;
+            _exitCode = 422;
         }
 
         if (text.Contains("nothing to commit, working tree clean"))
         {
-            ExitCode = 423;
+            _exitCode = 423;
         }
 
         switch (type)
@@ -1033,21 +1019,20 @@ internal partial class Build : NukeBuild
                 var responseString = ((ApiValidationException)ex.InnerException)?.HttpResponse?.Body.ToString() ?? "";
                 var responseDocument = JsonDocument.Parse(responseString);
                 var alreadyExistsError = false;
-                JsonElement errors;
 
-                if (responseDocument.RootElement.TryGetProperty("errors", out errors))
+                if (responseDocument.RootElement.TryGetProperty("errors", out var errors))
                 {
                     var errorCount = errors.GetArrayLength();
 
                     if (errorCount > 0)
                     {
-                        alreadyExistsError = errors.EnumerateArray().Where(e => e.GetProperty("code").GetString() == "already_exists").Count() > 0;
+                        alreadyExistsError = errors.EnumerateArray().Any(e => e.GetProperty("code").GetString() == "already_exists");
                     }
                 }
 
                 if (alreadyExistsError)
                 {
-                    ExitCode = 422;
+                    _exitCode = 422;
                 }
 
                 ControlFlow.Fail(ex.Message);
