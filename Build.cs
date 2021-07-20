@@ -77,15 +77,11 @@ internal partial class Build : NukeBuild
         return _exitCode ?? exitCode;
     }
 
-    [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
-    public static Configuration Configuration { get; set; } = IsLocalBuild ? Configuration.Debug : Configuration.Release;
-
     [Solution]
     public static Solution Solution { get; set; }
 
-    // TODO: Convert to a method because GitRepository.FromLocalDirectory() is a heavy method and it should not be used as a property
-    protected GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
-
+    [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
+    public static Configuration Configuration { get; set; } = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
     //private readonly Tool Git;
 
@@ -196,14 +192,17 @@ internal partial class Build : NukeBuild
     [Parameter("Force parameter for git checkout")]
     public static bool Force { get; set; }
 
-    protected AbsolutePath SourceDirectory => RootDirectory / "src";
-    protected AbsolutePath TestsDirectory => RootDirectory / "tests";
-
     [Parameter("Path to Artifacts Directory")]
     public static AbsolutePath ArtifactsDirectory { get; set; } = RootDirectory / "artifacts";
 
     [Parameter("Directory containing modules.json")]
     public static string ModulesJsonDirectoryName { get; set; } = "vc-modules";
+
+    // TODO: Convert to a method because GitRepository.FromLocalDirectory() is a heavy method and it should not be used as a property
+    protected GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
+
+    protected AbsolutePath SourceDirectory => RootDirectory / "src";
+    protected AbsolutePath TestsDirectory => RootDirectory / "tests";
 
     protected AbsolutePath ModulesLocalDirectory => ArtifactsDirectory / ModulesJsonDirectoryName;
     protected Project WebProject => Solution?.AllProjects.FirstOrDefault(x => x.Name.EndsWith(".Web") && !x.Path.ToString().Contains("samples") || x.Name.EndsWith("VirtoCommerce.Storefront"));
