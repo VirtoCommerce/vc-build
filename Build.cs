@@ -42,11 +42,6 @@ internal partial class Build : NukeBuild
     ///   - Microsoft VisualStudio     https://nuke.build/visualstudio
     ///   - Microsoft VSCode           https://nuke.build/vscode
 
-    //public Build()
-    //{
-    //    ToolPathResolver.ExecutingAssemblyDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-    //}
-
     private static readonly string[] _moduleContentFolders = { "dist", "Localizations", "Scripts", "Content" };
     private static readonly string[] _sonarLongLiveBranches = { "master", "develop" };
     private static readonly HttpClient _httpClient = new HttpClient();
@@ -82,13 +77,6 @@ internal partial class Build : NukeBuild
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     public static Configuration Configuration { get; set; } = IsLocalBuild ? Configuration.Debug : Configuration.Release;
-
-    //private readonly Tool Git;
-
-    //private readonly string MasterBranch = "master";
-    //private readonly string DevelopBranch = "develop";
-    //private readonly string ReleaseBranchPrefix = "release";
-    //private readonly string HotfixBranchPrefix = "hotfix";
 
     [Parameter("ApiKey for the specified source")]
     public static string ApiKey { get; set; }
@@ -258,10 +246,6 @@ internal partial class Build : NukeBuild
                 TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory);
             }
 
-            //if (DirectoryExists(TestsDirectory))
-            //{
-            //    WebProject.Directory.GlobDirectories("**/node_modules").ForEach(DeleteDirectory);
-            //}
             EnsureCleanDirectory(ArtifactsDirectory);
         });
 
@@ -389,8 +373,6 @@ internal partial class Build : NukeBuild
         //theme
         if (IsTheme)
         {
-            //var json = JsonDocument.Parse(File.ReadAllText(PackageJsonPath));
-            //json.RootElement.GetProperty("version")
             var jObject = SerializationTasks.JsonDeserializeFromFile<JObject>(PackageJsonPath);
             jObject["version"] = versionPrefix;
             SerializationTasks.JsonSerializeToFile(jObject, Path.GetFullPath(PackageJsonPath));
@@ -1045,20 +1027,6 @@ internal partial class Build : NukeBuild
                 ControlFlow.Fail(ex.Message);
             }
         });
-
-    //private void FinishReleaseOrHotfix(string tag)
-    //{
-    //    Git($"checkout {MasterBranch}");
-    //    Git($"merge --no-ff --no-edit {GitRepository.Branch}");
-    //    Git($"tag {tag}");
-
-    //    Git($"checkout {DevelopBranch}");
-    //    Git($"merge --no-ff --no-edit {GitRepository.Branch}");
-
-    //    //Uncomment to switch on armed mode 
-    //    //Git($"branch -D {GitRepository.Branch}");
-    //    //Git($"push origin {MasterBranch} {DevelopBranch} {tag}");
-    //}
 
     public Target ClearTemp => _ => _
         .Executes(() =>
