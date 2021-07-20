@@ -47,6 +47,11 @@ internal partial class Build : NukeBuild
     //    ToolPathResolver.ExecutingAssemblyDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
     //}
 
+    private static readonly string[] _moduleContentFolders = { "dist", "Localizations", "Scripts", "Content" };
+    private static readonly string[] _sonarLongLiveBranches = { "master", "develop" };
+    private static readonly HttpClient _httpClient = new HttpClient();
+    private static int? _exitCode;
+
     public static int Main()
     {
         var nukeFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), ".nuke");
@@ -72,13 +77,8 @@ internal partial class Build : NukeBuild
         return _exitCode ?? exitCode;
     }
 
-    private static int? _exitCode;
-
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     public static Configuration Configuration { get; set; } = IsLocalBuild ? Configuration.Debug : Configuration.Release;
-
-
-    private static readonly string[] _moduleContentFolders = { "dist", "Localizations", "Scripts", "Content" };
 
     [Solution]
     public static Solution Solution { get; set; }
@@ -93,10 +93,6 @@ internal partial class Build : NukeBuild
     //private readonly string DevelopBranch = "develop";
     //private readonly string ReleaseBranchPrefix = "release";
     //private readonly string HotfixBranchPrefix = "hotfix";
-    private static readonly string[] _sonarLongLiveBranches = { "master", "develop" };
-
-
-    private static readonly HttpClient _httpClient = new HttpClient();
 
     [Parameter("ApiKey for the specified source")]
     public static string ApiKey { get; set; }
