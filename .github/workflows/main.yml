@@ -16,7 +16,6 @@ on:
       [main, dev]
     paths-ignore:
       - 'docs/**'
-      - 'build/**'
       - 'README.md'
       - 'LICENSE'
     
@@ -28,7 +27,6 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
       NUGET_KEY: ${{ secrets.NUGET_KEY }}
       BLOB_SAS: ${{ secrets.BLOB_TOKEN }}
-      VERSION_SUFFIX: ""
 
     steps:
 
@@ -52,19 +50,11 @@ jobs:
         with: 
           projectType: "platform"
 
-      - name: Set VERSION_SUFFIX variable
-        run: |
-          if [ '${{ github.event_name }}' = 'workflow_dispatch' ]; then
-            echo "VERSION_SUFFIX=${{ steps.image.outputs.fullSuffix }}" >> $GITHUB_ENV
-          else
-            echo "VERSION_SUFFIX=${{ steps.image.outputs.suffix }}" >> $GITHUB_ENV
-          fi;
-
       - name: Add version suffix
         if: ${{ github.ref != 'refs/heads/main' }}
         uses: VirtoCommerce/vc-github-actions/add-version-suffix@master
         with:
-          versionSuffix: ${{ env.VERSION_SUFFIX }}
+          versionSuffix: ${{ steps.image.outputs.suffix }}
 
       - name: SonarCloud Begin
         uses: VirtoCommerce/vc-github-actions/sonar-scanner-begin@master
