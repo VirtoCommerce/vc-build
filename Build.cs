@@ -162,7 +162,7 @@ partial class Build : NukeBuild
     [Parameter("Directory containing modules.json")] string ModulesJsonDirectoryName = "vc-modules";
     AbsolutePath ModulesLocalDirectory => ArtifactsDirectory / ModulesJsonDirectoryName;
     Project WebProject => Solution?.AllProjects.FirstOrDefault(x => (x.Name.EndsWith(".Web") && !x.Path.ToString().Contains("samples")) || x.Name.EndsWith("VirtoCommerce.Storefront"));
-    AbsolutePath ModuleManifestFile => WebProject?.Directory / "module.manifest";
+    AbsolutePath ModuleManifestFile => WebProject?.Directory ?? RootDirectory / "module.manifest";
     AbsolutePath ModuleIgnoreFile => RootDirectory / "module.ignore";
 
     Microsoft.Build.Evaluation.Project MSBuildProject => WebProject?.GetMSBuildProject();
