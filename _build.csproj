@@ -50,11 +50,16 @@
     <ItemGroup>
         <NukeSpecificationFiles Include="**\*.json" Exclude="bin\**;obj\**;GrabMigrator\**;global.json;.nuke\parameters.json" />
         <NukeExternalFiles Include="**\*.*.ext" Exclude="bin\**;obj\**" />
+        <Compile Remove="artifacts\**" />
         <Compile Remove="Properties\**" />
+        <EmbeddedResource Remove="artifacts\**" />
         <EmbeddedResource Remove="Properties\**" />
         <None Remove="*.csproj.DotSettings;*.ref.*.txt" />
+        <None Remove="artifacts\**" />
         <None Remove="Properties\**" />
+        <NukeExternalFiles Remove="artifacts\**" />
         <NukeExternalFiles Remove="Properties\**" />
+        <NukeSpecificationFiles Remove="artifacts\**" />
         <NukeSpecificationFiles Remove="Properties\**" />
 
         <!-- Common build related files -->

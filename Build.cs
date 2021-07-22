@@ -162,7 +162,7 @@ partial class Build : NukeBuild
     [Parameter("Directory containing modules.json")] string ModulesJsonDirectoryName = "vc-modules";
     AbsolutePath ModulesLocalDirectory => ArtifactsDirectory / ModulesJsonDirectoryName;
     Project WebProject => Solution?.AllProjects.FirstOrDefault(x => (x.Name.EndsWith(".Web") && !x.Path.ToString().Contains("samples")) || x.Name.EndsWith("VirtoCommerce.Storefront"));
-    AbsolutePath ModuleManifestFile => WebProject.Directory / "module.manifest";
+    AbsolutePath ModuleManifestFile => WebProject?.Directory / "module.manifest";
     AbsolutePath ModuleIgnoreFile => RootDirectory / "module.ignore";
 
     Microsoft.Build.Evaluation.Project MSBuildProject => WebProject?.GetMSBuildProject();
@@ -239,19 +239,15 @@ partial class Build : NukeBuild
                   .EnableIncludeSymbols()
                   .SetSymbolPackageFormat(DotNetSymbolPackageFormat.snupkg)
                   .SetOutputDirectory(ArtifactsDirectory)
-                  .SetVersion(ReleaseVersion);
-
-          if (IsModule)
-          {
-              //For module take nuget package description from module manifest
-              settings.SetAuthors(ModuleManifest.Authors)
-                  .SetPackageLicenseUrl(ModuleManifest.LicenseUrl)
-                  .SetPackageProjectUrl(ModuleManifest.ProjectUrl)
-                  .SetPackageIconUrl(ModuleManifest.IconUrl)
-                  .SetPackageRequireLicenseAcceptance(false)
-                  .SetDescription(ModuleManifest.Description)
-                  .SetCopyright(ModuleManifest.Copyright);
-          }
+                  .SetVersion(ReleaseVersion)
+                  .When(IsModule, modulePackSettings => modulePackSettings
+                      .SetAuthors(ModuleManifest.Authors)
+                      .SetPackageLicenseUrl(ModuleManifest.LicenseUrl)
+                      .SetPackageProjectUrl(ModuleManifest.ProjectUrl)
+                      .SetPackageIconUrl(ModuleManifest.IconUrl)
+                      .SetPackageRequireLicenseAcceptance(false)
+                      .SetDescription(ModuleManifest.Description)
+                      .SetCopyright(ModuleManifest.Copyright));
           DotNetPack(settings);
       });
 
