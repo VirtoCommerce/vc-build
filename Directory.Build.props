@@ -8,6 +8,7 @@
   <PropertyGroup>
     <VersionPrefix>2.0.0</VersionPrefix>
     <VersionSuffix></VersionSuffix>
+    <VersionSuffix Condition=" '$(VersionSuffix)' != '' AND '$(BuildNumber)' != '' ">$(VersionSuffix)-$(BuildNumber)</VersionSuffix>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(MSBuildProjectName.Contains(Tests))' == false">   
@@ -15,6 +16,8 @@
     <Title>VirtoCommerce build CLI</Title>
     <Description>Cross-platform  build automation system for VirtoCommerce projects</Description>
     <PackageIconUrl>https://github.com/VirtoCommerce/vc-community/raw/master/NuGet/icon.png</PackageIconUrl>
+    <PackageVersion>$(VersionPrefix)</PackageVersion>
+    <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(VersionPrefix)-$(VersionSuffix)</PackageVersion>
     <Description>Cross-platform  build automation system for VirtoCommerce projects</Description>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>
