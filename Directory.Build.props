@@ -3,7 +3,7 @@
 
   <PropertyGroup>
     <Product>VirtoCommerce</Product>
-    <Copyright>Copyright © VirtoCommerce 2011-2020</Copyright>
+    <Copyright>Copyright © VirtoCommerce 2011-2021</Copyright>
   </PropertyGroup>
   <PropertyGroup>
     <VersionPrefix>2.0.0</VersionPrefix>
