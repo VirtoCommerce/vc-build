@@ -44,7 +44,7 @@ internal partial class Build
 
             if (!File.Exists(PackageManifestPath))
             {
-                Logger.Info("vc-package.json is not exists.");
+                Logger.Info("vc-package.json does not exist.");
                 Logger.Info("Looking for the platform release");
                 var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
                 packageManifest = PackageManager.CreatePackageManifest(platformRelease.TagName);

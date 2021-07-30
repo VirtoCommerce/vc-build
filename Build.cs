@@ -78,7 +78,7 @@ internal partial class Build : NukeBuild
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     public static Configuration Configuration { get; set; } = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
-    [Parameter("ApiKey for the specified source")]
+    [Parameter("API key for the specified source")]
     public static string ApiKey { get; set; }
 
     [Parameter]
@@ -99,7 +99,7 @@ internal partial class Build : NukeBuild
     [Parameter]
     public static string TestsFilter { get; set; } = "Category!=IntegrationTest";
 
-    [Parameter("Url to Swagger Validation Api")]
+    [Parameter("URL of Swagger Validation API")]
     public static string SwaggerValidatorUri { get; set; } = "https://validator.swagger.io/validator/debug";
 
     [Parameter("GitHub user for release creation")]
@@ -114,7 +114,7 @@ internal partial class Build : NukeBuild
     [Parameter("True - Pull Request")]
     public static bool PullRequest { get; set; }
 
-    [Parameter("Path to folder with  git clones of modules repositories")]
+    [Parameter("Path to folder with git clones of modules repositories")]
     public static AbsolutePath ModulesFolderPath { get; set; }
 
     [Parameter("Repo Organization/User")]
@@ -126,7 +126,7 @@ internal partial class Build : NukeBuild
     [Parameter("Sonar Organization (\"virto-commerce\" by default)")]
     public static string SonarOrg { get; set; } = "virto-commerce";
 
-    [Parameter("Path to nuget config")]
+    [Parameter("Path to NuGet config")]
     public static AbsolutePath NugetConfig { get; set; }
 
     [Parameter("Swagger schema path")]
@@ -135,7 +135,7 @@ internal partial class Build : NukeBuild
     [Parameter("Path to modules.json")]
     public static string ModulesJsonName { get; set; } = "modules_v3.json";
 
-    [Parameter("Full uri to module artifact")]
+    [Parameter("Full URI of module artifact")]
     public static string CustomModulePackageUri { get; set; }
 
     [Parameter("Path to packageJson")]
@@ -168,13 +168,13 @@ internal partial class Build : NukeBuild
     [Parameter("PR Number for SonarQube")]
     public static string SonarPRNumber { get; set; }
 
-    [Parameter("Github Repository for SonarQube")]
+    [Parameter("GitHub Repository for SonarQube")]
     public static string SonarGithubRepo { get; set; }
 
     [Parameter("PR Provider for SonarQube")]
     public static string SonarPRProvider { get; set; }
 
-    [Parameter("Modules.json repo url")]
+    [Parameter("Modules.json repo URL")]
     public static string ModulesJsonRepoUrl { get; set; } = "https://github.com/VirtoCommerce/vc-modules.git";
 
     [Parameter("Force parameter for git checkout")]
