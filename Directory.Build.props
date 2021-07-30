@@ -3,11 +3,12 @@
 
   <PropertyGroup>
     <Product>VirtoCommerce</Product>
-    <Copyright>Copyright © VirtoCommerce 2011-2020</Copyright>
+    <Copyright>Copyright © VirtoCommerce 2011-2021</Copyright>
   </PropertyGroup>
   <PropertyGroup>
     <VersionPrefix>2.0.0</VersionPrefix>
     <VersionSuffix></VersionSuffix>
+    <VersionSuffix Condition=" '$(VersionSuffix)' != '' AND '$(BuildNumber)' != '' ">$(VersionSuffix)-$(BuildNumber)</VersionSuffix>
   </PropertyGroup>
   <PropertyGroup>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -18,6 +19,9 @@
     <Title>VirtoCommerce build CLI</Title>
     <Description>Cross-platform  build automation system for VirtoCommerce projects</Description>
     <PackageIconUrl>https://github.com/VirtoCommerce/vc-community/raw/master/NuGet/icon.png</PackageIconUrl>
+    <PackageVersion>$(VersionPrefix)</PackageVersion>
+    <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(VersionPrefix)-$(VersionSuffix)</PackageVersion>
+    <Description>Cross-platform  build automation system for VirtoCommerce projects</Description>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
