@@ -47,6 +47,9 @@ partial class Build : NukeBuild
     //    ToolPathResolver.ExecutingAssemblyDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
     //}
 
+
+    private static bool ClearTempBeforeExit { get; set; } = false;
+
     public static int Main()
     {
         var nukeFile = Directory.GetFiles(Directory.GetCurrentDirectory(), ".nuke");
@@ -64,7 +67,13 @@ partial class Build : NukeBuild
                 File.CreateText(Path.Combine(Directory.GetCurrentDirectory(), ".nuke")).Close();
             }
         }
+
         var exitCode = Execute<Build>(x => x.Compile);
+        if (ClearTempBeforeExit)
+        {
+            FileSystemTasks.DeleteDirectory(TemporaryDirectory);
+        }
+
         return ExitCode ?? exitCode;
     }
 
@@ -152,7 +161,7 @@ partial class Build : NukeBuild
 
     [Parameter("Directory containing modules.json")] string ModulesJsonDirectoryName = "vc-modules";
     AbsolutePath ModulesLocalDirectory => ArtifactsDirectory / ModulesJsonDirectoryName;
-    Project WebProject => Solution?.AllProjects.FirstOrDefault(x => (x.Name.EndsWith(".Web") && !x.Path.ToString().Contains("samples")) || x.Name.EndsWith("VirtoCommerce.Storefront"));
+    Project WebProject => Solution?.AllProjects.FirstOrDefault(x => (x.Name.EndsWith(".Web") && !x.Path.ToString().Contains("samples")) || x.Name.EndsWith("VirtoCommerce.Storefront") || x.Name.EndsWith("_build"));
     AbsolutePath ModuleManifestFile => WebProject.Directory / "module.manifest";
     AbsolutePath ModuleIgnoreFile => RootDirectory / "module.ignore";
 
@@ -230,19 +239,15 @@ partial class Build : NukeBuild
                   .EnableIncludeSymbols()
                   .SetSymbolPackageFormat(DotNetSymbolPackageFormat.snupkg)
                   .SetOutputDirectory(ArtifactsDirectory)
-                  .SetVersion(ReleaseVersion);
-
-          if (IsModule)
-          {
-              //For module take nuget package description from module manifest
-              settings.SetAuthors(ModuleManifest.Authors)
-                  .SetPackageLicenseUrl(ModuleManifest.LicenseUrl)
-                  .SetPackageProjectUrl(ModuleManifest.ProjectUrl)
-                  .SetPackageIconUrl(ModuleManifest.IconUrl)
-                  .SetPackageRequireLicenseAcceptance(false)
-                  .SetDescription(ModuleManifest.Description)
-                  .SetCopyright(ModuleManifest.Copyright);
-          }
+                  .SetVersion(ReleaseVersion)
+                  .When(IsModule, modulePackSettings => modulePackSettings
+                      .SetAuthors(ModuleManifest.Authors)
+                      .SetPackageLicenseUrl(ModuleManifest.LicenseUrl)
+                      .SetPackageProjectUrl(ModuleManifest.ProjectUrl)
+                      .SetPackageIconUrl(ModuleManifest.IconUrl)
+                      .SetPackageRequireLicenseAcceptance(false)
+                      .SetDescription(ModuleManifest.Description)
+                      .SetCopyright(ModuleManifest.Copyright));
           DotNetPack(settings);
       });
 
@@ -951,6 +956,7 @@ partial class Build : NukeBuild
     Target ClearTemp => _ => _
         .Executes(() =>
         {
-            FileSystemTasks.DeleteDirectory(TemporaryDirectory);
+            ClearTempBeforeExit = true;
         });
+
 }

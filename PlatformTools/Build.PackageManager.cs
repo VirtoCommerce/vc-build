@@ -176,24 +176,24 @@ partial class Build: NukeBuild
             {
                 Id = moduleInstall.Id,
                 Version = moduleInstall.Version,
-                Dependencies = SkipDependencySolving ? null : externalModule.Dependencies.Select(d => new ManifestDependency()
+                Dependencies = SkipDependencySolving ? null : externalModule?.Dependencies?.Select(d => new ManifestDependency()
                 {
                     Id = d.Id,
                     Version = d.Version.ToString()
                 }).ToArray(),
-                PackageUrl = externalModule.Ref.Replace(externalModule.Version.ToString(), moduleInstall.Version),
-                Authors = externalModule.Authors.ToArray(),
-                PlatformVersion = externalModule.PlatformVersion.ToString(),
-                Incompatibilities = externalModule.Incompatibilities.Select(d => new ManifestDependency()
+                PackageUrl = externalModule.Ref?.Replace(externalModule.Version.ToString(), moduleInstall.Version),
+                Authors = externalModule.Authors?.ToArray(),
+                PlatformVersion = externalModule.PlatformVersion?.ToString(),
+                Incompatibilities = externalModule.Incompatibilities?.Select(d => new ManifestDependency()
                 {
                     Id = d.Id,
                     Version = d.Version.ToString()
                 }).ToArray(),
-                Groups = externalModule.Groups.Select(g => g).ToArray(),
+                Groups = externalModule.Groups?.Select(g => g).ToArray(),
                 Copyright = externalModule.Copyright,
                 Description = externalModule.Description,
                 IconUrl = externalModule.IconUrl,
-                Owners = externalModule.Owners.ToArray(),
+                Owners = externalModule.Owners?.ToArray(),
                 ProjectUrl = externalModule.ProjectUrl,
                 ReleaseNotes = externalModule.ReleaseNotes,
                 Tags = externalModule.Tags,
@@ -214,6 +214,9 @@ partial class Build: NukeBuild
             modulesToInstall.AddRange(missingModules);
         }
         moduleInstaller.Install(modulesToInstall.Where(m => !m.IsInstalled), progress);
+        AbsolutePath discoveryAbsolutePath = (AbsolutePath) Path.GetFullPath(discoveryPath);
+        var zipFiles = discoveryAbsolutePath.GlobFiles("*/*.zip");
+        zipFiles.ForEach(path => FileSystemTasks.DeleteFile(path));
         localModuleCatalog.Reload();
     });
 
@@ -228,7 +231,7 @@ partial class Build: NukeBuild
         Module.ForEach(m => FileSystemTasks.DeleteDirectory(Path.Combine(discoveryPath, m)));
         packageManifest.Modules.RemoveAll(m => Module.Contains(m.Id));
         PackageManager.ToFile(packageManifest);
-        localModulesCatalog.Load();
+        localModulesCatalog.Reload();
     });
 
     Target Update => _ => _
