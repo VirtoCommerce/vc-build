@@ -280,8 +280,7 @@ internal partial class Build : NukeBuild
                   .SetSymbolPackageFormat(DotNetSymbolPackageFormat.snupkg)
                   .SetOutputDirectory(ArtifactsDirectory)
                   .SetVersion(ReleaseVersion)
-                  .When(IsModule, modulePackSettings => modulePackSettings
-                      .SetAuthors(ModuleManifest.Authors)
+                  .When(IsModule, modulePackSettings => modulePackSettings 
                       .SetPackageLicenseUrl(ModuleManifest.LicenseUrl)
                       .SetPackageProjectUrl(ModuleManifest.ProjectUrl)
                       .SetPackageIconUrl(ModuleManifest.IconUrl)
