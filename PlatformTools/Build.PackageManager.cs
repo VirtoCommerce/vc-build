@@ -277,7 +277,7 @@ internal partial class Build
             Module.ForEach(m => FileSystemTasks.DeleteDirectory(Path.Combine(discoveryPath, m)));
             packageManifest.Modules.RemoveAll(m => Module.Contains(m.Id));
             PackageManager.ToFile(packageManifest);
-            localModulesCatalog.Load();
+            localModulesCatalog.Reload();
         });
 
     public Target Update => _ => _

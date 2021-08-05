@@ -14,7 +14,7 @@ namespace PlatformTools
     {
         private static ExternalModuleCatalog _catalog;
 
-        public static ExternalModuleCatalog GetCatalog(string authToken, LocalStorageModuleCatalog localCatalog, IList<string> manifestUrls)
+        public static ExternalModuleCatalog GetCatalog(string authToken, ILocalModuleCatalog localCatalog, IList<string> manifestUrls)
         {
             var options = GetOptions(authToken, manifestUrls);
             return GetCatalog(options, localCatalog);
