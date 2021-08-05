@@ -47,6 +47,9 @@ internal partial class Build : NukeBuild
     private static readonly HttpClient _httpClient = new HttpClient();
     private static int? _exitCode;
 
+
+    private static bool ClearTempBeforeExit { get; set; } = false;
+
     public static int Main()
     {
         var nukeFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), ".nuke");
@@ -68,6 +71,11 @@ internal partial class Build : NukeBuild
             }
         }
 
+        if (ClearTempBeforeExit)
+        {
+            FileSystemTasks.DeleteDirectory(TemporaryDirectory);
+        }
+        
         var exitCode = Execute<Build>(x => x.Compile);
         return _exitCode ?? exitCode;
     }
@@ -259,34 +267,29 @@ internal partial class Build : NukeBuild
             );
         });
 
-    public Target Pack => _ => _
-        .DependsOn(Test)
-        .Executes(() =>
-        {
-            //For platform take nuget package description from Directory.Build.props
-            var settings = new DotNetPackSettings()
-                .SetProject(Solution)
-                .EnableNoBuild()
-                .SetConfiguration(Configuration)
-                .EnableIncludeSymbols()
-                .SetSymbolPackageFormat(DotNetSymbolPackageFormat.snupkg)
-                .SetOutputDirectory(ArtifactsDirectory)
-                .SetVersion(ReleaseVersion);
-
-            if (IsModule)
-            {
-                //For module take nuget package description from module manifest
-                settings = settings.SetAuthors(ModuleManifest.Authors)
-                    .SetPackageLicenseUrl(ModuleManifest.LicenseUrl)
-                    .SetPackageProjectUrl(ModuleManifest.ProjectUrl)
-                    .SetPackageIconUrl(ModuleManifest.IconUrl)
-                    .SetPackageRequireLicenseAcceptance(false)
-                    .SetDescription(ModuleManifest.Description)
-                    .SetCopyright(ModuleManifest.Copyright);
-            }
-
-            DotNetPack(settings);
-        });
+    Target Pack => _ => _
+      .DependsOn(Test)
+      .Executes(() =>
+      {
+          //For platform take nuget package description from Directory.Build.props
+          var settings = new DotNetPackSettings()
+               .SetProject(Solution)
+                  .EnableNoBuild()
+                  .SetConfiguration(Configuration)
+                  .EnableIncludeSymbols()
+                  .SetSymbolPackageFormat(DotNetSymbolPackageFormat.snupkg)
+                  .SetOutputDirectory(ArtifactsDirectory)
+                  .SetVersion(ReleaseVersion)
+                  .When(IsModule, modulePackSettings => modulePackSettings
+                      .SetAuthors(ModuleManifest.Authors)
+                      .SetPackageLicenseUrl(ModuleManifest.LicenseUrl)
+                      .SetPackageProjectUrl(ModuleManifest.ProjectUrl)
+                      .SetPackageIconUrl(ModuleManifest.IconUrl)
+                      .SetPackageRequireLicenseAcceptance(false)
+                      .SetDescription(ModuleManifest.Description)
+                      .SetCopyright(ModuleManifest.Copyright));
+          DotNetPack(settings);
+      });
 
     public Target Test => _ => _
         .DependsOn(Compile)
@@ -1031,6 +1034,7 @@ internal partial class Build : NukeBuild
     public Target ClearTemp => _ => _
         .Executes(() =>
         {
-            DeleteDirectory(TemporaryDirectory);
+            ClearTempBeforeExit = true;
         });
+
 }

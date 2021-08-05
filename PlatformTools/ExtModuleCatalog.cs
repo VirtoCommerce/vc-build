@@ -20,7 +20,7 @@ namespace PlatformTools
             return GetCatalog(options, localCatalog);
         }
 
-        public static ExternalModuleCatalog GetCatalog(IOptions<ExternalModuleCatalogOptions> options, LocalStorageModuleCatalog localCatalog)
+        public static ExternalModuleCatalog GetCatalog(IOptions<ExternalModuleCatalogOptions> options, ILocalModuleCatalog localCatalog)
         {
             if (_catalog == null)
             {
