@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using VirtoCommerce.Platform.Core.Modularity;
@@ -9,7 +6,7 @@ using VirtoCommerce.Platform.Modules;
 
 namespace PlatformTools
 {
-    class LocalModuleCatalog
+    internal class LocalModuleCatalog
     {
         private static LocalCatalog _catalog;
 
@@ -28,19 +25,24 @@ namespace PlatformTools
                 _catalog = new LocalCatalog(options, distributedLock, logger);
                 _catalog.Load();
             }
-            else _catalog.Reload();
+            else
+            {
+                _catalog.Reload();
+            }
+
             return _catalog;
         }
 
         public static IOptions<LocalStorageModuleCatalogOptions> GetOptions(string discoveryPath, string probingPath)
         {
-            var moduleCatalogOptions = new LocalStorageModuleCatalogOptions()
+            var moduleCatalogOptions = new LocalStorageModuleCatalogOptions
             {
                 RefreshProbingFolderOnStart = true,
                 DiscoveryPath = discoveryPath,
                 ProbingPath = probingPath,
             };
-            return Options.Create<LocalStorageModuleCatalogOptions>(moduleCatalogOptions);
+
+            return Options.Create(moduleCatalogOptions);
         }
     }
 }

@@ -1,4 +1,4 @@
-<Project>
+﻿<Project>
   <!-- These properties will be shared for all projects -->
 
   <PropertyGroup>
@@ -10,8 +10,11 @@
     <VersionSuffix></VersionSuffix>
     <VersionSuffix Condition=" '$(VersionSuffix)' != '' AND '$(BuildNumber)' != '' ">$(VersionSuffix)-$(BuildNumber)</VersionSuffix>
   </PropertyGroup>
+  <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
 
-  <PropertyGroup Condition="'$(MSBuildProjectName.Contains(Tests))' == false">   
+  <PropertyGroup Condition="'$(MSBuildProjectName.Contains(Tests))' == false">
     <Authors>VirtoCommerce</Authors>
     <Title>VirtoCommerce build CLI</Title>
     <Description>Cross-platform  build automation system for VirtoCommerce projects</Description>
