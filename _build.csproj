@@ -8,7 +8,6 @@
         <PackAsTool>true</PackAsTool>
         <IsPackable>true</IsPackable>
         <ToolCommandName>vc-build</ToolCommandName>
-        <NoWarn>CS0649;CS0169</NoWarn>
         <PackageOutputPath>./artifacts</PackageOutputPath>
         <Title>VirtoCommerce build CLI</Title>
         <Description>Cross-platform  build automation system for VirtoCommerce projects</Description>
@@ -31,7 +30,7 @@
         <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
         <PackageReference Include="Octokit" Version="0.50.0" />
         <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
-        <PackageReference Include="Virtocommerce.Platform.Core" Version="3.66.0" />
+        <PackageReference Include="Virtocommerce.Platform.Core" Version="3.70.0" />
         <PackageReference Include="Nuke.Common" Version="5.0.2" />
     </ItemGroup>
 
@@ -42,19 +41,24 @@
         <PackageReference Include="Swashbuckle.AspNetCore.Cli" Version="5.6.3">
             <ExcludeAssets>all</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="VirtoCommerce.Platform.Data" Version="3.66.0" />
-        <PackageReference Include="VirtoCommerce.Platform.Modules" Version="3.66.0" />
-		<PackageReference Include="VirtoCommerce.Platform.DistributedLock" Version="3.66.0" />
+        <PackageReference Include="VirtoCommerce.Platform.Data" Version="3.70.0" />
+        <PackageReference Include="VirtoCommerce.Platform.Modules" Version="3.70.0" />
+		<PackageReference Include="VirtoCommerce.Platform.DistributedLock" Version="3.70.0" />
     </ItemGroup>
 
     <ItemGroup>
         <NukeSpecificationFiles Include="**\*.json" Exclude="bin\**;obj\**;GrabMigrator\**;global.json;.nuke\parameters.json" />
         <NukeExternalFiles Include="**\*.*.ext" Exclude="bin\**;obj\**" />
+        <Compile Remove="artifacts\**" />
         <Compile Remove="Properties\**" />
+        <EmbeddedResource Remove="artifacts\**" />
         <EmbeddedResource Remove="Properties\**" />
         <None Remove="*.csproj.DotSettings;*.ref.*.txt" />
+        <None Remove="artifacts\**" />
         <None Remove="Properties\**" />
+        <NukeExternalFiles Remove="artifacts\**" />
         <NukeExternalFiles Remove="Properties\**" />
+        <NukeSpecificationFiles Remove="artifacts\**" />
         <NukeSpecificationFiles Remove="Properties\**" />
 
         <!-- Common build related files -->
