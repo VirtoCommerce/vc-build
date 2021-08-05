@@ -196,9 +196,9 @@ internal partial class Build : NukeBuild
     // TODO: Convert to a method because GitRepository.FromLocalDirectory() is a heavy method and it should not be used as a property
     protected GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
 
-    protected AbsolutePath SourceDirectory => RootDirectory / "src";
-    protected AbsolutePath TestsDirectory => RootDirectory / "tests";
-    protected AbsolutePath SamplesDirectory => RootDirectory / "samples";
+    protected static AbsolutePath SourceDirectory => RootDirectory / "src";
+    protected static AbsolutePath TestsDirectory => RootDirectory / "tests";
+    protected static AbsolutePath SamplesDirectory => RootDirectory / "samples";
 
     protected AbsolutePath ModulesLocalDirectory => ArtifactsDirectory / ModulesJsonDirectoryName;
     protected Project WebProject => Solution?.AllProjects.FirstOrDefault(x => x.Name.EndsWith(".Web") && !x.Path.ToString().Contains("samples") || x.Name.EndsWith("VirtoCommerce.Storefront"));
