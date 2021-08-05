@@ -47,7 +47,6 @@ internal partial class Build : NukeBuild
     private static readonly HttpClient _httpClient = new HttpClient();
     private static int? _exitCode;
 
-
     private static bool ClearTempBeforeExit { get; set; } = false;
 
     public static int Main()
@@ -75,7 +74,7 @@ internal partial class Build : NukeBuild
         {
             FileSystemTasks.DeleteDirectory(TemporaryDirectory);
         }
-        
+
         var exitCode = Execute<Build>(x => x.Compile);
         return _exitCode ?? exitCode;
     }
@@ -199,6 +198,7 @@ internal partial class Build : NukeBuild
 
     protected AbsolutePath SourceDirectory => RootDirectory / "src";
     protected AbsolutePath TestsDirectory => RootDirectory / "tests";
+    protected AbsolutePath SamplesDirectory => RootDirectory / "samples";
 
     protected AbsolutePath ModulesLocalDirectory => ArtifactsDirectory / ModulesJsonDirectoryName;
     protected Project WebProject => Solution?.AllProjects.FirstOrDefault(x => x.Name.EndsWith(".Web") && !x.Path.ToString().Contains("samples") || x.Name.EndsWith("VirtoCommerce.Storefront"));
@@ -237,6 +237,7 @@ internal partial class Build : NukeBuild
             case OutputType.Err:
                 Logger.Error(text);
                 break;
+
             case OutputType.Std:
                 Logger.Info(text);
                 break;
@@ -247,11 +248,24 @@ internal partial class Build : NukeBuild
         .Before(Restore)
         .Executes(() =>
         {
-            SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory);
-
-            if (DirectoryExists(TestsDirectory))
+            var searchPattern = new string[] { "**/bin", "**/obj" };
+            if (DirectoryExists(SourceDirectory))
             {
-                TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory);
+                SourceDirectory.GlobDirectories(searchPattern).ForEach(DeleteDirectory);
+
+                if (DirectoryExists(TestsDirectory))
+                {
+                    TestsDirectory.GlobDirectories(searchPattern).ForEach(DeleteDirectory);
+                }
+
+                if (DirectoryExists(SamplesDirectory))
+                {
+                    SamplesDirectory.GlobDirectories(searchPattern).ForEach(DeleteDirectory);
+                }
+            }
+            else
+            {
+                RootDirectory.GlobDirectories(searchPattern).ForEach(DeleteDirectory);
             }
 
             EnsureCleanDirectory(ArtifactsDirectory);
@@ -267,28 +281,28 @@ internal partial class Build : NukeBuild
             );
         });
 
-    Target Pack => _ => _
-      .DependsOn(Test)
-      .Executes(() =>
-      {
+    public Target Pack => _ => _
+       .DependsOn(Test)
+       .Executes(() =>
+       {
           //For platform take nuget package description from Directory.Build.props
           var settings = new DotNetPackSettings()
-               .SetProject(Solution)
-                  .EnableNoBuild()
-                  .SetConfiguration(Configuration)
-                  .EnableIncludeSymbols()
-                  .SetSymbolPackageFormat(DotNetSymbolPackageFormat.snupkg)
-                  .SetOutputDirectory(ArtifactsDirectory)
-                  .SetVersion(ReleaseVersion)
-                  .When(IsModule, modulePackSettings => modulePackSettings 
-                      .SetPackageLicenseUrl(ModuleManifest.LicenseUrl)
-                      .SetPackageProjectUrl(ModuleManifest.ProjectUrl)
-                      .SetPackageIconUrl(ModuleManifest.IconUrl)
-                      .SetPackageRequireLicenseAcceptance(false)
-                      .SetDescription(ModuleManifest.Description)
-                      .SetCopyright(ModuleManifest.Copyright));
-          DotNetPack(settings);
-      });
+                .SetProject(Solution)
+                   .EnableNoBuild()
+                   .SetConfiguration(Configuration)
+                   .EnableIncludeSymbols()
+                   .SetSymbolPackageFormat(DotNetSymbolPackageFormat.snupkg)
+                   .SetOutputDirectory(ArtifactsDirectory)
+                   .SetVersion(ReleaseVersion)
+                   .When(IsModule, modulePackSettings => modulePackSettings
+                       .SetPackageLicenseUrl(ModuleManifest.LicenseUrl)
+                       .SetPackageProjectUrl(ModuleManifest.ProjectUrl)
+                       .SetPackageIconUrl(ModuleManifest.IconUrl)
+                       .SetPackageRequireLicenseAcceptance(false)
+                       .SetDescription(ModuleManifest.Description)
+                       .SetCopyright(ModuleManifest.Copyright));
+           DotNetPack(settings);
+       });
 
     public Target Test => _ => _
         .DependsOn(Compile)
@@ -916,7 +930,6 @@ internal partial class Build : NukeBuild
             Logger.Normal("Sonar validation done.");
         });
 
-
     public Target MassPullAndBuild => _ => _
         .Requires(() => ModulesFolderPath)
         .Executes(() =>
@@ -954,6 +967,7 @@ internal partial class Build : NukeBuild
             case OutputType.Err:
                 Logger.Error(text);
                 break;
+
             case OutputType.Std:
                 Logger.Info(text);
                 break;
@@ -1035,5 +1049,4 @@ internal partial class Build : NukeBuild
         {
             ClearTempBeforeExit = true;
         });
-
 }
