@@ -1,35 +1,49 @@
-# Manage tools
+# Introduction
 
-The official CLI [.NET Core GlobalTool](https://docs.microsoft.com/en-us/dotnet/core/tools/global-tools) for building, deploy releases, create and push packages, and manage environments for projects based on VirtoCommerce. Is powered by [nuke.build](https://nuke.build/) A cross-platform build automation system with C# DSL.
 
-## Publish a new version
+The VirtoCommerce Global Tool (vc-build) is the official CLI [.NET Core GlobalTool](https://docs.microsoft.com/en-us/dotnet/core/tools/global-tools) that helps you build, test and deploy releases, create and push NuGet packages, provide package management for projects based on VirtoCommerce, and automate common DevOps tasks. It is powered by [nuke.build](https://nuke.build/) - a cross-platform build automation system with C# DSL, that provides an approach to embrace existing IDE tooling and state where everyone in a team can manage and change the build scenarios. This allows writing build scenarios in C# and debugging them in Visual Studio. Also, along with crossplatform support, it was the best choice for us to build our own build automation solution on top of this project.
 
-Incerment package version in _build.csproj
+Check out [the project source code](https://github.com/VirtoCommerce/vc-build) for the implementation details.
 
-```console
+![vc-build CLI](docs/media/cli-tools-1.png)
 
-dotnet pack .\vc-platform\build\_build.csproj  --configuration Release --include-symbols --output .\vc-platform\artifacts /property:SymbolPackageFormat=snupkg
+## The key features:
 
-```
+[Build automation](docs/CLI-tools/build-automation.md) 
 
-```console
+- build and bundle a module project (both managed and scripted parts)
+- discovere and run all the unit tests from the solution
+- create and publish NuGet packages for projects from your solution, this can be helpful if you intend to re-use a module's logic in another project, you will be able to quickly publish the needed version as a NuGet package. In the private or public NuGet registry
+- include targets that allow to perform various additional quality checks such as static code analysis (currently we support out-of-the-box integration with SonarCloud)
 
-dotnet nuget push VirtoCommerce.GlobalTool.{version}.nupkg  -s https://api.nuget.org/v3/index.json -k {api key}
+[Packages management](docs/CLI-tools/package-management.md) 
 
-```
+- install, update, uninstall modules 
+- install and update a platform application
+- prepare backend package with specific versions of the platform and modules from the manifest file
+  
+[The platform cold start optimization and data migration (WIP)](docs/CLI-tools/cold-start-and-data-migration.md)
+
+- platform start optimization (slow run on Azure case)
+- get idempotent SQL scripts for all modules EF migrations with ability to apply them in a specific order without installed platform and source code (helpful for migration from VirtoCommerce platform version 2 (latest) to version 3)
+
+## Before you start
+Before you start using `VirtoCommerce.GlobalTool`, install the following in order to use all it's functionality:
+
+- .NET SDK 5.x
+- Node.js 12.x
+- Git SCM
 
 ## Installation
-
-Installing VirtoCommerce.GlobalTool package:
-
+Run this command to install `VirtoCommerce.GlobalTool` on your machine:
 ```console
 
 dotnet tool install VirtoCommerce.GlobalTool  -g
 
 ```
 
-## Latest version
-Run this command to update VirtoCommerce.GlobalTool to the latest version:
+## Updating 
+Run this command to update `VirtoCommerce.GlobalTool` to the latest version:
 
 ```console
 
@@ -37,8 +51,8 @@ dotnet tool update VirtoCommerce.GlobalTool -g
 
 ```
 
-## Usage
-To use VirtoCommerce.GlobalTool by invoke the tool using the following command: `vc-build`
+## Getting started
+To use `VirtoCommerce.GlobalTool` by invoke the tool using the following command: `vc-build`
 
 To get the all list of targets:
 ```console
@@ -46,22 +60,28 @@ To get the all list of targets:
 vc-build help
 
 ```
-Command output
+Command output:
 
 ```console
-NUKE Execution Engine version 0.24.11 (Windows,.NETCoreApp,Version=v2.1)
+NUKE Execution Engine version 5.0.2 (Windows,.NETCoreApp,Version=v2.1)
 
 Target with name 'help' does not exist. Available targets are:
   - ChangeVersion
   - Clean
+  - ClearTemp
   - Compile
   - CompleteHotfix
   - CompleteRelease
   - Compress
   - GetManifestGit
   - GrabMigrator
-  - IncremenPatch
   - IncrementMinor
+  - IncrementPatch
+  - Init
+  - InitPlatform
+  - Install
+  - InstallModules
+  - InstallPlatform
   - MassPullAndBuild
   - Pack
   - Publish
@@ -78,13 +98,18 @@ Target with name 'help' does not exist. Available targets are:
   - StartRelease
   - SwaggerValidation
   - Test
+  - Uninstall
+  - Update
   - UpdateManifest
   - ValidateSwaggerSchema
   - WebPackBuild
-
 ```
 
-## Compress
+
+## Usage examples
+Below you can see how the specific target could be used
+
+### Compress
 The target is used to create a redistributed zip archive for a module or platform. After executing, the resulting zip is placed in `artifacts` folder.
 To execute this target, you need to run this command in the root module folder of the cloned from GitHub repository.
 
@@ -94,7 +119,7 @@ vc-build compress
 
 ```
 
-console output
+Console output
 
 ```console
 
@@ -114,7 +139,7 @@ Total                              0:23
 
 ```
 
-## StartRelease, CompleteRelease, QuickRelease, StartHotfix, CompleteHotfix
+### StartRelease, CompleteRelease, QuickRelease, StartHotfix, CompleteHotfix
 Used to automate the routine operations with release branches
 #### StartRelease:
 - creates and pushes the new branch release/*version* from dev
@@ -122,15 +147,15 @@ Used to automate the routine operations with release branches
 - merges release/*version* into master and pushes
 - merges into dev branch, increments version's minor and pushes
 #### QuickRelease: 
-- Triggers StartRelease and then CompleteRelease
+- triggers StartRelease and then CompleteRelease
 #### StartHotfix:
-- Increments version's patch in master
-- Creates and pushes the new branch hotfix/*version*
+- increments version's patch in master
+- creates and pushes the new branch hotfix/*version*
 #### CompleteHotfix:
-- Merges hotfix branch into master
-- Adds tag and pushes
+- merges hotfix branch into master
+- adds tag and pushes
 
-## Packages management
+### Packages management
 The `vc-build` provides the set of targets that allow you to easily install, uninstall, and update platform dependencies by simple CLI commands execution.
 
 #### Install
