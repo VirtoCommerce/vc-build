@@ -69,6 +69,12 @@ internal partial class Build
                         continue;
                     }
 
+                    if (!string.IsNullOrEmpty(module.Version) && externalModule.Version.CompareTo(module.Version) > 0)
+                    {
+                        Logger.Error($"The latest available version of module ${module.Id} is ${externalModule.Version}, but entered: ${module.Version}");
+                        continue;
+                    }
+
                     module.Id = externalModule.Id;
                     module.Version = module.Version.EmptyToNull() ?? externalModule.Version.ToString();
 
@@ -259,11 +265,14 @@ internal partial class Build
                     .Except(modulesToInstall)
                     .OfType<ManifestModuleInfo>()
                     .ToList();
-
                 modulesToInstall.AddRange(missingModules);
             }
+            modulesToInstall.ForEach(module =>
+            {
+                module.DependsOn.Clear();
+            });
+            moduleInstaller.Install(modulesToInstall, progress);
 
-            moduleInstaller.Install(modulesToInstall.Where(m => !m.IsInstalled), progress);
             localModuleCatalog.Reload();
         });
 
