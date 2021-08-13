@@ -1,4 +1,4 @@
-The `vc-build` contains a set of targets  that designed to automate the various build scenarios for solution based on VC and moreover thanks to builder-server agnostic nature and cross-platform support it can be integrated into any exists CI/CD pipeline with different build services, or used for manual dev scenarios.
+The `vc-build` contains a set of targets that are designed to automate the various build scenarios for solutions based on VirtoCommerce and moreover, thanks to builder-server agnostic nature and cross-platform support, it can be integrated into any existing CI/CD pipeline with different build services, or used for local development scenarios.
 
 ![vc-build CLI](../media/cli-tools-2.png)
 
@@ -7,7 +7,7 @@ The `vc-build` contains a set of targets  that designed to automate the various 
 ```console
 vc-build compile -configuration <Debug|Release>
 ```
-Builds .NET Core solution of vc module.
+Compile .NET Core solution.
 
 ### Parameters:
 
@@ -18,7 +18,7 @@ Builds .NET Core solution of vc module.
 ```console
 vc-build test (with no args)
 ```
-Is used to build the solution and runs all unit tests are discovered from the projects that are located in the solution folder and satisfied by this mask `*.Tests|*.Testing`.
+Is used to compile the solution and runs all unit tests are discovered from the projects that are located in the solution folder and satisfied by this mask `*.Tests|*.Testing`.
 
 Also, this target produces the test coverage and overall stats report.
 
@@ -69,8 +69,8 @@ vc-build pack -configuration <Debug|Release>
 Builds the module solution and creates NuGet packages for all projects that have the `<IsPackable>` is set to `True` in the `.csproj` file.
 
 The result of this target are NuGet packages that are stored by `artifacts` path of the module's root folder. 
-If execute this target for platform solution the version is taken from  `Directory.Build.props`. 
-If executes  this target for a module solution, the version is taken from module manifest file.
+If execute this target for the platform solution the version is taken from `Directory.Build.props`. 
+If executes this target for a module solution, the version is taken from the module manifest file.
 
 ## PublishPackages
 
@@ -95,12 +95,12 @@ vc-build publishPackages -source C:\local-nuget
 ```console
 vc-build compress (with no args)
 ```
-Pack module into a distribution bundle zip that ready to be transferred to another platform instances or published. Executing this command in a module root folder, will put resulting zip into the `artifact` folder. 
+Pack the build artifacts into a distribution bundle zip that is ready to be transferred to a developer platform instance or published. Executing this command in a module root folder will put the resulting zip into the `artifact` folder. 
 
-This target normally checks and excludes from the resulting zip the all files that names are enumerated in these mutiple sources: 
+This target normally checks and excludes from the resulting zip all files which names are enumerated in these multiple sources: 
 
-- [global module.ignore](https://raw.githubusercontent.com/VirtoCommerce/vc-platform/dev/module.ignore) file that is managed by VC team
-- local `module.ignore` file taken from the root folder of the module
+- [global module.ignore](https://raw.githubusercontent.com/VirtoCommerce/vc-platform/dev/module.ignore) file that is managed by the VirtoCommerce team
+- local `module.ignore` file that is taken from the root folder of the module
   
 ### Example:
 
