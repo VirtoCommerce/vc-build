@@ -69,9 +69,9 @@ internal partial class Build
                         continue;
                     }
 
-                    if (!string.IsNullOrEmpty(module.Version) && externalModule.Version.CompareTo(module.Version) > 0)
+                    if (!string.IsNullOrEmpty(module.Version) && externalModule.Version < new SemanticVersion(new Version(module.Version)))
                     {
-                        Logger.Error($"The latest available version of module ${module.Id} is ${externalModule.Version}, but entered: ${module.Version}");
+                        Logger.Error($"The latest available version of module {module.Id} is {externalModule.Version}, but entered: {module.Version}");
                         continue;
                     }
 
@@ -202,6 +202,7 @@ internal partial class Build
             var externalModuleCatalog = ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, packageManifest.ModuleSources);
             var moduleInstaller = ModuleInstallerFacade.GetModuleInstaller(discoveryPath, ProbingPath, GitHubToken, packageManifest.ModuleSources);
             var modulesToInstall = new List<ManifestModuleInfo>();
+            var alreadyInstalledModules = localModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.IsInstalled);
 
             foreach (var module in packageManifest.Modules)
             {
@@ -212,7 +213,7 @@ internal partial class Build
                     ControlFlow.Fail($"No module {module.Id} found");
                 }
 
-                if (externalModule.IsInstalled && externalModule.Version.ToString() == module.Version)
+                if (alreadyInstalledModules.Any(installedModule => installedModule.ModuleName == module.Id && installedModule.Version.ToString() == module.Version))
                 {
                     continue;
                 }
@@ -261,10 +262,12 @@ internal partial class Build
             if (!SkipDependencySolving)
             {
                 var missingModules = externalModuleCatalog
-                    .CompleteListWithDependencies(modulesToInstall.Where(m => !m.IsInstalled))
+                    .CompleteListWithDependencies(modulesToInstall)
                     .Except(modulesToInstall)
                     .OfType<ManifestModuleInfo>()
+                    .Except(alreadyInstalledModules)
                     .ToList();
+
                 modulesToInstall.AddRange(missingModules);
             }
             modulesToInstall.ForEach(module =>
