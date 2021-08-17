@@ -329,7 +329,7 @@ internal partial class Build
         return packageManifest;
     }
 
-    private PackageManifest CreateManifestFromEnvironment(AbsolutePath platformPath, AbsolutePath discoveryPath)
+    private static PackageManifest CreateManifestFromEnvironment(AbsolutePath platformPath, AbsolutePath discoveryPath)
     {
         var platformWebDllPath = platformPath / "VirtoCommerce.Platform.Web.dll";
         if (!FileSystemTasks.FileExists(platformWebDllPath))
