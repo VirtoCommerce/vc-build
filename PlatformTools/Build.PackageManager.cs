@@ -40,19 +40,7 @@ internal partial class Build
         .Triggers(InstallPlatform, InstallModules)
         .Executes(async () =>
         {
-            PackageManifest packageManifest;
-
-            if (!File.Exists(PackageManifestPath))
-            {
-                Logger.Info("vc-package.json does not exist.");
-                Logger.Info("Looking for the platform release");
-                var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
-                packageManifest = PackageManager.CreatePackageManifest(platformRelease.TagName);
-            }
-            else
-            {
-                packageManifest = PackageManager.FromFile(PackageManifestPath);
-            }
+            PackageManifest packageManifest = await OpenOrCreateManifets(PackageManifestPath);
 
             var localModuleCatalog = LocalModuleCatalog.GetCatalog(GetDiscoveryPath(), ProbingPath);
             var externalModuleCatalog = ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, packageManifest.ModuleSources);
@@ -296,7 +284,7 @@ internal partial class Build
         .Triggers(InstallPlatform, InstallModules)
         .Executes(async () =>
         {
-            var packageManifest = PackageManager.FromFile(PackageManifestPath);
+            var packageManifest = await OpenOrCreateManifets(PackageManifestPath);
             var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
             packageManifest.PlatformVersion = platformRelease.TagName;
             packageManifest.PlatformAssetUrl = platformRelease.Assets.First().BrowserDownloadUrl;
@@ -317,4 +305,46 @@ internal partial class Build
 
             PackageManager.ToFile(packageManifest);
         });
+
+    private async Task<PackageManifest> OpenOrCreateManifets(string packageManifestPath)
+    {
+        PackageManifest packageManifest;
+        var platformWebDllPath = Path.Combine(Directory.GetParent(packageManifestPath).FullName, "VirtoCommerce.Platform.Web.dll");
+        if (!File.Exists(packageManifestPath) && File.Exists(platformWebDllPath))
+        {
+            var discoveryAbsolutePath = Path.GetFullPath(GetDiscoveryPath());
+            packageManifest = CreateManifestFromEnvironment(RootDirectory, (AbsolutePath)discoveryAbsolutePath);
+        }
+        else if (!File.Exists(packageManifestPath))
+        {
+            Logger.Info("vc-package.json is not exists.");
+            Logger.Info("Looking for the platform release");
+            var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
+            packageManifest = PackageManager.CreatePackageManifest(platformRelease.TagName);
+        }
+        else
+        {
+            packageManifest = PackageManager.FromFile(PackageManifestPath);
+        }
+        return packageManifest;
+    }
+
+    private static PackageManifest CreateManifestFromEnvironment(AbsolutePath platformPath, AbsolutePath discoveryPath)
+    {
+        var platformWebDllPath = platformPath / "VirtoCommerce.Platform.Web.dll";
+        if (!FileSystemTasks.FileExists(platformWebDllPath))
+        {
+            ControlFlow.Fail($"{platformWebDllPath} can't be found!");
+        }
+        var platformWebDllFileInfo = FileVersionInfo.GetVersionInfo(platformWebDllPath);
+        var platformVersion = platformWebDllFileInfo.ProductVersion;
+        var packageManifest = PackageManager.CreatePackageManifest(platformVersion);
+
+        var manifests = discoveryPath.GlobFiles("*/module.manifest");
+        manifests.ForEach(m => {
+            var manifest = ManifestReader.Read(m);
+            packageManifest.Modules.Add(new ModuleItem(manifest.Id, manifest.Version));
+        });
+        return packageManifest;
+    }
 }
