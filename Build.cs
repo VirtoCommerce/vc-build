@@ -348,7 +348,7 @@ internal partial class Build : NukeBuild
             }
         });
 
-    public void CustomDotnetLogger(OutputType type, string text)
+    public static void CustomDotnetLogger(OutputType type, string text)
     {
         Logger.Info(text);
 
@@ -950,7 +950,7 @@ internal partial class Build : NukeBuild
             }
         });
 
-    private void GitLogger(OutputType type, string text)
+    private static void GitLogger(OutputType type, string text)
     {
         if (text.Contains("github returned 422 Unprocessable Entity") && text.Contains("already_exists"))
         {
