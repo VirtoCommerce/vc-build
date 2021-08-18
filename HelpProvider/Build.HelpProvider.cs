@@ -10,25 +10,10 @@ using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 using Nuke.Common;
 
-internal partial class Build
+internal class HelpProvider
 {
-    [Parameter("Shows help for the target", Name = "?")]
-    public static bool HelpParameter { get; set; }
 
-    protected override void OnTargetStart(string target)
-    {
-        if (HelpParameter)
-        {
-            Logger.Info(GetHelpForTarget(target));
-            Environment.Exit(0);
-        }
-        else
-        {
-            base.OnTargetStart(target);
-        }
-    }
-
-    private string GetHelpForTarget(string target)
+    public static string GetHelpForTarget(string target)
     {
         var pipeline = new MarkdownPipelineBuilder().UseCustomContainers().Build();
         var rootDirectory = AppDomain.CurrentDomain.BaseDirectory;
@@ -62,7 +47,7 @@ internal partial class Build
         return result;
     }
 
-    private string GetTextContent(LeafBlock leaf)
+    private static string GetTextContent(LeafBlock leaf)
     {
         var inline = leaf?.Inline?.FirstChild;
 
@@ -93,7 +78,7 @@ internal partial class Build
         return result.ToString();
     }
 
-    private string GetFencedText(FencedCodeBlock fencedCodeBlock)
+    private static string GetFencedText(FencedCodeBlock fencedCodeBlock)
     {
         if (fencedCodeBlock == null)
         {

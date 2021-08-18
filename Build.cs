@@ -49,8 +49,15 @@ internal partial class Build : NukeBuild
 
     private static bool ClearTempBeforeExit { get; set; } = false;
 
-    public static int Main()
+    public static int Main(string[] args)
     {
+        if(args.Length == 2 && args[0]?.ToLowerInvariant() == "help")
+        {
+            var help = HelpProvider.GetHelpForTarget(args[1]);
+            Logger.Info(help);
+            Environment.Exit(0);
+        }
+
         var nukeFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), ".nuke");
 
         if (!nukeFiles.Any())
