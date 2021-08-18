@@ -12,7 +12,7 @@ using Nuke.Common;
 
 namespace VirtoCommerce.Build.HelpProvider
 {
-    public class HelpProvider
+    public static class HelpProvider
     {
 
         public static string GetHelpForTarget(string target)
