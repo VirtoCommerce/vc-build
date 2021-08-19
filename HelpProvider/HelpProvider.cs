@@ -14,14 +14,9 @@ namespace VirtoCommerce.Build.HelpProvider
 {
     public static class HelpProvider
     {
-
         public static string GetHelpForTarget(string target)
         {
-            var pipeline = new MarkdownPipelineBuilder().UseCustomContainers().Build();
-            var rootDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            var helpFilePath = Path.Combine(rootDirectory, "docs", "targets.md");
-            var markdownDocument = Markdown.Parse(File.ReadAllText(helpFilePath), pipeline);
-            var containers = markdownDocument.Descendants<CustomContainer>();
+            var containers = GetCustomContainers();
 
             var container = containers.FirstOrDefault(c =>
             {
@@ -32,7 +27,7 @@ namespace VirtoCommerce.Build.HelpProvider
                     return false;
                 }
 
-                return target == GetTextContent(heading);
+                return string.Compare(target, GetTextContent(heading), true) == 0;
             });
 
             if (container == null)
@@ -47,6 +42,32 @@ namespace VirtoCommerce.Build.HelpProvider
             var examples = GetFencedText(exampleBlock);
             var result = $"{description}{Environment.NewLine}{examples}";
             return result;
+        }
+
+        public static IEnumerable<string> GetTargets()
+        {
+            var containers = GetCustomContainers();
+            var result = new List<string>();
+            foreach (var container in containers)
+            {
+                var heading = container.Descendants<HeadingBlock>().FirstOrDefault();
+
+                if (heading == null)
+                {
+                    continue;
+                }
+                result.Add(GetTextContent(heading));
+            }
+            return result;
+        }
+
+        private static IEnumerable<CustomContainer> GetCustomContainers()
+        {
+            var pipeline = new MarkdownPipelineBuilder().UseCustomContainers().Build();
+            var rootDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            var helpFilePath = Path.Combine(rootDirectory, "docs", "targets.md");
+            var markdownDocument = Markdown.Parse(File.ReadAllText(helpFilePath), pipeline);
+            return markdownDocument.Descendants<CustomContainer>();
         }
 
         private static string GetTextContent(LeafBlock leaf)
@@ -68,6 +89,7 @@ namespace VirtoCommerce.Build.HelpProvider
                         var inlineContent = literal.Content;
                         result.Append(inlineContent.Text.Substring(inlineContent.Start, inlineContent.Length));
                         break;
+
                     case LineBreakInline:
                         result.Append(Environment.NewLine);
                         break;

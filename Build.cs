@@ -53,10 +53,20 @@ namespace VirtoCommerce.Build
 
         public static int Main(string[] args)
         {
-            if (args.Length == 2 && args[0]?.ToLowerInvariant() == "help")
+            if (args[0]?.ToLowerInvariant() == "help")
             {
-                var help = HelpProvider.HelpProvider.GetHelpForTarget(args[1]);
-                Logger.Info(help);
+                if (args.Length == 2)
+                {
+                    var help = HelpProvider.HelpProvider.GetHelpForTarget(args[1]);
+                    Logger.Info(help);
+                }
+                else if (args.Length == 1)
+                {
+                    var targets = HelpProvider.HelpProvider.GetTargets();
+                    var stringBuilder = new StringBuilder("There is a help for targets:" + Environment.NewLine);
+                    targets.ForEach(target => stringBuilder = stringBuilder.AppendLine($"- {target}"));
+                    Logger.Info(stringBuilder.ToString());
+                }
                 Environment.Exit(0);
             }
 
