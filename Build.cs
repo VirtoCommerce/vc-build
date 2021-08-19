@@ -45,7 +45,7 @@ namespace VirtoCommerce.Build
         ///   - Microsoft VSCode           https://nuke.build/vscode
 
         private static readonly string[] _moduleContentFolders = { "dist", "Localizations", "Scripts", "Content" };
-        private static readonly string[] _sonarLongLiveBranches = { "master", "develop" };
+        private static readonly string[] _sonarLongLiveBranches = { "master", "develop", "dev", "main" };
         private static readonly HttpClient _httpClient = new HttpClient();
         private static int? _exitCode;
 
