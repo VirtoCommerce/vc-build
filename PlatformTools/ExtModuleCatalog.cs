@@ -10,7 +10,7 @@ using VirtoCommerce.Platform.Modules.External;
 
 namespace PlatformTools
 {
-    internal class ExtModuleCatalog
+    internal static class ExtModuleCatalog
     {
         private static ExternalModuleCatalog _catalog;
 

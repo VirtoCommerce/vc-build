@@ -7,7 +7,7 @@ using VirtoCommerce.Platform.Modules.External;
 
 namespace PlatformTools
 {
-    internal class ModuleInstallerFacade
+    internal static class ModuleInstallerFacade
     {
         private static ModuleInstaller _moduleInstaller;
 

@@ -3,7 +3,7 @@ using Nuke.Common.IO;
 
 namespace PlatformTools
 {
-    internal class PackageManager
+    internal static class PackageManager
     {
         private static readonly string _defaultModuleManifest = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/modules_v3.json";
 
