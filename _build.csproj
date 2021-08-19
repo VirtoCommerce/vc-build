@@ -13,7 +13,7 @@
     <Description>Cross-platform  build automation system for VirtoCommerce projects</Description>
     <NeutralLanguage>en-US</NeutralLanguage>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <StartupObject>Build</StartupObject>
+    <StartupObject>VirtoCommerce.Build.Build</StartupObject>
     <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
