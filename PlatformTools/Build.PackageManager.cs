@@ -201,6 +201,7 @@ namespace VirtoCommerce.Build
                     if (externalModule == null)
                     {
                         ControlFlow.Fail($"No module {module.Id} found");
+                        return;
                     }
 
                     if (alreadyInstalledModules.Any(installedModule => installedModule.ModuleName == module.Id && installedModule.Version.ToString() == module.Version))

@@ -6,7 +6,7 @@ using VirtoCommerce.Platform.Modules;
 
 namespace PlatformTools
 {
-    internal class LocalModuleCatalog
+    internal static class LocalModuleCatalog
     {
         private static LocalCatalog _catalog;
 

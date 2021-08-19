@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace PlatformTools
 {
-    internal class AppSettings
+    internal static class AppSettings
     {
         private static IConfiguration _configuration;
 

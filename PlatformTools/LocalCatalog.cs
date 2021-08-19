@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -182,11 +182,6 @@ namespace PlatformTools
         private bool IsAssemblyRelatedFile(string path)
         {
             return _options.AssemblyFileExtensions.Union(_options.AssemblyServiceFileExtensions).Any(x => path.EndsWith(x, StringComparison.OrdinalIgnoreCase));
-        }
-
-        private bool IsAssemblyFile(string path)
-        {
-            return _options.AssemblyFileExtensions.Any(x => path.EndsWith(x, StringComparison.OrdinalIgnoreCase));
         }
 
         private bool IsLocalizationFile(string path)
