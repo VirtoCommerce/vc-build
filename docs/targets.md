@@ -19,6 +19,7 @@ This target downloads and install into the current folder the platform and modul
 
 By default, install target will install all modules listed as dependencies in vc-package.json.
 Path to vc-package.json, discovery and probing paths can be overridden with PackageManifestPath, DiscoveryPath, ProbingPath parameters. Also we can skip dependency solving with SkipDependencySolving parameter.
+Since version 2.0.0-beta0005 the -module parameter is case insensitive
 Examples:
 ```console
 vc-build install (with no args)
@@ -106,7 +107,8 @@ vc-build PublishPackages -ApiKey %SomeApiKey%
 ## QuickRelease
 Creates a release branch from dev. Merges it into master. Increments version in dev branch and removes release/* branch.
 ```console
-vc-build uninstall -Module VirtoCommerce.Cart VirtoCommerce.Catalog
+vc-build QuickRelease
+vc-build QuickRelease -Force
 ```
 :::
 :::
@@ -159,5 +161,12 @@ Creates the github release
 Gets parameters: GitHubUser, GitHubToken, ReleaseBranch
 ```console
 vc-build release -GitHubUser VirtoCommerce -GitHubToken %token% 
+```
+:::
+:::
+## ClearTemp
+Removes .tmp directory
+```console
+vc-build ClearTemp 
 ```
 :::

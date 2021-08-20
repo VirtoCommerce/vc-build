@@ -1,1 +1,5 @@
-WIP
+As you may know, the VirtoCommerce platform does a lot of work every start: check modules versions, files in probing path, copy modules files to probing path if they are absent or have inappropriate versions, and so on. It could take time for the application to complete all of the necessary operations and be ready to work. Sometimes, especially on machines with low resources, you could see that the application failed to start and throws the following error:  `HTTP Error 500.30 - ANCM In-Process Start Failure`.
+
+What is the solution?
+
+From the VirtoCommerce platform version 3.27.0, there is an option `VirtoCommerce:RefreshProbingFolderOnStart` to avoid checking the probing path at the platform startup. This can decrease startup time at least by a third. If the option is set to `false` and the probing path exists, the platform will start with the current probing path content on an “AS IS” basis. It is assumed that the probing path contains consistent module files. If the probing path is absent, then the platform will start as usual, with module discovering/copying, with no look at the option value.

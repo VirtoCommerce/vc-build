@@ -1,45 +1,52 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Octokit;
 
 namespace PlatformTools
 {
-    class GithubManager
+    internal static class GithubManager
     {
-        private static string GithubUser = "virtocommerce";
-        private static string PlatformRepo = "vc-platform";
-        private static GitHubClient Client = new GitHubClient(new ProductHeaderValue("vc-build"));
-        public static async Task<Release> GetPlatformRelease(string releaseTag)
+        private static readonly string _githubUser = "virtocommerce";
+        private static readonly string _platformRepo = "vc-platform";
+        private static readonly GitHubClient _client = new GitHubClient(new ProductHeaderValue("vc-build"));
+
+        public static Task<Release> GetPlatformRelease(string releaseTag)
         {
-            var release = string.IsNullOrEmpty(releaseTag)
-                ? await GetLatestReleaseAsync(GithubUser, PlatformRepo)
-                : await Client.Repository.Release.Get(GithubUser, PlatformRepo, releaseTag);
-            return release;
+            return string.IsNullOrEmpty(releaseTag)
+                ? GetLatestReleaseAsync(_githubUser, _platformRepo)
+                : _client.Repository.Release.Get(_githubUser, _platformRepo, releaseTag);
         }
-        public static async Task<Release> GetPlatformRelease(string token, string releaseTag)
+
+        public static Task<Release> GetPlatformRelease(string token, string releaseTag)
         {
             SetAuthToken(token);
-            return await GetPlatformRelease(releaseTag);
+            return GetPlatformRelease(releaseTag);
         }
+
         public static void SetAuthToken(string token)
         {
-            if(!string.IsNullOrEmpty(token))
-                Client.Credentials = new Credentials(token);
+            if (!string.IsNullOrEmpty(token))
+            {
+                _client.Credentials = new Credentials(token);
+            }
         }
 
         private static async Task<Release> GetLatestReleaseAsync(string repoUser, string repoName)
         {
-            var releases = await Client.Repository.Release.GetAll(repoUser, repoName, new ApiOptions() { PageSize = 5, PageCount = 1});
+            var releases = await _client.Repository.Release.GetAll(repoUser, repoName, new ApiOptions
+            {
+                PageSize = 5,
+                PageCount = 1,
+            });
+
             var release = releases.OrderByDescending(r => r.TagName.Trim()).FirstOrDefault();
             return release;
         }
 
         /// <summary>
-        /// Gets a repo owner and a repo name from packageUrl
+        ///     Gets a repo owner and a repo name from packageUrl
         /// </summary>
         /// <param name="url"></param>
         /// <returns>The First Value is Owner, The Second is Repo Name</returns>
@@ -50,23 +57,18 @@ namespace PlatformTools
             var groups = match.Groups;
             return new Tuple<string, string>(groups[1].Value, groups[2].Value);
         }
-        public static async Task<Release> GetModuleRelease(string token, string moduleRepo, string releaseTag)
+
+        public static Task<Release> GetModuleRelease(string token, string moduleRepo, string releaseTag)
         {
-            GithubManager.SetAuthToken(token);
-            return await GithubManager.GetModuleRelease(moduleRepo, releaseTag);
+            SetAuthToken(token);
+            return GetModuleRelease(moduleRepo, releaseTag);
         }
-        public static async Task<Release> GetModuleRelease(string moduleRepo, string releaseTag)
+
+        public static Task<Release> GetModuleRelease(string moduleRepo, string releaseTag)
         {
-            Release release;
-            if (string.IsNullOrEmpty(releaseTag))
-            {
-                release = await Client.Repository.Release.GetLatest(GithubUser, moduleRepo);
-            }
-            else
-            {
-                release = await Client.Repository.Release.Get(GithubUser, moduleRepo, releaseTag);
-            }
-            return release;
+            return string.IsNullOrEmpty(releaseTag)
+                ? _client.Repository.Release.GetLatest(_githubUser, moduleRepo)
+                : _client.Repository.Release.Get(_githubUser, moduleRepo, releaseTag);
         }
     }
 }

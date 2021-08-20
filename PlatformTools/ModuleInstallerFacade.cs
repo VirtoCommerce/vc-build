@@ -1,26 +1,22 @@
-using System;
 using System.Collections.Generic;
-using System.Text;
-using Microsoft.Extensions.Options;
-using VirtoCommerce.Platform.Core.Modularity;
-using VirtoCommerce.Platform.Core.TransactionFileManager;
-using VirtoCommerce.Platform.Modules;
-using VirtoCommerce.Platform.Modules.External;
+using System.IO.Abstractions;
 using VirtoCommerce.Platform.Data.TransactionFileManager;
 using VirtoCommerce.Platform.Data.ZipFile;
+using VirtoCommerce.Platform.Modules;
+using VirtoCommerce.Platform.Modules.External;
 
 namespace PlatformTools
 {
-    class ModuleInstallerFacade
+    internal static class ModuleInstallerFacade
     {
         private static ModuleInstaller _moduleInstaller;
 
-        public static ModuleInstaller GetModuleInstaller(string discoveryPath, string probingPath, string authToken, IEnumerable<string> manifestUrls)
+        public static ModuleInstaller GetModuleInstaller(string discoveryPath, string probingPath, string authToken, IList<string> manifestUrls)
         {
-            if(_moduleInstaller == null)
+            if (_moduleInstaller == null)
             {
                 var fileManager = new TransactionFileManager();
-                var fileSystem = new System.IO.Abstractions.FileSystem();
+                var fileSystem = new FileSystem();
                 var zipFileWrapper = new ZipFileWrapper(fileSystem, fileManager);
                 var localCatalogOptions = LocalModuleCatalog.GetOptions(discoveryPath, probingPath);
                 var extCatalogOptions = ExtModuleCatalog.GetOptions(authToken, manifestUrls);
@@ -29,6 +25,7 @@ namespace PlatformTools
                 var modulesClient = new ExternalModulesClient(extCatalogOptions);
                 _moduleInstaller = new ModuleInstaller(externalModuleCatalog, modulesClient, fileManager, localCatalogOptions, fileSystem, zipFileWrapper);
             }
+
             return _moduleInstaller;
         }
     }

@@ -9,14 +9,14 @@ vc-build install -module <module> -version <version>
 vc-build install -module <module>:<version>
 ```
 
-This command downloads and install into the current folder the platform or modules with versions that are passed as the command parameters or defined in `vc-package.json`. 
+This command downloads and installs into the current folder the platform or modules with versions that are passed as the command parameters or defined in `vc-package.json`. 
 
 `vc-package.json` - file is used to maintain the list of installed modules with their versions. This allows `vc-build` to easily restore the platform with the modules when on a different machine, such as a build server, without all those packages.
 
 
 - `vc-build install (with no args)`
 
-This target downloads and install into the current folder the platform and modules with versions described in `vc-package.json`. 
+This target downloads and installs into the current folder the platform and modules with versions described in `vc-package.json`. 
 If `vc-package.json` is not found in the local folder, by default the command will download and install the latest platform and modules versions that are marked with the `commerce` group.
 
 By default, `install` target will install all modules listed as dependencies in `vc-package.json`.
@@ -28,7 +28,7 @@ vc-build install
 
 - `vc-build install -platform -version <version>`
 
-Fetch and install the platform with the specific version. If the platform with specified version does not exist in the registry, then this will fail.
+Fetch and install the platform with the specific version. If the platform with a specified version does not exist in the registry, then this will fail.
 If no version is specified, the latest platform version will be installed.
 
 ### Examples:
@@ -62,7 +62,7 @@ vc-build update -platform -version <version>
 vc-build update -module <module> -version <version>
 ```
 This command will update the platform and all modules listed to the version specified by `<version>`, respecting semver.
-If `<version>` is not specified the component will updated to the latest version.
+If `<version>` is not specified the component will be updated to the latest version.
 If no args are specified, the platform and all modules in the specified location will be updated.
 
 This command also updated the installed dependencies versions in the `vc-package.json` 

@@ -1,24 +1,22 @@
-using System;
 using System.Collections.Generic;
-using System.Text;
 using Nuke.Common.IO;
-using VirtoCommerce.Platform.Core.Common;
-using VirtoCommerce.Platform.Core.Modularity;
 
 namespace PlatformTools
 {
-    class PackageManager
+    internal static class PackageManager
     {
-        private static string _defaultModuleManifest = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/modules_v3.json";
-        public static PackageManifest CreatePackageManifest(string platformVersion, string PlatformAssetUrl)
+        private static readonly string _defaultModuleManifest = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/modules_v3.json";
+
+        public static PackageManifest CreatePackageManifest(string platformVersion, string platformAssetUrl)
         {
-            var manifest = new PackageManifest()
+            var manifest = new PackageManifest
             {
                 PlatformVersion = platformVersion,
-                PlatformAssetUrl = PlatformAssetUrl,
+                PlatformAssetUrl = platformAssetUrl,
                 Modules = new List<ModuleItem>(),
-                ModuleSources = new List<string>()
+                ModuleSources = new List<string>(),
             };
+
             manifest.ModuleSources.Add(_defaultModuleManifest);
             return manifest;
         }

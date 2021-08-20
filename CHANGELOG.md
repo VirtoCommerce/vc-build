@@ -3,6 +3,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [2.0.0] - 2021-08-05
+### Changed
+- vc-build was updated to .Net 5
+- Documentation was moved from vc-platform repo
+- Updated dependencies
+### Added 
+- Force parameter
+- Case insensitivity for module installation
+- ClearTemp Target
+- Removing of zip files after modules installation
+- _build project search
+### Fixed
+- Modules installation
+- FileNotFoundException in ClearTemp target
+- Properties of nugets of modules
+- Check if ModuleManifestPath is null
+- QuickRelease fails when the release branch is already exists
+
 ## [1.7.5] - 2021-05-27
 ### Added
 - -SkipDependencySolving parameter
@@ -46,7 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.4.19] - 2020-12-28
 ### Added
-- VCBUILD_DISABLE_RELEASE_APPROVEMENT environment variable to disable release approvement
+- VCBUILD_DISABLE_RELEASE_APPROVAL environment variable to disable release approval
 ### Changed
 - Updated Nuke.Common dependency
 - github-release tool replaced by Octokit
