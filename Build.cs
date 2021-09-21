@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -503,10 +504,10 @@ namespace VirtoCommerce.Build
 
                 if (disableApproval.IsNullOrEmpty() && !Force)
                 {
-                    Console.Write($"Are you sure you want to release {GitRepository.Identifier}? (Y/N): ");
+                    Console.Write($"Are you sure you want to release {GitRepository.Identifier}? (y/N): ");
                     var response = Console.ReadLine();
 
-                    if (response.EqualsInvariant("y"))
+                    if (string.Compare(response, "y", true, CultureInfo.InvariantCulture) != 0)
                     {
                         ControlFlow.Fail("Aborted");
                     }
