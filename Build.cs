@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -220,11 +221,11 @@ namespace VirtoCommerce.Build
         protected static AbsolutePath SamplesDirectory => RootDirectory / "samples";
 
         protected AbsolutePath ModulesLocalDirectory => ArtifactsDirectory / ModulesJsonDirectoryName;
-        protected Project WebProject => Solution?.AllProjects.FirstOrDefault(x => x.Name.EndsWith(".Web") || x.Name.EndsWith("VirtoCommerce.Storefront") || x.Name.EndsWith("_build"));
-        protected AbsolutePath ModuleManifestFile => WebProject?.Directory / "module.manifest";
+        protected static Project WebProject => Solution?.AllProjects.FirstOrDefault(x => x.Name.EndsWith(".Web") || x.Name.EndsWith("VirtoCommerce.Storefront") || x.Name.EndsWith("_build"));
+        protected static AbsolutePath ModuleManifestFile => WebProject?.Directory / "module.manifest";
         protected AbsolutePath ModuleIgnoreFile => RootDirectory / "module.ignore";
 
-        protected Microsoft.Build.Evaluation.Project MSBuildProject => WebProject?.GetMSBuildProject();
+        protected static Microsoft.Build.Evaluation.Project MSBuildProject => WebProject?.GetMSBuildProject();
         protected string VersionPrefix => IsTheme ? GetThemeVersion(PackageJsonPath) : MSBuildProject.GetProperty("VersionPrefix")?.EvaluatedValue;
         protected string VersionSuffix => MSBuildProject?.GetProperty("VersionSuffix")?.EvaluatedValue;
         protected string ReleaseVersion => MSBuildProject?.GetProperty("PackageVersion")?.EvaluatedValue ?? WebProject.GetProperty("Version");
@@ -503,10 +504,10 @@ namespace VirtoCommerce.Build
 
                 if (disableApproval.IsNullOrEmpty() && !Force)
                 {
-                    Console.Write($"Are you sure you want to release {GitRepository.Identifier}? (Y/N): ");
+                    Console.Write($"Are you sure you want to release {GitRepository.Identifier}? (y/N): ");
                     var response = Console.ReadLine();
 
-                    if (response.EqualsInvariant("y"))
+                    if (string.Compare(response, "y", true, CultureInfo.InvariantCulture) != 0)
                     {
                         ControlFlow.Fail("Aborted");
                     }
