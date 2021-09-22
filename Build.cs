@@ -221,7 +221,7 @@ namespace VirtoCommerce.Build
         protected static AbsolutePath SamplesDirectory => RootDirectory / "samples";
 
         protected AbsolutePath ModulesLocalDirectory => ArtifactsDirectory / ModulesJsonDirectoryName;
-        protected Project WebProject => Solution?.AllProjects.FirstOrDefault(x => x.Name.EndsWith(".Web") || x.Name.EndsWith("VirtoCommerce.Storefront") || x.Name.EndsWith("_build"));
+        protected static Project WebProject => Solution?.AllProjects.FirstOrDefault(x => x.Name.EndsWith(".Web") || x.Name.EndsWith("VirtoCommerce.Storefront") || x.Name.EndsWith("_build"));
         protected AbsolutePath ModuleManifestFile => WebProject?.Directory / "module.manifest";
         protected AbsolutePath ModuleIgnoreFile => RootDirectory / "module.ignore";
 
