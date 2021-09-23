@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Nuke.Common;
 using Nuke.Common.IO;
@@ -153,7 +154,26 @@ namespace VirtoCommerce.Build
                 }
 
                 await HttpTasks.HttpDownloadFileAsync(platformAssetUrl, platformZip);
+
+                // backup appsettings.json if exists
+                var tempFile = string.Empty;
+                if (File.Exists(AppsettingsPath))
+                {
+                    tempFile = Path.GetTempFileName();
+                    FileSystemTasks.MoveFile(AppsettingsPath, tempFile, FileExistsPolicy.Overwrite);
+                }
+                
                 CompressionTasks.Uncompress(platformZip, RootDirectory);
+
+                // return appsettings.json back
+                if (!string.IsNullOrEmpty(tempFile))
+                {
+                    var bakFileName = new StringBuilder("appsettings.")
+                        .Append(DateTime.Now.ToString("MMddyyHHmmss"))
+                        .Append(".bak");
+                    var destinationSettingsPath = !Force ? AppsettingsPath : Path.Join(Path.GetDirectoryName(AppsettingsPath), bakFileName.ToString());
+                    FileSystemTasks.MoveFile(tempFile, destinationSettingsPath, FileExistsPolicy.Overwrite);
+                }
             }
         }
 
@@ -184,6 +204,7 @@ namespace VirtoCommerce.Build
 
         public Target InstallModules => _ => _
             .After(InstallPlatform)
+            .OnlyWhenDynamic(() => !PlatformParameter)
             .Executes(() =>
             {
                 var packageManifest = PackageManager.FromFile(PackageManifestPath);
