@@ -213,6 +213,9 @@ namespace VirtoCommerce.Build
         [Parameter("Directory containing modules.json")]
         public static string ModulesJsonDirectoryName { get; set; } = "vc-modules";
 
+        [Parameter("Defauld (start) project name")]
+        public static string DefaultProject { get; set; } = ".Web";
+
         // TODO: Convert to a method because GitRepository.FromLocalDirectory() is a heavy method and it should not be used as a property
         protected GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
 
@@ -221,9 +224,10 @@ namespace VirtoCommerce.Build
         protected static AbsolutePath SamplesDirectory => RootDirectory / "samples";
 
         protected AbsolutePath ModulesLocalDirectory => ArtifactsDirectory / ModulesJsonDirectoryName;
-        protected static Project WebProject => Solution?.AllProjects.FirstOrDefault(x => x.Name.EndsWith(".Web") || x.Name.EndsWith("VirtoCommerce.Storefront") || x.Name.EndsWith("_build"));
+        protected static Project WebProject => Solution?.AllProjects.FirstOrDefault(x => x.Name.EndsWith(DefaultProject) || x.Name.EndsWith("VirtoCommerce.Storefront") || x.Name.EndsWith("_build"));
         protected static AbsolutePath ModuleManifestFile => WebProject?.Directory / "module.manifest";
         protected AbsolutePath ModuleIgnoreFile => RootDirectory / "module.ignore";
+        protected static AbsolutePath WebDirectory => WebProject?.Directory;
 
         protected static Microsoft.Build.Evaluation.Project MSBuildProject => WebProject?.GetMSBuildProject();
         protected string VersionPrefix => IsTheme ? GetThemeVersion(PackageJsonPath) : MSBuildProject.GetProperty("VersionPrefix")?.EvaluatedValue;
