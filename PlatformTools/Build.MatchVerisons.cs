@@ -23,76 +23,119 @@ namespace VirtoCommerce.Build
 
                 foreach (var project in allProjects)
                 {
-                    var msBuildProject = project.GetMSBuildProject();
-
-                    // get all VirtoCommerce references
-                    var packagesInfo = msBuildProject.Items
-                        .Where(x => x.ItemType == "PackageReference"
-                            && (x.EvaluatedInclude.StartsWith("VirtoCommerce.Platform.") || _moduleNameRegEx.IsMatch(x.EvaluatedInclude)))
-                        .Select(x =>
-                        {
-                            var versionMetadata = x.Metadata.FirstOrDefault(x => x.Name == "Version");
-                            if (versionMetadata == null)
-                            {
-                                return null;
-                            }
-
-                            var name = x.EvaluatedInclude;
-
-                            return new PackageItem
-                            {
-                                Name = name,
-                                Version = versionMetadata.EvaluatedValue,
-                                ProjectName = project.Name,
-                                IsPlatformPackage = name.StartsWith("VirtoCommerce.Platform.")
-                            };
-                        })
-                        .Where(x => x != null);
-
+                    var packagesInfo = GetProjectPackages(project);
                     allPackages.AddRange(packagesInfo);
                 }
 
                 var errors = new List<string>();
 
-                // check match between manifest platform version and platform packages
-                var platformErrors = allPackages
-                    .Where(package => package.IsPlatformPackage
-                        && SemanticVersion.Parse(package.Version) != SemanticVersion.Parse(ModuleManifest.PlatformVersion))
-                    .Select(x =>
-                        $"Mismatched platform dependency version found. Platform version: {ModuleManifest.PlatformVersion}, Platform package name: {x.Name}, platform package version: {x.Version}, project name: {x.ProjectName}");
-
+                var platformErrors = ValdatePlatformVersion(allPackages);
                 errors.AddRange(platformErrors);
 
-                if (ModuleManifest.Dependencies != null)
-                {
-                    // check dependencies for module packages versions mismatch
-                    foreach (var dependency in ModuleManifest.Dependencies)
-                    {
-                        var dependencyVersionErrors = allPackages
-                            .Where(package => !package.IsPlatformPackage
-                                && HasNameMatch(package.Name, dependency.Id)
-                                && SemanticVersion.Parse(package.Version) != SemanticVersion.Parse(dependency.Version))
-                            .Select(package =>
-                                $"Mismatched dependency version found. Dependency: {dependency.Id}, version: {dependency.Version}, Project package version: {package.Version}, project name: {package.ProjectName}");
+                var dependencyVerionErrors = ValidateModuleDependenciesVersions(allPackages);
+                errors.AddRange(dependencyVerionErrors);
 
-                        errors.AddRange(dependencyVersionErrors);
-                    }
-
-                    // check project packages for missed dependency in manifest
-                    foreach (var packageGroup in allPackages.Where(x => !x.IsPlatformPackage).GroupBy(x => x.Name))
-                    {
-                        if (!ModuleManifest.Dependencies.Any(dependency => HasNameMatch(packageGroup.Key, dependency.Id)))
-                        {
-                            errors.Add($"Dependency in module.manifest is missing. Package name: {packageGroup.Key}");
-                        }
-                    }
-                }
+                var missedDependenciesErrors = ValidateForMissedDependencies(allPackages);
+                errors.AddRange(missedDependenciesErrors);
 
                 if (errors.Any())
                 {
                     ControlFlow.Fail(errors.Join(Environment.NewLine));
                 }
             });
+
+        /// <summary>
+        /// Get list of VirtoCommerce packages (platform and module)
+        /// </summary>
+        private IEnumerable<PackageItem> GetProjectPackages(Project project)
+        {
+            var msBuildProject = project.GetMSBuildProject();
+
+            // find all VirtoCommerce references
+            return msBuildProject.Items
+                .Where(x => x.ItemType == "PackageReference"
+                    && (x.EvaluatedInclude.StartsWith("VirtoCommerce.Platform.") || _moduleNameRegEx.IsMatch(x.EvaluatedInclude)))
+                .Select(x =>
+                {
+                    var versionMetadata = x.Metadata.FirstOrDefault(x => x.Name == "Version");
+                    if (versionMetadata == null)
+                    {
+                        return null;
+                    }
+
+                    var name = x.EvaluatedInclude;
+
+                    return new PackageItem
+                    {
+                        Name = name,
+                        Version = versionMetadata.EvaluatedValue,
+                        ProjectName = project.Name,
+                        IsPlatformPackage = name.StartsWith("VirtoCommerce.Platform.")
+                    };
+                })
+                .Where(x => x != null);
+        }
+
+        /// <summary>
+        /// Check match between manifest platform version and platform packages
+        /// </summary>
+        private IEnumerable<string> ValdatePlatformVersion(IEnumerable<PackageItem> packages)
+        {
+            return packages
+                .Where(package => package.IsPlatformPackage && SemanticVersion.Parse(package.Version) != SemanticVersion.Parse(ModuleManifest.PlatformVersion))
+                .Select(x =>
+                        $"Mismatched platform dependency version found. Platform version: {ModuleManifest.PlatformVersion}, Platform package name: {x.Name}, platform package version: {x.Version}, project name: {x.ProjectName}");
+        }
+
+        /// <summary>
+        /// Check dependencies for module packages versions mismatch
+        /// </summary>
+        private IEnumerable<string> ValidateModuleDependenciesVersions(IEnumerable<PackageItem> packages)
+        {
+            var result = new List<string>();
+
+            if (ModuleManifest.Dependencies.IsNullOrEmpty())
+            {
+                return result;
+            }
+
+            foreach (var dependency in ModuleManifest.Dependencies)
+            {
+                var errors = packages
+                    .Where(package => !package.IsPlatformPackage
+                        && HasNameMatch(package.Name, dependency.Id)
+                        && SemanticVersion.Parse(package.Version) != SemanticVersion.Parse(dependency.Version))
+                    .Select(package =>
+                        $"Mismatched dependency version found. Dependency: {dependency.Id}, version: {dependency.Version}, Project package version: {package.Version}, project name: {package.ProjectName}");
+
+                result.AddRange(errors);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Check project packages for missed dependency in manifest
+        /// </summary>
+        private IEnumerable<string> ValidateForMissedDependencies(IEnumerable<PackageItem> packages)
+        {
+            var result = new List<string>();
+
+            if (ModuleManifest.Dependencies.IsNullOrEmpty())
+            {
+                return result;
+            }
+
+            foreach (var packageGroup in packages.Where(x => !x.IsPlatformPackage).GroupBy(x => x.Name))
+            {
+                if (!ModuleManifest.Dependencies.Any(dependency => HasNameMatch(packageGroup.Key, dependency.Id)))
+                {
+                    result.Add($"Dependency in module.manifest is missing. Package name: {packageGroup.Key}");
+                }
+            }
+
+            return result;
+        }
 
         private bool HasNameMatch(string packageName, string dependencyName)
         {
