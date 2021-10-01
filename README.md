@@ -105,6 +105,12 @@ Target with name 'help' does not exist. Available targets are:
   - WebPackBuild
 ```
 
+To get help for the specific target:
+```console
+
+vc-build help NameOfTheTarget
+
+```
 
 ## Usage examples
 Below you can see how the specific target could be used

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -212,6 +213,9 @@ namespace VirtoCommerce.Build
         [Parameter("Directory containing modules.json")]
         public static string ModulesJsonDirectoryName { get; set; } = "vc-modules";
 
+        [Parameter("Defauld (start) project name")]
+        public static string DefaultProject { get; set; } = ".Web";
+
         // TODO: Convert to a method because GitRepository.FromLocalDirectory() is a heavy method and it should not be used as a property
         protected GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
 
@@ -220,11 +224,12 @@ namespace VirtoCommerce.Build
         protected static AbsolutePath SamplesDirectory => RootDirectory / "samples";
 
         protected AbsolutePath ModulesLocalDirectory => ArtifactsDirectory / ModulesJsonDirectoryName;
-        protected Project WebProject => Solution?.AllProjects.FirstOrDefault(x => x.Name.EndsWith(".Web") && !x.Path.ToString().Contains("samples") || x.Name.EndsWith("VirtoCommerce.Storefront") || x.Name.EndsWith("_build"));
-        protected AbsolutePath ModuleManifestFile => WebProject?.Directory / "module.manifest";
+        protected static Project WebProject => Solution?.AllProjects.FirstOrDefault(x => x.Name.EndsWith(DefaultProject) || x.Name.EndsWith("VirtoCommerce.Storefront") || x.Name.EndsWith("_build"));
+        protected static AbsolutePath ModuleManifestFile => WebProject?.Directory / "module.manifest";
         protected AbsolutePath ModuleIgnoreFile => RootDirectory / "module.ignore";
+        protected static AbsolutePath WebDirectory => WebProject?.Directory;
 
-        protected Microsoft.Build.Evaluation.Project MSBuildProject => WebProject?.GetMSBuildProject();
+        protected static Microsoft.Build.Evaluation.Project MSBuildProject => WebProject?.GetMSBuildProject();
         protected string VersionPrefix => IsTheme ? GetThemeVersion(PackageJsonPath) : MSBuildProject.GetProperty("VersionPrefix")?.EvaluatedValue;
         protected string VersionSuffix => MSBuildProject?.GetProperty("VersionSuffix")?.EvaluatedValue;
         protected string ReleaseVersion => MSBuildProject?.GetProperty("PackageVersion")?.EvaluatedValue ?? WebProject.GetProperty("Version");
@@ -267,7 +272,7 @@ namespace VirtoCommerce.Build
             .Before(Restore)
             .Executes(() =>
             {
-                var searchPattern = new string[] { "**/bin", "**/obj" };
+                var searchPattern = new [] { "**/bin", "**/obj" };
                 if (DirectoryExists(SourceDirectory))
                 {
                     SourceDirectory.GlobDirectories(searchPattern).ForEach(DeleteDirectory);
@@ -503,10 +508,10 @@ namespace VirtoCommerce.Build
 
                 if (disableApproval.IsNullOrEmpty() && !Force)
                 {
-                    Console.Write($"Are you sure you want to release {GitRepository.Identifier}? (Y/N): ");
+                    Console.Write($"Are you sure you want to release {GitRepository.Identifier}? (y/N): ");
                     var response = Console.ReadLine();
 
-                    if (response.EqualsInvariant("y"))
+                    if (string.Compare(response, "y", true, CultureInfo.InvariantCulture) != 0)
                     {
                         ControlFlow.Fail("Aborted");
                     }
