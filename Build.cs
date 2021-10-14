@@ -511,7 +511,7 @@ namespace VirtoCommerce.Build
                     Console.Write($"Are you sure you want to release {GitRepository.Identifier}? (y/N): ");
                     var response = Console.ReadLine();
 
-                    if (string.Compare(response, "y", true, CultureInfo.InvariantCulture) != 0)
+                    if (string.Equal(response, "y", StringComparison.OrdinalIgnoreCase))
                     {
                         ControlFlow.Fail("Aborted");
                     }
