@@ -22,9 +22,6 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        dotnet: [ '3.1.x', '6.0.x' ]
     env:
       SONAR_TOKEN: ${{secrets.SONAR_TOKEN}}
       GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
@@ -39,7 +36,7 @@ jobs:
           
       - uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: ${{ matrix.dotnet }}
+          dotnet-version: '6.0.x'
 
       - name: Install VirtoCommerce.GlobalTool
         uses: VirtoCommerce/vc-github-actions/setup-vcbuild@master
