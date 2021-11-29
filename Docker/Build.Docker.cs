@@ -1,6 +1,3 @@
-using System;
-using System.Text;
-using Microsoft.Build.Utilities;
 using Nuke.Common;
 using Nuke.Common.Tools.Docker;
 using Nuke.Common.Utilities;
