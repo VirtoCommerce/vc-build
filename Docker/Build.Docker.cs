@@ -14,7 +14,7 @@ namespace VirtoCommerce.Build
         [Parameter("Docker Image Tag")] public static string DockerImageTag { get; set; }
         [Parameter("Dockerfile Path")] public static string DockerfilePath { get; set; }
 
-        private static string DockerImageFullName => DockerImageTag.IsNullOrEmpty() ? DockerImageName : DockerImageName.Append($":{DockerImageTag}");
+        private static string DockerImageFullName => string.IsNullOrEmpty(DockerImageTag) ? DockerImageName : DockerImageName.Append($":{DockerImageTag}");
 
         Target DockerLogin => _ => _
         .Before(BuildImage, PushImage)
