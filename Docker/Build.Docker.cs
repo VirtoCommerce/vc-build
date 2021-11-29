@@ -35,6 +35,7 @@ namespace VirtoCommerce.Build
             var settings = new DockerBuildSettings()
                 .SetFile(DockerfilePath)
                 .SetPull(true)
+                .SetPath(RootDirectory)
                 .SetTag(DockerImageFullName);
             DockerTasks.DockerBuild(settings);
         });
