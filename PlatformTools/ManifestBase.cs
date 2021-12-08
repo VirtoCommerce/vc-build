@@ -1,4 +1,3 @@
-using System;
 namespace VirtoCommerce.Build.PlatformTools
 {
     public class ManifestBase
