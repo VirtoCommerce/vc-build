@@ -23,7 +23,6 @@ namespace VirtoCommerce.Build.PlatformTools.Azure
 
         public Task InnerInstall(AzureUniversalPackages artifacts)
         {
-            var azureClient = new AzureDevClient(artifacts.Organization, token);
             foreach (var module in artifacts.Modules)
             {
                 var moduleDestination = Path.Join(discoveryPath, module.Id);
@@ -43,7 +42,7 @@ namespace VirtoCommerce.Build.PlatformTools.Azure
                     { "AZURE_DEVOPS_EXT_PAT", token }
                 };
                 var azPath = ToolPathResolver.GetPathExecutable("az");
-                var process = ProcessTasks.StartProcess(toolPath: azPath, arguments: argsBuilder.ToString(), environmentVariables: envVariables).AssertZeroExitCode();
+                ProcessTasks.StartProcess(toolPath: azPath, arguments: argsBuilder.ToString(), environmentVariables: envVariables).AssertZeroExitCode();
 
                 var zipPath = Directory.GetFiles(moduleDestination).FirstOrDefault(p => p.EndsWith(".zip"));
                 if (zipPath == null)

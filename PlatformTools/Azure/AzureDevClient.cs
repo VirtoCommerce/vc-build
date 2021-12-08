@@ -31,7 +31,6 @@ namespace VirtoCommerce.Build.PlatformTools.Azure
         {
             var client = await _connection.GetClientAsync<BuildHttpClient>();
             var build = await client.GetLatestBuildAsync(project, definitionName, branch);
-            var artifacts = await client.GetArtifactsAsync(project, build.Id);
             var result = await client.GetArtifactContentZipAsync(project, build.Id, "backend");
             return result;
         }
