@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using VirtoCommerce.Build.PlatformTools;
 
 namespace VirtoCommerce.Build.PlatformTools.Azure
 {

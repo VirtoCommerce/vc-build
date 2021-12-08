@@ -7,7 +7,7 @@ using PlatformTools;
 
 namespace VirtoCommerce.Build.PlatformTools.Azure
 {
-    internal class AzurePipelineArtifactsModuleInstaller: IModulesInstaller
+    internal class AzurePipelineArtifactsModuleInstaller : IModulesInstaller
     {
         readonly string token;
         readonly string discoveryPath;

@@ -1,4 +1,3 @@
-using System;
 using PlatformTools;
 
 namespace VirtoCommerce.Build.PlatformTools.Azure

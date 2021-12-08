@@ -1,9 +1,7 @@
 using System;
 using System.IO;
-using System.Net;
 using System.Net.Http;
 using System.Text;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using VirtoCommerce.Platform.Core.Modularity;
 using VirtoCommerce.Platform.Modules.External;
