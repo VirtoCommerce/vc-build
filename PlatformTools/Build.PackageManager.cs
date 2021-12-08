@@ -34,6 +34,9 @@ namespace VirtoCommerce.Build
         [Parameter("Install the platform", Name = "Platform")]
         public static bool PlatformParameter { get; set; }
 
+        [Parameter("Azure PAT")]
+        public static string AzureToken { get; set; }
+
         public Target Init => _ => _
             .Executes(async () =>
             {
