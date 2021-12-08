@@ -18,7 +18,8 @@ namespace VirtoCommerce.Build.PlatformTools
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             JObject jo = JObject.Load(reader);
-            switch (jo[nameof(ModuleSource.Name)].Value<string>())
+            var sourceName = jo[nameof(ModuleSource.Name)].Value<string>();
+            switch (sourceName)
             {
                 case nameof(GithubReleases):
                     return JsonConvert.DeserializeObject<GithubReleases>(jo.ToString(), SpecifiedSubclassConversion);
@@ -27,7 +28,7 @@ namespace VirtoCommerce.Build.PlatformTools
                 case nameof(AzureUniversalPackages):
                     return JsonConvert.DeserializeObject<AzureUniversalPackages>(jo.ToString(), SpecifiedSubclassConversion);
                 default:
-                    throw new Exception();
+                    throw new TypeLoadException($"Unknown module source: {sourceName}");
             }
             throw new NotImplementedException();
         }

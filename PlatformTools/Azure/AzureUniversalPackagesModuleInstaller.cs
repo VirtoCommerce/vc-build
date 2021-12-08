@@ -46,7 +46,7 @@ namespace VirtoCommerce.Build.PlatformTools.Azure
                 var azPath = ToolPathResolver.GetPathExecutable("az");
                 var process = ProcessTasks.StartProcess(toolPath: azPath, arguments: argsBuilder.ToString(), environmentVariables: envVariables).AssertZeroExitCode();
 
-                var zipPath = Directory.GetFiles(moduleDestination).Where(p => p.EndsWith(".zip")).FirstOrDefault();
+                var zipPath = Directory.GetFiles(moduleDestination).FirstOrDefault(p => p.EndsWith(".zip"));
                 if (zipPath == null)
                     ControlFlow.Fail($"Can't download {module.Id} - {module.Version}");
 

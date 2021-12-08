@@ -12,16 +12,6 @@ namespace PlatformTools
 
         public static ManifestBase CreatePackageManifest(string platformVersion, string platformAssetUrl)
         {
-            //var manifest = new PackageManifest
-            //{
-            //    PlatformVersion = platformVersion,
-            //    PlatformAssetUrl = platformAssetUrl,
-            //    Modules = new List<ModuleItem>(),
-            //    ModuleSources = new List<string>(),
-            //};
-
-            //manifest.ModuleSources.Add(_defaultModuleManifest);
-            //var source = new GithubReleases { ModuleSources = new List<string>().Add(_defaultModuleManifest) }
             var manifest = new MixedPackageManifest
             {
                 ManifestVersion = "2.0",
