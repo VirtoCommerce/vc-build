@@ -1,10 +1,10 @@
 using System.Collections.Generic;
+using VirtoCommerce.Build.PlatformTools;
 
 namespace PlatformTools
 {
-    internal class PackageManifest
+    internal class PackageManifest: ManifestBase
     {
-        public string PlatformVersion { get; set; }
         public string PlatformAssetUrl { get; set; }
         public List<string> ModuleSources { get; set; }
         public List<ModuleItem> Modules { get; set; }
