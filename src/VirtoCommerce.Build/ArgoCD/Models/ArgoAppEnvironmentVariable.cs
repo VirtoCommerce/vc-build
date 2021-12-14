@@ -1,4 +1,3 @@
-using System;
 namespace VirtoCommerce.Build.ArgoCD.Models
 {
     public class ArgoAppEnvironmentVariable

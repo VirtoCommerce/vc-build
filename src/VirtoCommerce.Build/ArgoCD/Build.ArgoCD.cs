@@ -4,14 +4,10 @@ using System.Collections.Generic;
 using System.Net.Http;
 using ArgoCD.Client;
 using Nuke.Common;
-using Nuke.Common.IO;
-using Nuke.Common.Tooling;
 using VirtoCommerce.Build.ArgoCD.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
-using Newtonsoft.Json.Serialization;
 using System.Linq;
-using ArgoCD.Client.Models;
 
 namespace VirtoCommerce.Build
 {
@@ -20,19 +16,15 @@ namespace VirtoCommerce.Build
         [Parameter("ArgoCD Server")] public string ArgoServer { get; set; }
         [Parameter("ArgoCD Token")] public string ArgoToken { get; set; }
         [Parameter("Config file for Argo Application Service")] public string ArgoConfigFile { get; set; }
-        Target ArgoUpdateEnvironment => _ => _
+        public Target ArgoUpdateEnvironment => _ => _
         .Executes(async () =>
         {
-            if (string.IsNullOrEmpty(ArgoToken))
-            {
-                ArgoToken = Environment.GetEnvironmentVariable("ARGO_TOKEN");
-            }
             var deserializer = new DeserializerBuilder().WithNamingConvention(UnderscoredNamingConvention.Instance).Build();
             var rawYaml = await File.ReadAllTextAsync(ArgoConfigFile);
             var apps = deserializer.Deserialize<IList<ArgoApplication>>(rawYaml);
             var httpClient = new HttpClient();
             var argoServerUrl = new Uri(ArgoServer);
-            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", ArgoToken);
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", ArgoToken ?? Environment.GetEnvironmentVariable("ARGO_TOKEN"));
             httpClient.BaseAddress = argoServerUrl;
             var argoClient = new ArgoCDClient(httpClient, true);
             argoClient.BaseUri = argoServerUrl;
