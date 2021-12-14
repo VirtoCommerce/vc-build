@@ -303,7 +303,8 @@ namespace VirtoCommerce.Build
                     var installer = GetModuleInstaller(moduleSource);
                     await installer.Install(moduleSource);
                 }
-                var zipFiles = ((AbsolutePath)discoveryPath).GlobFiles("**/*.zip");
+                AbsolutePath absoluteDiscoveryPath = (AbsolutePath)Path.GetFullPath(discoveryPath);
+                var zipFiles = absoluteDiscoveryPath.GlobFiles("**/*.zip");
                 zipFiles.ForEach(f => FileSystemTasks.DeleteFile(f));
                 localModuleCatalog.Reload();
             });

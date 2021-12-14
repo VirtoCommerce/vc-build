@@ -23,7 +23,8 @@ namespace PlatformTools
                         ModuleSources = new List<string>
                         {
                             _defaultModuleManifest
-                        }
+                        },
+                        Modules = new List<ModuleItem>()                        
                     }
                 }
             };
