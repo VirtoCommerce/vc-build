@@ -171,6 +171,7 @@ namespace VirtoCommerce.Build
                 }
                 
                 CompressionTasks.Uncompress(platformZip, RootDirectory);
+                FileSystemTasks.DeleteFile(platformZip);
 
                 // return appsettings.json back
                 if (!string.IsNullOrEmpty(tempFile))
@@ -302,7 +303,8 @@ namespace VirtoCommerce.Build
                     var installer = GetModuleInstaller(moduleSource);
                     await installer.Install(moduleSource);
                 }
-
+                var zipFiles = ((AbsolutePath)discoveryPath).GlobFiles("**/*.zip");
+                zipFiles.ForEach(f => FileSystemTasks.DeleteFile(f));
                 localModuleCatalog.Reload();
             });
 
