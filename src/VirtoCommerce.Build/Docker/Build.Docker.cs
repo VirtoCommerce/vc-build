@@ -49,7 +49,7 @@ namespace VirtoCommerce.Build
             DockerTasks.DockerImagePush(settings);
         });
 
-        Target BuildAndPush => _ => _
+        public Target BuildAndPush => _ => _
         .DependsOn(DockerLogin, BuildImage, PushImage);
     }
 }
