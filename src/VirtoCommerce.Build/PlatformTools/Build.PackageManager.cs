@@ -351,8 +351,9 @@ namespace VirtoCommerce.Build
 
                         if (externalModule == null)
                         {
-                            ControlFlow.Fail($"No module {module.Id} found");
-                            throw new ArgumentNullException(); // for sonarQube
+                            var errorMessage = $"No module {module.Id} found";
+                            ControlFlow.Fail(errorMessage);
+                            throw new ArgumentNullException(errorMessage); // for sonarQube
                         }
 
                         module.Version = externalModule.Version.ToString();

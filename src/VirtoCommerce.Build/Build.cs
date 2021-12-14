@@ -321,13 +321,6 @@ namespace VirtoCommerce.Build
                             .SetSymbolPackageFormat(DotNetSymbolPackageFormat.snupkg)
                             .SetOutputDirectory(ArtifactsDirectory)
                             .SetVersion(ReleaseVersion);
-                            //.When(IsModule, modulePackSettings => modulePackSettings
-                            //    .SetPackageLicenseUrl(ModuleManifest.LicenseUrl)
-                            //    .SetPackageProjectUrl(ModuleManifest.ProjectUrl)
-                            //    .SetPackageIconUrl(ModuleManifest.IconUrl)
-                            //    .SetPackageRequireLicenseAcceptance(false)
-                            //    .SetDescription(ModuleManifest.Description)
-                            //    .SetCopyright(ModuleManifest.Copyright));
                DotNetPack(settings);
            });
 
