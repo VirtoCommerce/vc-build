@@ -48,7 +48,7 @@ jobs:
       - name: Install VirtoCommerce.GlobalTool
         run: |
           dotnet pack
-          dotnet tool install -g VirtoCommerce.GlobalTool --add-source ./artifacts
+          dotnet tool install -g VirtoCommerce.GlobalTool --add-source ./src/VirtoCommerce.Build/artifacts
 
       - name: Install dotnet-sonarscanner
         run: dotnet tool install --global dotnet-sonarscanner
