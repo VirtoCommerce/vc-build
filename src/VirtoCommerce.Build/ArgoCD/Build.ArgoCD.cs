@@ -16,7 +16,7 @@ namespace VirtoCommerce.Build
         [Parameter("ArgoCD Server")] public string ArgoServer { get; set; }
         [Parameter("ArgoCD Token")] public string ArgoToken { get; set; }
         [Parameter("Config file for Argo Application Service")] public string ArgoConfigFile { get; set; }
-        public Target ArgoUpdateEnvironment => _ => _
+        public Target ArgoUpdateApplication => _ => _
         .Executes(async () =>
         {
             var deserializer = new DeserializerBuilder().WithNamingConvention(UnderscoredNamingConvention.Instance).Build();
