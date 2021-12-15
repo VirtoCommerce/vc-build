@@ -22,6 +22,7 @@ using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.Git;
 using Nuke.Common.Tools.Npm;
+using Nuke.Common.Tools.SonarScanner;
 using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
 using Octokit;
@@ -866,56 +867,31 @@ namespace VirtoCommerce.Build
         public Target SonarQubeStart => _ => _
             .Executes(() =>
             {
-                var dotNetPath = ToolPathResolver.TryGetEnvironmentExecutable("DOTNET_EXE") ?? ToolPathResolver.GetPathExecutable("dotnet");
                 Logger.Normal($"IsServerBuild = {IsServerBuild}");
-                var branchName = string.IsNullOrEmpty(SonarBranchName) ? GitRepository.Branch : SonarBranchName;
-                var branchNameTarget = string.IsNullOrEmpty(SonarBranchNameTarget) ? GitRepository.Branch : SonarBranchNameTarget;
+                var branchName = SonarBranchName ?? GitRepository.Branch;
+                var branchNameTarget = SonarBranchNameTarget ?? GitRepository.Branch;
                 Logger.Info($"BRANCH_NAME = {branchName}");
-                var prBaseParam = "";
-                var prBranchParam = "";
-                var prKeyParam = "";
-                var prRepoParam = "";
-                var prProviderParam = "";
-                var branchNameParam = "";
-                var branchTargetParam = "";
 
-                if (PullRequest)
-                {
-                    var prBase = string.IsNullOrEmpty(SonarPRBase) ? Environment.GetEnvironmentVariable("CHANGE_TARGET") : SonarPRBase;
-                    prBaseParam = $"/d:sonar.pullrequest.base=\"{prBase}\"";
-
-                    var changeTitle = string.IsNullOrEmpty(SonarPRBranch) ? Environment.GetEnvironmentVariable("CHANGE_TITLE") : SonarPRBranch;
-                    prBranchParam = $"/d:sonar.pullrequest.branch=\"{changeTitle}\"";
-
-                    var prNumber = string.IsNullOrEmpty(SonarPRNumber) ? Environment.GetEnvironmentVariable("CHANGE_ID") : SonarPRNumber;
-                    prKeyParam = $"/d:sonar.pullrequest.key={prNumber}";
-
-                    prRepoParam = string.IsNullOrEmpty(SonarGithubRepo) ? "" : $"/d:sonar.pullrequest.github.repository={SonarGithubRepo}";
-
-                    prProviderParam = string.IsNullOrEmpty(SonarPRProvider) ? "" : $"/d:sonar.pullrequest.provider={SonarPRProvider}";
-                }
-                else
-                {
-                    branchNameParam = $"/d:\"sonar.branch.name={branchName}\"";
-                    branchTargetParam = _sonarLongLiveBranches.Contains(branchName) ? "" : $"/d:\"sonar.branch.target={branchNameTarget}\"";
-                }
-
-                var projectNameParam = $"/n:\"{RepoName}\"";
-                var projectKeyParam = $"/k:\"{RepoOrg}_{RepoName}\"";
-                var projectVersionParam = $"/v:\"{ReleaseVersion}\"";
-                var hostParam = $"/d:sonar.host.url={SonarUrl}";
-                var tokenParam = $"/d:sonar.login={SonarAuthToken}";
-                var sonarReportPathParam = $"/d:sonar.coverageReportPaths={CoverageReportPath}";
-                var organizationParam = $"/o:{SonarOrg}";
-
-                var dotNetArguments = $"sonarscanner begin {organizationParam} {branchNameParam} {branchTargetParam} {projectKeyParam} {projectNameParam} {projectVersionParam} {hostParam} {tokenParam} {sonarReportPathParam} {prBaseParam} {prBranchParam} {prKeyParam} {prRepoParam} {prProviderParam}";
-
-                Logger.Normal($"Execute: {dotNetArguments.Replace(SonarAuthToken, "{IS HIDDEN}")}");
-
-                var process = ProcessTasks.StartProcess(dotNetPath, dotNetArguments, customLogger: SonarLogger, logInvocation: false)
-                    .AssertWaitForExit().AssertZeroExitCode();
-
-                process.Output.EnsureOnlyStd();
+                SonarScannerTasks.SonarScannerBegin(c => c.SetName(RepoName)
+                    .SetProjectKey($"{RepoOrg}_{RepoName}")
+                    .SetVersion(ReleaseVersion)
+                    .SetServer(SonarUrl)
+                    .SetLogin(SonarAuthToken)
+                    .SetProcessArgumentConfigurator(args => args.Add($"/d:sonar.coverageReportPaths={CoverageReportPath}")
+                        .Add($"/o:{SonarOrg}"))
+                    .When(PullRequest, cc => cc
+                        .SetPullRequestBase(SonarPRBase ?? Environment.GetEnvironmentVariable("CHANGE_TARGET"))
+                        .SetPullRequestBranch(SonarPRBranch ?? Environment.GetEnvironmentVariable("CHANGE_TITLE"))
+                        .SetPullRequestKey(SonarPRNumber ?? Environment.GetEnvironmentVariable("CHANGE_ID"))
+                        .When(!string.IsNullOrEmpty(SonarGithubRepo), ccc => ccc
+                            .SetProcessArgumentConfigurator(args => args.Add($"/d:sonar.pullrequest.github.repository={SonarGithubRepo}")))
+                        .When(!string.IsNullOrEmpty(SonarPRProvider), ccc => ccc
+                            .SetProcessArgumentConfigurator(args => args.Add($"/d:sonar.pullrequest.provider={SonarPRProvider}"))))
+                    .When(!PullRequest, cc => cc
+                        .SetBranchName(branchName)
+                        .When(_sonarLongLiveBranches.Contains(branchName), ccc => ccc
+                            .SetProcessArgumentConfigurator(args => args.Add($"/d:\"sonar.branch.target={branchNameTarget}\""))))
+                );
             });
 
         public Target SonarQubeEnd => _ => _
@@ -927,12 +903,10 @@ namespace VirtoCommerce.Build
                 var tokenParam = $"/d:sonar.login={SonarAuthToken}";
                 var dotNetArguments = $"sonarscanner end {tokenParam}";
 
-                Logger.Normal($"Execute: {dotNetArguments.Replace(SonarAuthToken, "{IS HIDDEN}")}");
+                var output = SonarScannerTasks.SonarScannerEnd(c => c
+                    .SetLogin(SonarAuthToken));
 
-                var process = ProcessTasks.StartProcess(dotNetPath, dotNetArguments, customLogger: SonarLogger, logInvocation: false)
-                    .AssertWaitForExit().AssertZeroExitCode();
-
-                var errors = process.Output.Where(o => !o.Text.Contains(@"The 'files' list in config file 'tsconfig.json' is empty") && o.Type == OutputType.Err).ToList();
+                var errors = output.Where(o => !o.Text.Contains(@"The 'files' list in config file 'tsconfig.json' is empty") && o.Type == OutputType.Err).ToList();
 
                 if (errors.Any())
                 {
