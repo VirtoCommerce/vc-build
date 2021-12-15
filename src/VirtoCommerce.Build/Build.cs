@@ -56,6 +56,7 @@ namespace VirtoCommerce.Build
 
         public static int Main(string[] args)
         {
+            Environment.SetEnvironmentVariable("NUKE_TELEMETRY_OPTOUT", "1");
             if (args[0]?.ToLowerInvariant() == "help")
             {
                 if (args.Length == 2)
