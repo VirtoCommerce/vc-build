@@ -872,7 +872,9 @@ namespace VirtoCommerce.Build
                 var branchNameTarget = SonarBranchNameTarget ?? GitRepository.Branch;
                 Logger.Info($"BRANCH_NAME = {branchName}");
 
-                SonarScannerTasks.SonarScannerBegin(c => c.SetName(RepoName)
+                SonarScannerTasks.SonarScannerBegin(c => c
+                    .SetFramework("net5.0")
+                    .SetName(RepoName)
                     .SetProjectKey($"{RepoOrg}_{RepoName}")
                     .SetVersion(ReleaseVersion)
                     .SetServer(SonarUrl)
