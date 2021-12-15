@@ -11,7 +11,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
-using Microsoft.Build.Locator;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Nuke.Common;
@@ -55,8 +54,6 @@ namespace VirtoCommerce.Build
 
         public static int Main(string[] args)
         {
-            MSBuildLocator.RegisterDefaults();
-
             if (args[0]?.ToLowerInvariant() == "help")
             {
                 if (args.Length == 2)
