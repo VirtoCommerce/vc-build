@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.29613.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VirtoCommerce.Build", "src\VirtoCommerce.Build\VirtoCommerce.Build.csproj", "{826FB1DE-BF4F-4314-AA00-FC5BC7627D7F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArgoCD.Client", "src\ArgoCD.Client\ArgoCD.Client.csproj", "{2AD3EE22-AE26-4885-AB9F-5A5279A60FA1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArgoCD.Client", "src\ArgoCD.Client\ArgoCD.Client.csproj", "{1895FCF7-C5E2-42BD-8559-9526B43B919D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{826FB1DE-BF4F-4314-AA00-FC5BC7627D7F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{826FB1DE-BF4F-4314-AA00-FC5BC7627D7F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{826FB1DE-BF4F-4314-AA00-FC5BC7627D7F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2AD3EE22-AE26-4885-AB9F-5A5279A60FA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2AD3EE22-AE26-4885-AB9F-5A5279A60FA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2AD3EE22-AE26-4885-AB9F-5A5279A60FA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2AD3EE22-AE26-4885-AB9F-5A5279A60FA1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1895FCF7-C5E2-42BD-8559-9526B43B919D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1895FCF7-C5E2-42BD-8559-9526B43B919D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1895FCF7-C5E2-42BD-8559-9526B43B919D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1895FCF7-C5E2-42BD-8559-9526B43B919D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

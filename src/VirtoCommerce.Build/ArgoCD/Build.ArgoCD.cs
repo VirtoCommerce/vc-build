@@ -40,7 +40,7 @@ namespace VirtoCommerce.Build
                 argoAppParams = argoAppParams.Except(parametersToDelete).ToList();
                 var configs = app.Config.Select(c => new ConfigHelmParameter(c.Key, c.Value));
                 var secretConfigs = app.SecretConfig.Select(c => new SecretConfigHelmParameter(c.Key, c.Value));
-                var secrets = secretConfigs.DistinctBy(s => s.Value).Select(s => new SecretHelmParameter(s.Value));
+                var secrets = secretConfigs.Select(s => s.Value).Distinct().Select(s => new SecretHelmParameter(s));
                 argoAppParams = argoAppParams.Concat(configs)
                     .Concat(secretConfigs)
                     .Concat(secrets)
