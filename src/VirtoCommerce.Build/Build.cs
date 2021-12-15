@@ -26,6 +26,7 @@ using Nuke.Common.Tools.SonarScanner;
 using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
 using Octokit;
+using VirtoCommerce.Build.Utils;
 using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.Platform.Core.Modularity;
 using static Nuke.Common.IO.FileSystemTasks;
@@ -83,12 +84,17 @@ namespace VirtoCommerce.Build
                 {
                     var solutionFileName = Path.GetFileName(solutions.First());
                     Logger.Info($"Solution found: {solutionFileName}");
-                    File.WriteAllText(".nuke", solutionFileName);
+                    CreateDotNuke(RootDirectory, solutionFileName);
                 }
                 else if (solutions.Length < 1)
                 {
-                    File.CreateText(Path.Combine(Directory.GetCurrentDirectory(), ".nuke")).Close();
+                    CreateDotNuke(Directory.GetCurrentDirectory());
                 }
+            }
+            else
+            {
+                var nukeFile = nukeFiles.First();
+                ConvertDotNukeFile(nukeFile);
             }
 
             if (ClearTempBeforeExit)
@@ -98,6 +104,22 @@ namespace VirtoCommerce.Build
 
             var exitCode = Execute<Build>(x => x.Compile);
             return _exitCode ?? exitCode;
+        }
+
+        private static void ConvertDotNukeFile(string path)
+        {
+            var directory = Path.GetDirectoryName(path);
+            var solutionPath = File.ReadLines(path).FirstOrDefault();
+            FileSystemTasks.DeleteFile(path);
+            CreateDotNuke(directory, solutionPath);
+        }
+        private static void CreateDotNuke(string path, string solutionPath = "")
+        {
+            var dotnukeDir = Path.Join(path, ".nuke");
+            var paramsFilePath = Path.Join(dotnukeDir, "parameters.json");
+            EnsureExistingDirectory(dotnukeDir);
+            var parameters = new NukeParameters { Solution = solutionPath };
+            SerializationTasks.JsonSerializeToFile(parameters, paramsFilePath);
         }
 
         [Solution]
@@ -879,8 +901,8 @@ namespace VirtoCommerce.Build
                     .SetVersion(ReleaseVersion)
                     .SetServer(SonarUrl)
                     .SetLogin(SonarAuthToken)
-                    .SetProcessArgumentConfigurator(args => args.Add($"/d:sonar.coverageReportPaths={CoverageReportPath}")
-                        .Add($"/o:{SonarOrg}"))
+                    .SetOrganization(SonarOrg)
+                    .SetGenericCoveragePaths(CoverageReportPath)
                     .When(PullRequest, cc => cc
                         .SetPullRequestBase(SonarPRBase ?? Environment.GetEnvironmentVariable("CHANGE_TARGET"))
                         .SetPullRequestBranch(SonarPRBranch ?? Environment.GetEnvironmentVariable("CHANGE_TITLE"))
