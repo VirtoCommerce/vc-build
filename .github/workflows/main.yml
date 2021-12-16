@@ -39,9 +39,6 @@ jobs:
           dotnet pack
           dotnet tool install -g VirtoCommerce.GlobalTool --add-source ./src/VirtoCommerce.Build/artifacts
 
-      - name: Install dotnet-sonarscanner
-        run: dotnet tool install --global dotnet-sonarscanner
-
       - name: Get changelog
         id: changelog
         uses: VirtoCommerce/vc-github-actions/changelog-generator@master
