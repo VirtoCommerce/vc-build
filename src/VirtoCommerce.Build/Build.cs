@@ -939,8 +939,8 @@ namespace VirtoCommerce.Build
                 //{
                 //    toolPath = ToolPathResolver.GetPackageExecutable(packageId: "dotnet-sonarscanner",
                 //        packageExecutable: scriptName, framework: framework);
-                //    var chmodTool = ToolResolver.GetPathTool("chmod");
-                //    chmodTool.Invoke($"+X {toolPath}").EnsureOnlyStd();
+                var chmodTool = ToolResolver.GetPathTool("chmod");
+                chmodTool.Invoke($"+X /home/runner/.dotnet/tools/.store/virtocommerce.globaltool/2.2.0/virtocommerce.globaltool/2.2.0/tools/net5.0/any/dotnet-sonarscanner/netcoreapp3.0/any/sonar-scanner-4.4.0.2170/bin/sonar-scanner").EnsureOnlyStd();
                 //}
                 var output = SonarScannerTasks.SonarScannerEnd(c => c
                     .SetFramework(framework)
