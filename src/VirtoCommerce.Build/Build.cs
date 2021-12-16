@@ -927,10 +927,6 @@ namespace VirtoCommerce.Build
             .DependsOn(Compile)
             .Executes(() =>
             {
-                var dotNetPath = ToolPathResolver.TryGetEnvironmentExecutable("DOTNET_EXE") ?? ToolPathResolver.GetPathExecutable("dotnet");
-                var tokenParam = $"/d:sonar.login={SonarAuthToken}";
-                var dotNetArguments = $"sonarscanner end {tokenParam}";
-
                 var output = SonarScannerTasks.SonarScannerEnd(c => c
                     .SetFramework("net5.0")
                     .SetLogin(SonarAuthToken));
