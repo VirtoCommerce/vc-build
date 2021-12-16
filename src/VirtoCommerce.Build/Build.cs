@@ -95,7 +95,7 @@ namespace VirtoCommerce.Build
                     CreateDotNuke(Directory.GetCurrentDirectory());
                 }
             }
-            else
+            else if(nukeFiles.Any())
             {
                 var nukeFile = nukeFiles.First();
                 ConvertDotNukeFile(nukeFile);
