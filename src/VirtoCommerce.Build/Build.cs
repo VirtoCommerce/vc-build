@@ -932,7 +932,7 @@ namespace VirtoCommerce.Build
             .DependsOn(Compile)
             .Executes(() =>
             {
-                var framework = "net5.0";
+                var framework = "netcoreapp3.0";
                 var output = SonarScannerTasks.SonarScannerEnd(c => c
                     .SetFramework(framework)
                     .SetLogin(SonarAuthToken));
