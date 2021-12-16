@@ -79,7 +79,7 @@ namespace VirtoCommerce.Build
 
             var nukeFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), ".nuke");
 
-            if (!nukeFiles.Any())
+            if (!nukeFiles.Any() && !Directory.Exists(RootDirectory / ".nuke"))
             {
                 Logger.Info("No .nuke file found!");
                 var solutions = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.sln");
@@ -932,6 +932,7 @@ namespace VirtoCommerce.Build
                 var dotNetArguments = $"sonarscanner end {tokenParam}";
 
                 var output = SonarScannerTasks.SonarScannerEnd(c => c
+                    .SetFramework("net5.0")
                     .SetLogin(SonarAuthToken));
 
                 var errors = output.Where(o => !o.Text.Contains(@"The 'files' list in config file 'tsconfig.json' is empty") && o.Type == OutputType.Err).ToList();
