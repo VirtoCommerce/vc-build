@@ -911,10 +911,15 @@ namespace VirtoCommerce.Build
                         .SetPullRequestBase(SonarPRBase ?? Environment.GetEnvironmentVariable("CHANGE_TARGET"))
                         .SetPullRequestBranch(SonarPRBranch ?? Environment.GetEnvironmentVariable("CHANGE_TITLE"))
                         .SetPullRequestKey(SonarPRNumber ?? Environment.GetEnvironmentVariable("CHANGE_ID"))
-                        .When(!string.IsNullOrEmpty(SonarPRProvider), ccc => ccc
-                            .SetProcessArgumentConfigurator(args => args.Add($"/d:sonar.pullrequest.provider={SonarPRProvider}")))
-                        .When(!string.IsNullOrEmpty(SonarGithubRepo), ccc => ccc
-                            .SetProcessArgumentConfigurator(args => args.Add("/d:sonar.pullrequest.github.repository={value}", SonarGithubRepo))))
+                        .SetProcessArgumentConfigurator(args =>
+                        {
+                            var result = args;
+                            if (!string.IsNullOrEmpty(SonarPRProvider))
+                                result = result.Add($"/d:sonar.pullrequest.provider={SonarPRProvider}");
+                            if (!string.IsNullOrEmpty(SonarGithubRepo))
+                                result = result.Add("/d:sonar.pullrequest.github.repository={value}", SonarGithubRepo);
+                            return result;
+                        }))
                     .When(!PullRequest, cc => cc
                         .SetBranchName(branchName)
                         .When(_sonarLongLiveBranches.Contains(branchName), ccc => ccc
@@ -927,9 +932,13 @@ namespace VirtoCommerce.Build
             .DependsOn(Compile)
             .Executes(() =>
             {
+                var framework = "net5.0";
                 var output = SonarScannerTasks.SonarScannerEnd(c => c
-                    .SetFramework("net5.0")
-                    .SetProcessToolPath(SonarScannerTasks.SonarScannerPath)
+                    .SetFramework(framework)
+                    .SetProcessToolPath(ToolPathResolver.GetPackageExecutable(
+                        packageId: "dotnet-sonarscanner|MSBuild.SonarQube.Runner.Tool",
+                        packageExecutable: "SonarScanner.MSBuild.dll|SonarScanner.MSBuild.exe",
+                        framework: framework))
                     .SetLogin(SonarAuthToken));
 
                 var errors = output.Where(o => !o.Text.Contains(@"The 'files' list in config file 'tsconfig.json' is empty") && o.Type == OutputType.Err).ToList();
