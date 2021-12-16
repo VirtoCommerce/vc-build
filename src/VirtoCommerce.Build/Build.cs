@@ -911,7 +911,7 @@ namespace VirtoCommerce.Build
                         .SetPullRequestBase(SonarPRBase ?? Environment.GetEnvironmentVariable("CHANGE_TARGET"))
                         .SetPullRequestBranch(SonarPRBranch ?? Environment.GetEnvironmentVariable("CHANGE_TITLE"))
                         .SetPullRequestKey(SonarPRNumber ?? Environment.GetEnvironmentVariable("CHANGE_ID"))
-                        .When(!string.IsNullOrEmpty(SonarGithubRepo), ccc => cc
+                        .When(!string.IsNullOrEmpty(SonarGithubRepo), ccc => ccc
                             .SetProcessArgumentConfigurator(args => args.Add("/d:sonar.pullrequest.github.repository={value}", SonarGithubRepo)))
                         .When(!string.IsNullOrEmpty(SonarPRProvider), ccc => ccc
                             .SetProcessArgumentConfigurator(args => args.Add($"/d:sonar.pullrequest.provider={SonarPRProvider}"))))
