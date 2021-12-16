@@ -937,9 +937,11 @@ namespace VirtoCommerce.Build
                 {
                     var sonarScannerShPath = ToolPathResolver.GetPackageExecutable(packageId: "dotnet-sonarscanner",
                         packageExecutable: "sonar-scanner", framework: framework);
+                    var sonarScannerShRightPath = Directory.GetParent(sonarScannerShPath)?.Parent?.FullName ?? string.Empty;
+                    FileSystemTasks.MoveFile(sonarScannerShPath, Path.Combine(sonarScannerShRightPath, "sonar-scanner"));
                     Logger.Info($"sonar-scanner path: {sonarScannerShPath}");
                     var chmod = ToolResolver.GetPathTool("chmod");
-                    chmod.Invoke($"+x {sonarScannerShPath}");
+                    chmod.Invoke($"+x {sonarScannerShRightPath}");
                 }
                 var output = SonarScannerTasks.SonarScannerEnd(c => c
                     .SetFramework(framework)
