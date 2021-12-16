@@ -911,10 +911,10 @@ namespace VirtoCommerce.Build
                         .SetPullRequestBase(SonarPRBase ?? Environment.GetEnvironmentVariable("CHANGE_TARGET"))
                         .SetPullRequestBranch(SonarPRBranch ?? Environment.GetEnvironmentVariable("CHANGE_TITLE"))
                         .SetPullRequestKey(SonarPRNumber ?? Environment.GetEnvironmentVariable("CHANGE_ID"))
-                        .When(!string.IsNullOrEmpty(SonarGithubRepo), ccc => ccc
-                            .SetProcessArgumentConfigurator(args => args.Add("/d:sonar.pullrequest.github.repository={value}", SonarGithubRepo)))
                         .When(!string.IsNullOrEmpty(SonarPRProvider), ccc => ccc
-                            .SetProcessArgumentConfigurator(args => args.Add($"/d:sonar.pullrequest.provider={SonarPRProvider}"))))
+                            .SetProcessArgumentConfigurator(args => args.Add($"/d:sonar.pullrequest.provider={SonarPRProvider}")))
+                        .When(!string.IsNullOrEmpty(SonarGithubRepo), ccc => ccc
+                            .SetProcessArgumentConfigurator(args => args.Add("/d:sonar.pullrequest.github.repository={value}", SonarGithubRepo))))
                     .When(!PullRequest, cc => cc
                         .SetBranchName(branchName)
                         .When(_sonarLongLiveBranches.Contains(branchName), ccc => ccc
@@ -929,6 +929,7 @@ namespace VirtoCommerce.Build
             {
                 var output = SonarScannerTasks.SonarScannerEnd(c => c
                     .SetFramework("net5.0")
+                    .SetProcessToolPath(SonarScannerTasks.SonarScannerPath)
                     .SetLogin(SonarAuthToken));
 
                 var errors = output.Where(o => !o.Text.Contains(@"The 'files' list in config file 'tsconfig.json' is empty") && o.Type == OutputType.Err).ToList();
