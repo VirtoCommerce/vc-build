@@ -34,6 +34,7 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using Formatting = Newtonsoft.Json.Formatting;
 using ProductHeaderValue = Octokit.ProductHeaderValue;
 using Project = Nuke.Common.ProjectModel.Project;
+using Microsoft.Build.Locator;
 
 namespace VirtoCommerce.Build
 {
@@ -56,6 +57,8 @@ namespace VirtoCommerce.Build
 
         public static int Main(string[] args)
         {
+            if(!MSBuildLocator.IsRegistered) MSBuildLocator.RegisterDefaults();
+
             Environment.SetEnvironmentVariable("NUKE_TELEMETRY_OPTOUT", "1");
             if (args[0]?.ToLowerInvariant() == "help")
             {
