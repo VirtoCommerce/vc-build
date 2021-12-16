@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
+using Microsoft.Build.Locator;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Nuke.Common;
@@ -34,7 +35,6 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using Formatting = Newtonsoft.Json.Formatting;
 using ProductHeaderValue = Octokit.ProductHeaderValue;
 using Project = Nuke.Common.ProjectModel.Project;
-using Microsoft.Build.Locator;
 
 namespace VirtoCommerce.Build
 {
@@ -911,8 +911,8 @@ namespace VirtoCommerce.Build
                         .SetPullRequestBase(SonarPRBase ?? Environment.GetEnvironmentVariable("CHANGE_TARGET"))
                         .SetPullRequestBranch(SonarPRBranch ?? Environment.GetEnvironmentVariable("CHANGE_TITLE"))
                         .SetPullRequestKey(SonarPRNumber ?? Environment.GetEnvironmentVariable("CHANGE_ID"))
-                        .When(!string.IsNullOrEmpty(SonarGithubRepo), ccc => ccc
-                            .SetProcessArgumentConfigurator(args => args.Add($"/d:sonar.pullrequest.github.repository={SonarGithubRepo}")))
+                        .When(!string.IsNullOrEmpty(SonarGithubRepo), ccc => cc
+                            .SetProcessArgumentConfigurator(args => args.Add($"/d:sonar.pullrequest.github.repository={SonarGithubRepo}", false)))
                         .When(!string.IsNullOrEmpty(SonarPRProvider), ccc => ccc
                             .SetProcessArgumentConfigurator(args => args.Add($"/d:sonar.pullrequest.provider={SonarPRProvider}"))))
                     .When(!PullRequest, cc => cc
