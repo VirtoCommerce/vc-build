@@ -933,15 +933,17 @@ namespace VirtoCommerce.Build
             .Executes(() =>
             {
                 var framework = "net5.0";
+                string toolPath = string.Empty;
                 if (OperatingSystem.IsLinux())
                 {
-                    var toolPath = ToolPathResolver.GetPackageExecutable(packageId: "dotnet-sonarscanner",
+                    toolPath = ToolPathResolver.GetPackageExecutable(packageId: "dotnet-sonarscanner",
                         packageExecutable: "sonar-scanner", framework: framework);
                     var chmodTool = ToolResolver.GetPathTool("chmod");
                     chmodTool.Invoke($"+X {toolPath}").EnsureOnlyStd();
                 }
                 var output = SonarScannerTasks.SonarScannerEnd(c => c
                     .SetFramework(framework)
+                    .When(!string.IsNullOrEmpty(toolPath), _ => c.SetProcessToolPath(toolPath))
                     .SetLogin(SonarAuthToken));
 
                 var errors = output.Where(o => !o.Text.Contains(@"The 'files' list in config file 'tsconfig.json' is empty") && o.Type == OutputType.Err).ToList();
