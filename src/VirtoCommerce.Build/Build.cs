@@ -933,6 +933,13 @@ namespace VirtoCommerce.Build
             .Executes(() =>
             {
                 var framework = "net5.0";
+                if (OperatingSystem.IsLinux())
+                {
+                    var toolPath = ToolPathResolver.GetPackageExecutable(packageId: "dotnet-sonarscanner",
+                        packageExecutable: "sonar-scanner", framework: framework);
+                    var chmodTool = ToolResolver.GetPathTool("chmod");
+                    chmodTool.Invoke($"+X {toolPath}").EnsureOnlyStd();
+                }
                 var output = SonarScannerTasks.SonarScannerEnd(c => c
                     .SetFramework(framework)
                     .SetLogin(SonarAuthToken));
