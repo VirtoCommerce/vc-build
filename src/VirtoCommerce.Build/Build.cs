@@ -935,10 +935,6 @@ namespace VirtoCommerce.Build
                 var framework = "net5.0";
                 var output = SonarScannerTasks.SonarScannerEnd(c => c
                     .SetFramework(framework)
-                    .SetProcessToolPath(ToolPathResolver.GetPackageExecutable(
-                        packageId: "dotnet-sonarscanner|MSBuild.SonarQube.Runner.Tool",
-                        packageExecutable: "SonarScanner.MSBuild.dll|SonarScanner.MSBuild.exe",
-                        framework: framework))
                     .SetLogin(SonarAuthToken));
 
                 var errors = output.Where(o => !o.Text.Contains(@"The 'files' list in config file 'tsconfig.json' is empty") && o.Type == OutputType.Err).ToList();
