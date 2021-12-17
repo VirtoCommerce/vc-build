@@ -280,21 +280,6 @@ namespace VirtoCommerce.Build
         protected GitRepository ModulesRepository => GitRepository.FromUrl(ModulesJsonRepoUrl);
 
         protected bool IsModule => FileExists(ModuleManifestFile);
-
-        private void SonarLogger(OutputType type, string text)
-        {
-            switch (type)
-            {
-                case OutputType.Err:
-                    Logger.Error(text);
-                    break;
-
-                case OutputType.Std:
-                    Logger.Info(text);
-                    break;
-            }
-        }
-
         public Target Clean => _ => _
             .Before(Restore)
             .Executes(() =>
@@ -948,16 +933,10 @@ namespace VirtoCommerce.Build
                     var chmod = ToolResolver.GetPathTool("chmod");
                     chmod.Invoke($"+x {sonarScriptDestinationPath}");
                 }
-                var output = SonarScannerTasks.SonarScannerEnd(c => c
+
+                SonarScannerTasks.SonarScannerEnd(c => c
                     .SetFramework(framework)
                     .SetLogin(SonarAuthToken));
-
-                //var errors = output.Where(o => !o.Text.Contains(@"The 'files' list in config file 'tsconfig.json' is empty") && o.Type == OutputType.Err).ToList();
-
-                //if (errors.Any())
-                //{
-                //    ControlFlow.Fail(errors.Select(e => e.Text).Join(Environment.NewLine));
-                //}
             });
 
         public Target StartAnalyzer => _ => _
