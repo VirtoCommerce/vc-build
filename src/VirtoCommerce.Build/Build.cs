@@ -898,17 +898,30 @@ namespace VirtoCommerce.Build
                         .SetPullRequestKey(SonarPRNumber ?? Environment.GetEnvironmentVariable("CHANGE_ID"))
                         .SetProcessArgumentConfigurator(args =>
                         {
-                            var result = args;
                             if (!string.IsNullOrEmpty(SonarPRProvider))
-                                result = result.Add($"/d:sonar.pullrequest.provider={SonarPRProvider}");
+                            {
+                                args = args.Add($"/d:sonar.pullrequest.provider={SonarPRProvider}");
+                            }
+
                             if (!string.IsNullOrEmpty(SonarGithubRepo))
-                                result = result.Add("/d:sonar.pullrequest.github.repository={value}", SonarGithubRepo);
-                            return result;
+                            {
+                                args = args.Add("/d:sonar.pullrequest.github.repository={value}", SonarGithubRepo);
+                            }
+
+                            return args;
                         }))
                     .When(!PullRequest, cc => cc
                         .SetBranchName(branchName)
-                        .When(_sonarLongLiveBranches.Contains(branchName), ccc => ccc
-                            .SetProcessArgumentConfigurator(args => args.Add($"/d:\"sonar.branch.target={branchNameTarget}\""))))
+                        .SetProcessArgumentConfigurator(args =>
+                        {
+                            if (_sonarLongLiveBranches.Contains(branchName))
+                            {
+                                args = args.Add($"/d:\"sonar.branch.target={branchNameTarget}\"");
+                            }
+
+                            return args;
+                        })
+                    )
                 );
             });
 
