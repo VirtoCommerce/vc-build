@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
+using Microsoft.Build.Locator;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Nuke.Common;
@@ -22,9 +23,11 @@ using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.Git;
 using Nuke.Common.Tools.Npm;
+using Nuke.Common.Tools.SonarScanner;
 using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
 using Octokit;
+using VirtoCommerce.Build.Utils;
 using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.Platform.Core.Modularity;
 using static Nuke.Common.IO.FileSystemTasks;
@@ -54,6 +57,9 @@ namespace VirtoCommerce.Build
 
         public static int Main(string[] args)
         {
+            if(!MSBuildLocator.IsRegistered) MSBuildLocator.RegisterDefaults();
+
+            Environment.SetEnvironmentVariable("NUKE_TELEMETRY_OPTOUT", "1");
             if (args[0]?.ToLowerInvariant() == "help")
             {
                 if (args.Length == 2)
@@ -73,7 +79,7 @@ namespace VirtoCommerce.Build
 
             var nukeFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), ".nuke");
 
-            if (!nukeFiles.Any())
+            if (!nukeFiles.Any() && !Directory.Exists(RootDirectory / ".nuke"))
             {
                 Logger.Info("No .nuke file found!");
                 var solutions = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.sln");
@@ -82,12 +88,17 @@ namespace VirtoCommerce.Build
                 {
                     var solutionFileName = Path.GetFileName(solutions.First());
                     Logger.Info($"Solution found: {solutionFileName}");
-                    File.WriteAllText(".nuke", solutionFileName);
+                    CreateDotNuke(RootDirectory, solutionFileName);
                 }
                 else if (solutions.Length < 1)
                 {
-                    File.CreateText(Path.Combine(Directory.GetCurrentDirectory(), ".nuke")).Close();
+                    CreateDotNuke(Directory.GetCurrentDirectory());
                 }
+            }
+            else if(nukeFiles.Any())
+            {
+                var nukeFile = nukeFiles.First();
+                ConvertDotNukeFile(nukeFile);
             }
 
             if (ClearTempBeforeExit)
@@ -97,6 +108,22 @@ namespace VirtoCommerce.Build
 
             var exitCode = Execute<Build>(x => x.Compile);
             return _exitCode ?? exitCode;
+        }
+
+        private static void ConvertDotNukeFile(string path)
+        {
+            var directory = Path.GetDirectoryName(path);
+            var solutionPath = File.ReadLines(path).FirstOrDefault();
+            FileSystemTasks.DeleteFile(path);
+            CreateDotNuke(directory, solutionPath);
+        }
+        private static void CreateDotNuke(string path, string solutionPath = "")
+        {
+            var dotnukeDir = Path.Join(path, ".nuke");
+            var paramsFilePath = Path.Join(dotnukeDir, "parameters.json");
+            EnsureExistingDirectory(dotnukeDir);
+            var parameters = new NukeParameters { Solution = solutionPath };
+            SerializationTasks.JsonSerializeToFile(parameters, paramsFilePath);
         }
 
         [Solution]
@@ -253,21 +280,6 @@ namespace VirtoCommerce.Build
         protected GitRepository ModulesRepository => GitRepository.FromUrl(ModulesJsonRepoUrl);
 
         protected bool IsModule => FileExists(ModuleManifestFile);
-
-        private void SonarLogger(OutputType type, string text)
-        {
-            switch (type)
-            {
-                case OutputType.Err:
-                    Logger.Error(text);
-                    break;
-
-                case OutputType.Std:
-                    Logger.Info(text);
-                    break;
-            }
-        }
-
         public Target Clean => _ => _
             .Before(Restore)
             .Executes(() =>
@@ -866,56 +878,38 @@ namespace VirtoCommerce.Build
         public Target SonarQubeStart => _ => _
             .Executes(() =>
             {
-                var dotNetPath = ToolPathResolver.TryGetEnvironmentExecutable("DOTNET_EXE") ?? ToolPathResolver.GetPathExecutable("dotnet");
                 Logger.Normal($"IsServerBuild = {IsServerBuild}");
-                var branchName = string.IsNullOrEmpty(SonarBranchName) ? GitRepository.Branch : SonarBranchName;
-                var branchNameTarget = string.IsNullOrEmpty(SonarBranchNameTarget) ? GitRepository.Branch : SonarBranchNameTarget;
+                var branchName = SonarBranchName ?? GitRepository.Branch;
+                var branchNameTarget = SonarBranchNameTarget ?? GitRepository.Branch;
                 Logger.Info($"BRANCH_NAME = {branchName}");
-                var prBaseParam = "";
-                var prBranchParam = "";
-                var prKeyParam = "";
-                var prRepoParam = "";
-                var prProviderParam = "";
-                var branchNameParam = "";
-                var branchTargetParam = "";
 
-                if (PullRequest)
-                {
-                    var prBase = string.IsNullOrEmpty(SonarPRBase) ? Environment.GetEnvironmentVariable("CHANGE_TARGET") : SonarPRBase;
-                    prBaseParam = $"/d:sonar.pullrequest.base=\"{prBase}\"";
-
-                    var changeTitle = string.IsNullOrEmpty(SonarPRBranch) ? Environment.GetEnvironmentVariable("CHANGE_TITLE") : SonarPRBranch;
-                    prBranchParam = $"/d:sonar.pullrequest.branch=\"{changeTitle}\"";
-
-                    var prNumber = string.IsNullOrEmpty(SonarPRNumber) ? Environment.GetEnvironmentVariable("CHANGE_ID") : SonarPRNumber;
-                    prKeyParam = $"/d:sonar.pullrequest.key={prNumber}";
-
-                    prRepoParam = string.IsNullOrEmpty(SonarGithubRepo) ? "" : $"/d:sonar.pullrequest.github.repository={SonarGithubRepo}";
-
-                    prProviderParam = string.IsNullOrEmpty(SonarPRProvider) ? "" : $"/d:sonar.pullrequest.provider={SonarPRProvider}";
-                }
-                else
-                {
-                    branchNameParam = $"/d:\"sonar.branch.name={branchName}\"";
-                    branchTargetParam = _sonarLongLiveBranches.Contains(branchName) ? "" : $"/d:\"sonar.branch.target={branchNameTarget}\"";
-                }
-
-                var projectNameParam = $"/n:\"{RepoName}\"";
-                var projectKeyParam = $"/k:\"{RepoOrg}_{RepoName}\"";
-                var projectVersionParam = $"/v:\"{ReleaseVersion}\"";
-                var hostParam = $"/d:sonar.host.url={SonarUrl}";
-                var tokenParam = $"/d:sonar.login={SonarAuthToken}";
-                var sonarReportPathParam = $"/d:sonar.coverageReportPaths={CoverageReportPath}";
-                var organizationParam = $"/o:{SonarOrg}";
-
-                var dotNetArguments = $"sonarscanner begin {organizationParam} {branchNameParam} {branchTargetParam} {projectKeyParam} {projectNameParam} {projectVersionParam} {hostParam} {tokenParam} {sonarReportPathParam} {prBaseParam} {prBranchParam} {prKeyParam} {prRepoParam} {prProviderParam}";
-
-                Logger.Normal($"Execute: {dotNetArguments.Replace(SonarAuthToken, "{IS HIDDEN}")}");
-
-                var process = ProcessTasks.StartProcess(dotNetPath, dotNetArguments, customLogger: SonarLogger, logInvocation: false)
-                    .AssertWaitForExit().AssertZeroExitCode();
-
-                process.Output.EnsureOnlyStd();
+                SonarScannerTasks.SonarScannerBegin(c => c
+                    .SetFramework("net5.0")
+                    .SetName(RepoName)
+                    .SetProjectKey($"{RepoOrg}_{RepoName}")
+                    .SetVersion(ReleaseVersion)
+                    .SetServer(SonarUrl)
+                    .SetLogin(SonarAuthToken)
+                    .SetOrganization(SonarOrg)
+                    .SetGenericCoveragePaths(CoverageReportPath)
+                    .When(PullRequest, cc => cc
+                        .SetPullRequestBase(SonarPRBase ?? Environment.GetEnvironmentVariable("CHANGE_TARGET"))
+                        .SetPullRequestBranch(SonarPRBranch ?? Environment.GetEnvironmentVariable("CHANGE_TITLE"))
+                        .SetPullRequestKey(SonarPRNumber ?? Environment.GetEnvironmentVariable("CHANGE_ID"))
+                        .SetProcessArgumentConfigurator(args =>
+                        {
+                            var result = args;
+                            if (!string.IsNullOrEmpty(SonarPRProvider))
+                                result = result.Add($"/d:sonar.pullrequest.provider={SonarPRProvider}");
+                            if (!string.IsNullOrEmpty(SonarGithubRepo))
+                                result = result.Add("/d:sonar.pullrequest.github.repository={value}", SonarGithubRepo);
+                            return result;
+                        }))
+                    .When(!PullRequest, cc => cc
+                        .SetBranchName(branchName)
+                        .When(_sonarLongLiveBranches.Contains(branchName), ccc => ccc
+                            .SetProcessArgumentConfigurator(args => args.Add($"/d:\"sonar.branch.target={branchNameTarget}\""))))
+                );
             });
 
         public Target SonarQubeEnd => _ => _
@@ -923,21 +917,26 @@ namespace VirtoCommerce.Build
             .DependsOn(Compile)
             .Executes(() =>
             {
-                var dotNetPath = ToolPathResolver.TryGetEnvironmentExecutable("DOTNET_EXE") ?? ToolPathResolver.GetPathExecutable("dotnet");
-                var tokenParam = $"/d:sonar.login={SonarAuthToken}";
-                var dotNetArguments = $"sonarscanner end {tokenParam}";
-
-                Logger.Normal($"Execute: {dotNetArguments.Replace(SonarAuthToken, "{IS HIDDEN}")}");
-
-                var process = ProcessTasks.StartProcess(dotNetPath, dotNetArguments, customLogger: SonarLogger, logInvocation: false)
-                    .AssertWaitForExit().AssertZeroExitCode();
-
-                var errors = process.Output.Where(o => !o.Text.Contains(@"The 'files' list in config file 'tsconfig.json' is empty") && o.Type == OutputType.Err).ToList();
-
-                if (errors.Any())
+                const string framework = "net5.0";
+                if (OperatingSystem.IsLinux())
                 {
-                    ControlFlow.Fail(errors.Select(e => e.Text).Join(Environment.NewLine));
+                    const string sonarScript = "sonar-scanner";
+                    var sonarScannerShPath = ToolPathResolver.GetPackageExecutable(packageId: "dotnet-sonarscanner",
+                        packageExecutable: sonarScript, framework: framework).Replace("netcoreapp2.0", "net5.0");
+                    var sonarScannerShRightPath = Directory.GetParent(sonarScannerShPath)?.Parent?.FullName ?? string.Empty;
+                    var tmpFile = TemporaryDirectory / sonarScript;
+                    FileSystemTasks.MoveFile(sonarScannerShPath, tmpFile);
+                    FileSystemTasks.DeleteDirectory(sonarScannerShRightPath);
+                    var sonarScriptDestinationPath = Path.Combine(sonarScannerShRightPath, sonarScript);
+                    FileSystemTasks.MoveFile(tmpFile, sonarScriptDestinationPath);
+                    Logger.Info($"{sonarScript} path: {sonarScannerShPath}");
+                    var chmod = ToolResolver.GetPathTool("chmod");
+                    chmod.Invoke($"+x {sonarScriptDestinationPath}");
                 }
+
+                SonarScannerTasks.SonarScannerEnd(c => c
+                    .SetFramework(framework)
+                    .SetLogin(SonarAuthToken));
             });
 
         public Target StartAnalyzer => _ => _
