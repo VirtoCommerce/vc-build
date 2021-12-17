@@ -914,7 +914,7 @@ namespace VirtoCommerce.Build
                         .SetBranchName(branchName)
                         .SetProcessArgumentConfigurator(args =>
                         {
-                            if (_sonarLongLiveBranches.Contains(branchName))
+                            if (!_sonarLongLiveBranches.Contains(branchName))
                             {
                                 args = args.Add($"/d:\"sonar.branch.target={branchNameTarget}\"");
                             }
