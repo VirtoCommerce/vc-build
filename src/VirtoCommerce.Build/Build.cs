@@ -77,12 +77,14 @@ namespace VirtoCommerce.Build
                 Environment.Exit(0);
             }
 
-            var nukeFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), ".nuke");
+            var currentDirectory = Directory.GetCurrentDirectory();
 
-            if (!nukeFiles.Any() && !Directory.Exists(RootDirectory / ".nuke"))
+            var nukeFiles = Directory.GetFiles(currentDirectory, ".nuke");
+
+            if (!nukeFiles.Any() && !Directory.Exists(Path.Join(currentDirectory, ".nuke")))
             {
                 Logger.Info("No .nuke file found!");
-                var solutions = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.sln");
+                var solutions = Directory.GetFiles(currentDirectory, "*.sln");
 
                 if (solutions.Length == 1)
                 {
@@ -92,7 +94,7 @@ namespace VirtoCommerce.Build
                 }
                 else if (solutions.Length < 1)
                 {
-                    CreateDotNuke(Directory.GetCurrentDirectory());
+                    CreateDotNuke(currentDirectory);
                 }
             }
             else if(nukeFiles.Any())
