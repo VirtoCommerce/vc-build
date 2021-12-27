@@ -245,6 +245,8 @@ namespace VirtoCommerce.Build
         [Parameter("Defauld (start) project name")]
         public static string DefaultProject { get; set; } = ".Web";
 
+        [Parameter("Main branch")] public static string MainBranch { get; set; } = "master";
+
         // TODO: Convert to a method because GitRepository.FromLocalDirectory() is a heavy method and it should not be used as a property
         protected GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
 
@@ -550,10 +552,10 @@ namespace VirtoCommerce.Build
             {
                 var currentBranch = GitTasks.GitCurrentBranch();
                 //Master
-                GitTasks.Git("checkout master");
+                GitTasks.Git($"checkout {MainBranch}");
                 GitTasks.Git("pull");
                 GitTasks.Git($"merge {currentBranch}");
-                GitTasks.Git("push origin master");
+                GitTasks.Git($"push origin {MainBranch}");
                 //Dev
                 GitTasks.Git("checkout dev");
                 GitTasks.Git($"merge {currentBranch}");
@@ -585,7 +587,7 @@ namespace VirtoCommerce.Build
         public Target StartHotfix => _ => _
             .Executes(() =>
             {
-                GitTasks.Git("checkout master");
+                GitTasks.Git($"checkout {MainBranch}");
                 GitTasks.Git("pull");
                 IncrementVersionPatch();
                 var hotfixBranchName = $"hotfix/{CustomVersionPrefix}";
@@ -605,10 +607,10 @@ namespace VirtoCommerce.Build
                 //workaround for run from sources
                 var currentBranch = GitTasks.GitCurrentBranch();
                 //Master
-                GitTasks.Git("checkout master");
+                GitTasks.Git($"checkout {MainBranch}");
                 GitTasks.Git($"merge {currentBranch}");
                 GitTasks.Git($"tag {VersionPrefix}");
-                GitTasks.Git("push origin master");
+                GitTasks.Git($"push origin {MainBranch}");
                 //remove hotfix branch
                 GitTasks.Git($"branch -d {currentBranch}");
                 GitTasks.Git($"push origin --delete {currentBranch}");
