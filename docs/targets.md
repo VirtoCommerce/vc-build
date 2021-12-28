@@ -170,3 +170,43 @@ Removes .tmp directory
 vc-build ClearTemp 
 ```
 :::
+:::
+## DockerLogin
+Executes "docker login"
+Gets parameters: DockerRegistryUrl, DockerUsername, DockerPassword
+```console
+vc-build dockerlogin -DockerRegistryUrl https://myregistry.com -DockerUsername user -DockerPassword 12345
+```
+:::
+:::
+## BuildImage
+Builds docker image
+Gets parameters: DockerfilePath, DockerImageFullName
+```console
+vc-build buildimage -DockerfilePath ./dockerfile -DockerImageFullName myimage:dev
+```
+:::
+:::
+## PushImage
+Pushes docker image to the remote registry
+Gets parameters: DockerImageFullName
+```console
+vc-build PushImage -DockerImageFullName myimage:dev
+```
+:::
+:::
+## BuildAndPush
+Builds and pushes docker image
+Gets parameters: DockerRegistryUrl, DockerUsername, DockerPassword, DockerfilePath, DockerImageFullName
+```console
+vc-build BuildAndPush -DockerRegistryUrl https://myregistry.com -DockerUsername user -DockerPassword 12345 -DockerfilePath ./dockerfile -DockerImageFullName myimage:dev
+```
+:::
+:::
+## ArgoUpdateApplication
+Updates Applications in ArgoCD
+Gets parameters: ArgoServer, ArgoToken(or as an alternative - ARGO_TOKEN environment variable), ArgoConfigFile
+```console
+vc-build ArgoUpdateApplication -ArgoConfigFile ./environments.yml -ArgoServer https://argoserver.com
+```
+:::
