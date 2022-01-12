@@ -24,18 +24,7 @@ namespace VirtoCommerce.Build
             .Executes(() =>
             {
                 var configuration = AppSettings.GetConfiguration(RootDirectory, AppsettingsPath);
-
-                var moduleCatalogOptions = new LocalStorageModuleCatalogOptions
-                {
-                    DiscoveryPath = DiscoveryPath.EmptyToNull() ?? configuration.GetModulesDiscoveryPath(),
-                    ProbingPath = ProbingPath,
-                };
-
-                var options = Options.Create(moduleCatalogOptions);
-                var logger = new LoggerFactory().CreateLogger<LocalStorageModuleCatalog>();
-                var distributedLock = new NoLockDistributedLockProvider(new LoggerFactory().CreateLogger<NoLockDistributedLockProvider>());
-                var moduleCatalog = new LocalStorageModuleCatalog(options, distributedLock, logger);
-                moduleCatalog.Load();
+                LocalModuleCatalog.GetCatalog(DiscoveryPath.EmptyToNull() ?? configuration.GetModulesDiscoveryPath(), ProbingPath);
             });
     }
 }
