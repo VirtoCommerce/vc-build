@@ -1,11 +1,6 @@
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Nuke.Common;
 using PlatformTools;
 using VirtoCommerce.Platform.Core.Common;
-using VirtoCommerce.Platform.Core.Modularity;
-using VirtoCommerce.Platform.DistributedLock;
-using VirtoCommerce.Platform.Modules;
 
 namespace VirtoCommerce.Build
 {

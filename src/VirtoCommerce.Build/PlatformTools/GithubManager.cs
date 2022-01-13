@@ -41,7 +41,7 @@ namespace PlatformTools
                 PageCount = 1,
             });
 
-            var release = releases.OrderByDescending(r => r.TagName.Trim()).FirstOrDefault();
+            var release = releases.OrderByDescending(r => new Version(r.TagName.Trim())).FirstOrDefault();
             return release;
         }
 
