@@ -39,7 +39,8 @@ namespace VirtoCommerce.Build
                 "storefront.image.repository",
                 "storefront.image.tag",
                 "ingress.config",
-                "ingress.storefront_config",
+                "ingress.hostname",
+                "ingress.storefront_hostname",
                 "theme.url"
               };
               httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", ArgoToken ?? Environment.GetEnvironmentVariable("ARGO_TOKEN"));
@@ -62,12 +63,15 @@ namespace VirtoCommerce.Build
                       new ImageTagHelmParameter(app.Platform.ImageTag),
                       new TierHelmParameter(app.Platform.Tier),
                       new ImageRepositoryHelmParameter(app.Platform.ImageRepository),
-                      new IngressHelmParameter(app.Platform.Ingress),
+                      new IngressConfigHelmParameter(app.Ingress.Config),
+                      new IngressHostnameHelmParameter(app.Ingress.Hostname),
+                      new StorefrontIngressHostnameHelmParameter(app.Ingress.StorefrontHostname),
                       new StorefrontImageTagHelmParameter(app.Storefront.ImageTag),
                       new StorefrontImageRepositoryHelmParameter(app.Storefront.ImageRepository),
-                      new StorefrontIngressHelmParameter(app.Storefront.Ingress),
+                      new StorefrontIngressHostnameHelmParameter(app.Storefront.Ingress),
                       new ThemeUrlHelmParameter(app.Storefront.ThemeUrl)
                   }.Where(p => p.Value != null);
+
                   argoAppParams = argoAppParams.Concat(configs)
                       .Concat(secretConfigs)
                       .Concat(secrets)
