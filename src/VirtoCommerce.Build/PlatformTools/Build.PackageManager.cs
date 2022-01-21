@@ -11,6 +11,7 @@ using Nuke.Common.Utilities.Collections;
 using PlatformTools;
 using VirtoCommerce.Build.PlatformTools;
 using VirtoCommerce.Build.PlatformTools.Azure;
+using VirtoCommerce.Build.PlatformTools.Github;
 using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.Platform.Core.Modularity;
 
@@ -97,7 +98,7 @@ namespace VirtoCommerce.Build
                         }
                     }
                 }
-                else if (!PlatformParameter && !modules.Any())
+                else if (!PlatformParameter && !modules.Any() && !FileSystemTasks.FileExists((AbsolutePath)Path.GetFullPath(PackageManifestPath)))
                 {
                     Logger.Info("Add group: commerce");
                     var commerceModules = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.Groups.Contains("commerce")).Select(m => new ModuleItem(m.Id, m.Version.ToString()));
@@ -313,6 +314,7 @@ namespace VirtoCommerce.Build
         {
             AzurePipelineArtifacts s => new AzurePipelineArtifactsModuleInstaller(AzureToken, GetDiscoveryPath()),
             AzureUniversalPackages s => new AzureUniversalPackagesModuleInstaller(AzureToken, GetDiscoveryPath()),
+            GithubPrivateRepos s => new GithubPrivateModulesInstaller(GitHubToken, GetDiscoveryPath()),
             _ => throw new NotImplementedException("Unknown module source"),
         };
 

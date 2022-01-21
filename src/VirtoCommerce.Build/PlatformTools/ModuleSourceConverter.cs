@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using VirtoCommerce.Build.PlatformTools.Azure;
+using VirtoCommerce.Build.PlatformTools.Github;
 
 namespace VirtoCommerce.Build.PlatformTools
 {
@@ -27,6 +28,8 @@ namespace VirtoCommerce.Build.PlatformTools
                     return JsonConvert.DeserializeObject<AzurePipelineArtifacts>(jo.ToString(), SpecifiedSubclassConversion);
                 case nameof(AzureUniversalPackages):
                     return JsonConvert.DeserializeObject<AzureUniversalPackages>(jo.ToString(), SpecifiedSubclassConversion);
+                case nameof(GithubPrivateRepos):
+                    return JsonConvert.DeserializeObject<GithubPrivateRepos>(jo.ToString(), SpecifiedSubclassConversion);
                 default:
                     throw new TypeLoadException($"Unknown module source: {sourceName}");
             }
