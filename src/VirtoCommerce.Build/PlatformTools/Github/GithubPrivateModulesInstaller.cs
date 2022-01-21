@@ -29,10 +29,6 @@ namespace VirtoCommerce.Build.PlatformTools.Github
 
         protected async Task InnerInstall(GithubPrivateRepos source)
         {
-            var webClient = new WebClient();
-            webClient.Headers.Add(HttpRequestHeader.UserAgent, "VirtoCommerce.Build");
-            webClient.Headers.Add(HttpRequestHeader.Authorization, $"Bearer {_token}");
-            webClient.Headers.Add(HttpRequestHeader.Accept, "application/octet-stream");
             foreach (var module in source.Modules)
             {
                 var moduleDestination = Path.Join(_discoveryPath, module.Id);
@@ -53,7 +49,6 @@ namespace VirtoCommerce.Build.PlatformTools.Github
                     continue ;
                 }
                 Logger.Info($"Downloading {module.Id}");
-                //webClient.DownloadFile(new Uri(asset.Url), Path.GetFullPath(zipDestination));
                 await HttpTasks.HttpDownloadFileAsync(asset.Url, zipDestination, c =>
                 {
                     c.Headers.Add(HttpRequestHeader.UserAgent, "VirtoCommerce.Build");
