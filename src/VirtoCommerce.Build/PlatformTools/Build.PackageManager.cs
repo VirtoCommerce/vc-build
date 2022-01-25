@@ -154,7 +154,7 @@ namespace VirtoCommerce.Build
                 await InstallPlatformAsync(packageManifest.PlatformVersion);
             });
 
-        private async Task InstallPlatformAsync(string platformVersion)
+        private static async Task InstallPlatformAsync(string platformVersion)
         {
             Logger.Info($"Installing platform {platformVersion}");
             var platformRelease = await GithubManager.GetPlatformRelease(platformVersion);
