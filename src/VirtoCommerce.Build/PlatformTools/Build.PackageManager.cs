@@ -140,7 +140,14 @@ namespace VirtoCommerce.Build
             }
         }
 
+        private bool PlatformVersionChanged()
+        {
+            var manifest = PackageManager.FromFile(PackageManifestPath);
+            return NeedToInstallPlatform(manifest.PlatformVersion);
+        }
+
         public Target InstallPlatform => _ => _
+            .OnlyWhenDynamic(() => PlatformVersionChanged())
             .Executes(async () =>
             {
                 var packageManifest = PackageManager.FromFile(PackageManifestPath);
@@ -149,40 +156,37 @@ namespace VirtoCommerce.Build
 
         private async Task InstallPlatformAsync(string platformVersion)
         {
-            if (NeedToInstallPlatform(platformVersion))
+            Logger.Info($"Installing platform {platformVersion}");
+            var platformRelease = await GithubManager.GetPlatformRelease(platformVersion);
+            var platformAssetUrl = platformRelease.Assets.FirstOrDefault()?.BrowserDownloadUrl;
+            var platformZip = TemporaryDirectory / "platform.zip";
+
+            if (string.IsNullOrEmpty(platformAssetUrl))
             {
-                Logger.Info($"Installing platform {platformVersion}");
-                var platformRelease = await GithubManager.GetPlatformRelease(platformVersion);
-                var platformAssetUrl = platformRelease.Assets.FirstOrDefault()?.BrowserDownloadUrl;
-                var platformZip = TemporaryDirectory / "platform.zip";
+                ControlFlow.Fail($"No platform's assets found with tag {platformVersion}");
+            }
 
-                if (string.IsNullOrEmpty(platformAssetUrl))
-                {
-                    ControlFlow.Fail($"No platform's assets found with tag {platformVersion}");
-                }
+            await HttpTasks.HttpDownloadFileAsync(platformAssetUrl, platformZip);
 
-                await HttpTasks.HttpDownloadFileAsync(platformAssetUrl, platformZip);
-
-                // backup appsettings.json if exists
-                var tempFile = string.Empty;
-                if (File.Exists(AppsettingsPath))
-                {
-                    tempFile = Path.GetTempFileName();
-                    FileSystemTasks.MoveFile(AppsettingsPath, tempFile, FileExistsPolicy.Overwrite);
-                }
+            // backup appsettings.json if exists
+            var tempFile = string.Empty;
+            if (File.Exists(AppsettingsPath))
+            {
+                tempFile = Path.GetTempFileName();
+                FileSystemTasks.MoveFile(AppsettingsPath, tempFile, FileExistsPolicy.Overwrite);
+            }
                 
-                CompressionTasks.Uncompress(platformZip, RootDirectory);
-                FileSystemTasks.DeleteFile(platformZip);
+            CompressionTasks.Uncompress(platformZip, RootDirectory);
+            FileSystemTasks.DeleteFile(platformZip);
 
-                // return appsettings.json back
-                if (!string.IsNullOrEmpty(tempFile))
-                {
-                    var bakFileName = new StringBuilder("appsettings.")
-                        .Append(DateTime.Now.ToString("MMddyyHHmmss"))
-                        .Append(".bak");
-                    var destinationSettingsPath = !Force ? AppsettingsPath : Path.Join(Path.GetDirectoryName(AppsettingsPath), bakFileName.ToString());
-                    FileSystemTasks.MoveFile(tempFile, destinationSettingsPath, FileExistsPolicy.Overwrite);
-                }
+            // return appsettings.json back
+            if (!string.IsNullOrEmpty(tempFile))
+            {
+                var bakFileName = new StringBuilder("appsettings.")
+                    .Append(DateTime.Now.ToString("MMddyyHHmmss"))
+                    .Append(".bak");
+                var destinationSettingsPath = !Force ? AppsettingsPath : Path.Join(Path.GetDirectoryName(AppsettingsPath), bakFileName.ToString());
+                FileSystemTasks.MoveFile(tempFile, destinationSettingsPath, FileExistsPolicy.Overwrite);
             }
         }
 
