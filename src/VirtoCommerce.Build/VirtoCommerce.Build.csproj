@@ -88,14 +88,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="docs\targets.md">
+    <None Include="..\..\docs\targets.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="PlatformTools\Azure\" />
-    <Folder Include="ArgoCD\" />
-    <Folder Include="ArgoCD\Models\" />
     <Folder Include="Utils\" />
   </ItemGroup>
   <ItemGroup>

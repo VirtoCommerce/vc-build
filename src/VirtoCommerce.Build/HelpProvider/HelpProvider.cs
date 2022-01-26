@@ -65,7 +65,7 @@ namespace VirtoCommerce.Build.HelpProvider
         {
             var pipeline = new MarkdownPipelineBuilder().UseCustomContainers().Build();
             var rootDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            var helpFilePath = Path.Combine(rootDirectory, "docs", "targets.md");
+            var helpFilePath = Path.Combine(rootDirectory, "targets.md");
             var markdownDocument = Markdown.Parse(File.ReadAllText(helpFilePath), pipeline);
             return markdownDocument.Descendants<CustomContainer>();
         }
