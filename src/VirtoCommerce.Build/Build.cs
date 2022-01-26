@@ -60,14 +60,14 @@ namespace VirtoCommerce.Build
             if(!MSBuildLocator.IsRegistered) MSBuildLocator.RegisterDefaults();
 
             Environment.SetEnvironmentVariable("NUKE_TELEMETRY_OPTOUT", "1");
-            if (args[0]?.ToLowerInvariant() == "help")
+            if (args.ElementAtOrDefault(0)?.ToLowerInvariant() == "help" || args.Length == 0)
             {
-                if (args.Length == 2)
+                if (args.Length >= 2)
                 {
                     var help = HelpProvider.HelpProvider.GetHelpForTarget(args[1]);
                     Logger.Info(help);
                 }
-                else if (args.Length == 1)
+                else if (args.Length <= 1)
                 {
                     var targets = HelpProvider.HelpProvider.GetTargets();
                     var stringBuilder = new StringBuilder("There is a help for targets:" + Environment.NewLine);
