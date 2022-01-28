@@ -364,7 +364,7 @@ namespace VirtoCommerce.Build
 
                 if (coberturaReports.Count > 0)
                 {
-                    var reportGenerator = ToolResolver.GetPackageTool("dotnet-reportgenerator-globaltool", "ReportGenerator.dll", "4.8.8", "netcoreapp3.0");
+                    var reportGenerator = ToolResolver.GetPackageTool("dotnet-reportgenerator-globaltool", "ReportGenerator.dll", "5.0.3", "net6.0");
                     reportGenerator.Invoke($"-reports:{outPath / "**/coverage.cobertura.xml"} -targetdir:{outPath} -reporttypes:SonarQube");
                     var sonarCoverageReportPath = outPath.GlobFiles("SonarQube.xml").FirstOrDefault();
 
