@@ -1,11 +1,11 @@
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Net;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
-using Nuke.Common;
 using Nuke.Common.IO;
 using Octokit;
+using Serilog;
 
 namespace VirtoCommerce.Build.PlatformTools.Github
 {
@@ -19,7 +19,7 @@ namespace VirtoCommerce.Build.PlatformTools.Github
         {
             _token = token;
             _discoveryPath = discoveryPath;
-            _client = new GitHubClient(new ProductHeaderValue("vc-build"));
+            _client = new GitHubClient(new Octokit.ProductHeaderValue("vc-build"));
             _client.Credentials = new Credentials(token);
         }
         public Task Install(ModuleSource source)
@@ -39,24 +39,24 @@ namespace VirtoCommerce.Build.PlatformTools.Github
                 var release = await _client.Repository.Release.Get(source.Owner, module.Id, module.Version);
                 if (release == null)
                 {
-                    Logger.Error($"{module.Id}:{module.Version} is not found");
+                    Log.Error($"{module.Id}:{module.Version} is not found");
                     continue;
                 }
                 var asset = release.Assets.FirstOrDefault();
                 if (asset == null)
                 {
-                    Logger.Error($"{module.Id}:{module.Version} has no assets");
+                    Log.Error($"{module.Id}:{module.Version} has no assets");
                     continue ;
                 }
-                Logger.Info($"Downloading {module.Id}");
-                await HttpTasks.HttpDownloadFileAsync(asset.Url, zipDestination, c =>
+                Log.Information($"Downloading {module.Id}");
+                await HttpTasks.HttpDownloadFileAsync(asset.Url, zipDestination, clientConfigurator: c =>
                 {
-                    c.Headers.Add(HttpRequestHeader.UserAgent, "VirtoCommerce.Build");
-                    c.Headers.Add(HttpRequestHeader.Authorization, $"Bearer {_token}");
-                    c.Headers.Add(HttpRequestHeader.Accept, "application/octet-stream");
+                    c.DefaultRequestHeaders.Add("User-Agent", "VirtoCommerce.Build");
+                    c.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+                    c.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/octet-stream"));
                     return c;
                 });
-                Logger.Info($"Extractiong {module.Id}");
+                Log.Information($"Extractiong {module.Id}");
                 ZipFile.ExtractToDirectory(zipDestination, moduleDestination);
             }
         }
