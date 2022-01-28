@@ -40,7 +40,7 @@ namespace VirtoCommerce.Build
 
                 if (errors.Any())
                 {
-                    ControlFlow.Fail(errors.Join(Environment.NewLine));
+                    Assert.Fail(errors.Join(Environment.NewLine));
                 }
             });
 

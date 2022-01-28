@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Nuke.Common;
+using Serilog;
 using VirtoCommerce.Platform.Core.Common;
 
 namespace GrabMigrator
@@ -291,12 +292,12 @@ namespace GrabMigrator
 
         private void Fail(string text)
         {
-            ControlFlow.Fail($@"{DateTime.Now}: {text}");
+            Assert.Fail($@"{DateTime.Now}: {text}");
         }
 
         private void Out(string text)
         {
-            Logger.Normal($@"{DateTime.Now}: {text}");
+            Log.Information($@"{DateTime.Now}: {text}");
         }
 
         private void OutBox(string text)

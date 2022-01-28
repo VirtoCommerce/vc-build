@@ -1,8 +1,6 @@
-using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Nuke.Common;
 using Nuke.Common.IO;
@@ -28,25 +26,25 @@ namespace VirtoCommerce.Build.PlatformTools.Azure
                 var moduleDestination = Path.Join(discoveryPath, module.Id);
                 Directory.CreateDirectory(moduleDestination);
                 FileSystemTasks.EnsureCleanDirectory(moduleDestination);
-                var argsBuilder = new StringBuilder("artifacts universal download");
-                argsBuilder = argsBuilder
-                    .Append($" --organization {artifacts.Organization}")
-                    .Append($" --project {artifacts.Project}")
-                    .Append($" --feed {artifacts.Feed}")
-                    .Append($" --name {module.Id}")
-                    .Append($" --path {moduleDestination}")
-                    .Append($" --scope project")
-                    .Append($" --version {module.Version}");
-                var envVariables = new Dictionary<string, string>()
-                {
-                    { "AZURE_DEVOPS_EXT_PAT", token }
-                };
                 var azPath = ToolPathResolver.GetPathExecutable("az");
-                ProcessTasks.StartProcess(toolPath: azPath, arguments: argsBuilder.ToString(), environmentVariables: envVariables).AssertZeroExitCode();
+                var azToolSettings = new AzureCliToolSettings()
+                    .AddProcessEnvironmentVariable("AZURE_DEVOPS_EXT_PAT", token)
+                    .SetProcessToolPath(azPath)
+                    .SetProcessArgumentConfigurator(c => c
+                        .Add("artifacts universal download")
+                        .Add("--organization \"{0}\"", artifacts.Organization)
+                        .Add("--project \"{0}\"", artifacts.Project)
+                        .Add("--feed {0}", artifacts.Feed)
+                        .Add("--name {0}", module.Id)
+                        .Add("--path \"{0}\"", moduleDestination)
+                        .Add("--scope {0}", "project")
+                        .Add("--version {0}", module.Version)
+                    );
+                ProcessTasks.StartProcess(azToolSettings).AssertZeroExitCode();
 
                 var zipPath = Directory.GetFiles(moduleDestination).FirstOrDefault(p => p.EndsWith(".zip"));
                 if (zipPath == null)
-                    ControlFlow.Fail($"Can't download {module.Id} - {module.Version}");
+                    Assert.Fail($"Can't download {module.Id} - {module.Version}");
 
                 ZipFile.ExtractToDirectory(zipPath, moduleDestination);
             }
