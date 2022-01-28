@@ -87,7 +87,7 @@ namespace VirtoCommerce.Build.HelpProvider
                 {
                     case LiteralInline literal:
                         var inlineContent = literal.Content;
-                        result.Append(inlineContent.Text.Substring(inlineContent.Start, inlineContent.Length));
+                        result.Append(inlineContent.Text.AsSpan(inlineContent.Start, inlineContent.Length));
                         break;
 
                     case LineBreakInline:
