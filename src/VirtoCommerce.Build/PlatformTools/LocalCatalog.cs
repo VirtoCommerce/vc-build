@@ -220,7 +220,7 @@ namespace PlatformTools
                     // We should not fail platform start in that case - just add warning into the log. In case of unability to place newer version - should fail platform start.
                     if (versionsAreSameButLaterDate)
                     {
-                        var message = $"File '{targetFilePath}' was not updated by '{sourceFilePath}' of the same version but later modified date, because probably it was used by another process"
+                        var message = $"File '{targetFilePath}' was not updated by '{sourceFilePath}' of the same version but later modified date, because probably it was used by another process";
                         _logger.LogWarning(message);
                     }
                     else
