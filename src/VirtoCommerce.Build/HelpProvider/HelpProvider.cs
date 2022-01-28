@@ -8,7 +8,7 @@ using Markdig.Extensions.CustomContainers;
 using Markdig.Helpers;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
-using Nuke.Common;
+using Serilog;
 
 namespace VirtoCommerce.Build.HelpProvider
 {
@@ -32,7 +32,7 @@ namespace VirtoCommerce.Build.HelpProvider
 
             if (container == null)
             {
-                Logger.Error($"Help is not found for the target {target}");
+                Log.Error($"Help is not found for the target {target}");
                 return string.Empty;
             }
 
@@ -65,7 +65,7 @@ namespace VirtoCommerce.Build.HelpProvider
         {
             var pipeline = new MarkdownPipelineBuilder().UseCustomContainers().Build();
             var rootDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            var helpFilePath = Path.Combine(rootDirectory, "docs", "targets.md");
+            var helpFilePath = Path.Combine(rootDirectory, "targets.md");
             var markdownDocument = Markdown.Parse(File.ReadAllText(helpFilePath), pipeline);
             return markdownDocument.Descendants<CustomContainer>();
         }
@@ -87,7 +87,7 @@ namespace VirtoCommerce.Build.HelpProvider
                 {
                     case LiteralInline literal:
                         var inlineContent = literal.Content;
-                        result.Append(inlineContent.Text.Substring(inlineContent.Start, inlineContent.Length));
+                        result.Append(inlineContent.Text.AsSpan(inlineContent.Start, inlineContent.Length));
                         break;
 
                     case LineBreakInline:

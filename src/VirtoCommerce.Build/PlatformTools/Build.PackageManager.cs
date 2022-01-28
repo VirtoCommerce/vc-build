@@ -9,6 +9,7 @@ using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Utilities.Collections;
 using PlatformTools;
+using Serilog;
 using VirtoCommerce.Build.PlatformTools;
 using VirtoCommerce.Build.PlatformTools.Azure;
 using VirtoCommerce.Build.PlatformTools.Github;
@@ -65,13 +66,13 @@ namespace VirtoCommerce.Build
 
                         if (externalModule == null)
                         {
-                            Logger.Error($"Cannot find a module with ID '{module.Id}'");
+                            Log.Error($"Cannot find a module with ID '{module.Id}'");
                             continue;
                         }
 
                         if (!string.IsNullOrEmpty(module.Version) && externalModule.Version < new SemanticVersion(new Version(module.Version)))
                         {
-                            Logger.Error($"The latest available version of module {module.Id} is {externalModule.Version}, but entered: {module.Version}");
+                            Log.Error($"The latest available version of module {module.Id} is {externalModule.Version}, but entered: {module.Version}");
                             continue;
                         }
 
@@ -82,25 +83,25 @@ namespace VirtoCommerce.Build
 
                         if (existingModule == null)
                         {
-                            Logger.Info($"Add {module.Id}:{module.Version}");
+                            Log.Information($"Add {module.Id}:{module.Version}");
                             modules.Add(module);
                         }
                         else
                         {
                             if (new Version(existingModule.Version) > new Version(module.Version))
                             {
-                                Logger.Error($"{module.Id}: Module downgrading isn't supported");
+                                Log.Error($"{module.Id}: Module downgrading isn't supported");
                                 continue;
                             }
 
-                            Logger.Info($"Change version: {existingModule.Version} -> {module.Version}");
+                            Log.Information($"Change version: {existingModule.Version} -> {module.Version}");
                             existingModule.Version = module.Version;
                         }
                     }
                 }
                 else if (!PlatformParameter && !modules.Any() && !FileSystemTasks.FileExists((AbsolutePath)Path.GetFullPath(PackageManifestPath)))
                 {
-                    Logger.Info("Add group: commerce");
+                    Log.Information("Add group: commerce");
                     var commerceModules = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.Groups.Contains("commerce")).Select(m => new ModuleItem(m.Id, m.Version.ToString()));
                     modules.AddRange(commerceModules);
                 }
@@ -140,49 +141,53 @@ namespace VirtoCommerce.Build
             }
         }
 
+        private bool PlatformVersionChanged()
+        {
+            var manifest = PackageManager.FromFile(PackageManifestPath);
+            return NeedToInstallPlatform(manifest.PlatformVersion);
+        }
+
         public Target InstallPlatform => _ => _
+            .OnlyWhenDynamic(() => PlatformVersionChanged())
             .Executes(async () =>
             {
                 var packageManifest = PackageManager.FromFile(PackageManifestPath);
                 await InstallPlatformAsync(packageManifest.PlatformVersion);
             });
 
-        private async Task InstallPlatformAsync(string platformVersion)
+        private static async Task InstallPlatformAsync(string platformVersion)
         {
-            if (NeedToInstallPlatform(platformVersion))
+            Log.Information($"Installing platform {platformVersion}");
+            var platformRelease = await GithubManager.GetPlatformRelease(platformVersion);
+            var platformAssetUrl = platformRelease.Assets.FirstOrDefault()?.BrowserDownloadUrl;
+            var platformZip = TemporaryDirectory / "platform.zip";
+
+            if (string.IsNullOrEmpty(platformAssetUrl))
             {
-                Logger.Info($"Installing platform {platformVersion}");
-                var platformRelease = await GithubManager.GetPlatformRelease(platformVersion);
-                var platformAssetUrl = platformRelease.Assets.FirstOrDefault()?.BrowserDownloadUrl;
-                var platformZip = TemporaryDirectory / "platform.zip";
+                Assert.Fail($"No platform's assets found with tag {platformVersion}");
+            }
 
-                if (string.IsNullOrEmpty(platformAssetUrl))
-                {
-                    ControlFlow.Fail($"No platform's assets found with tag {platformVersion}");
-                }
+            await HttpTasks.HttpDownloadFileAsync(platformAssetUrl, platformZip);
 
-                await HttpTasks.HttpDownloadFileAsync(platformAssetUrl, platformZip);
-
-                // backup appsettings.json if exists
-                var tempFile = string.Empty;
-                if (File.Exists(AppsettingsPath))
-                {
-                    tempFile = Path.GetTempFileName();
-                    FileSystemTasks.MoveFile(AppsettingsPath, tempFile, FileExistsPolicy.Overwrite);
-                }
+            // backup appsettings.json if exists
+            var tempFile = string.Empty;
+            if (File.Exists(AppsettingsPath))
+            {
+                tempFile = Path.GetTempFileName();
+                FileSystemTasks.MoveFile(AppsettingsPath, tempFile, FileExistsPolicy.Overwrite);
+            }
                 
-                CompressionTasks.Uncompress(platformZip, RootDirectory);
-                FileSystemTasks.DeleteFile(platformZip);
+            CompressionTasks.Uncompress(platformZip, RootDirectory);
+            FileSystemTasks.DeleteFile(platformZip);
 
-                // return appsettings.json back
-                if (!string.IsNullOrEmpty(tempFile))
-                {
-                    var bakFileName = new StringBuilder("appsettings.")
-                        .Append(DateTime.Now.ToString("MMddyyHHmmss"))
-                        .Append(".bak");
-                    var destinationSettingsPath = !Force ? AppsettingsPath : Path.Join(Path.GetDirectoryName(AppsettingsPath), bakFileName.ToString());
-                    FileSystemTasks.MoveFile(tempFile, destinationSettingsPath, FileExistsPolicy.Overwrite);
-                }
+            // return appsettings.json back
+            if (!string.IsNullOrEmpty(tempFile))
+            {
+                var bakFileName = new StringBuilder("appsettings.")
+                    .Append(DateTime.Now.ToString("MMddyyHHmmss"))
+                    .Append(".bak");
+                var destinationSettingsPath = !Force ? AppsettingsPath : Path.Join(Path.GetDirectoryName(AppsettingsPath), bakFileName.ToString());
+                FileSystemTasks.MoveFile(tempFile, destinationSettingsPath, FileExistsPolicy.Overwrite);
             }
         }
 
@@ -232,7 +237,7 @@ namespace VirtoCommerce.Build
 
                     if (externalModule == null)
                     {
-                        ControlFlow.Fail($"No module {module.Id} found");
+                        Assert.Fail($"No module {module.Id} found");
                         return;
                     }
 
@@ -280,7 +285,7 @@ namespace VirtoCommerce.Build
                     modulesToInstall.Add(moduleInfo);
                 }
 
-                var progress = new Progress<ProgressMessage>(m => Logger.Info(m.Message));
+                var progress = new Progress<ProgressMessage>(m => Log.Information(m.Message));
 
                 if (!SkipDependencySolving)
                 {
@@ -354,7 +359,7 @@ namespace VirtoCommerce.Build
                         if (externalModule == null)
                         {
                             var errorMessage = $"No module {module.Id} found";
-                            ControlFlow.Fail(errorMessage);
+                            Assert.Fail(errorMessage);
                             throw new ArgumentNullException(errorMessage); // for sonarQube
                         }
 
@@ -376,8 +381,8 @@ namespace VirtoCommerce.Build
             }
             else if (!File.Exists(packageManifestPath))
             {
-                Logger.Info("vc-package.json is not exists.");
-                Logger.Info("Looking for the platform release");
+                Log.Information("vc-package.json is not exists.");
+                Log.Information("Looking for the platform release");
                 var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
                 packageManifest = PackageManager.CreatePackageManifest(platformRelease.TagName);
             }
@@ -393,7 +398,7 @@ namespace VirtoCommerce.Build
             var platformWebDllPath = platformPath / "VirtoCommerce.Platform.Web.dll";
             if (!FileSystemTasks.FileExists(platformWebDllPath))
             {
-                ControlFlow.Fail($"{platformWebDllPath} can't be found!");
+                Assert.Fail($"{platformWebDllPath} can't be found!");
             }
             var platformWebDllFileInfo = FileVersionInfo.GetVersionInfo(platformWebDllPath);
             var platformVersion = platformWebDllFileInfo.ProductVersion;

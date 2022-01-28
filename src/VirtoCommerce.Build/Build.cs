@@ -27,10 +27,10 @@ using Nuke.Common.Tools.SonarScanner;
 using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
 using Octokit;
+using Serilog;
 using VirtoCommerce.Build.Utils;
 using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.Platform.Core.Modularity;
-using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using Formatting = Newtonsoft.Json.Formatting;
 using ProductHeaderValue = Octokit.ProductHeaderValue;
@@ -60,19 +60,19 @@ namespace VirtoCommerce.Build
             if(!MSBuildLocator.IsRegistered) MSBuildLocator.RegisterDefaults();
 
             Environment.SetEnvironmentVariable("NUKE_TELEMETRY_OPTOUT", "1");
-            if (args[0]?.ToLowerInvariant() == "help")
+            if (args.ElementAtOrDefault(0)?.ToLowerInvariant() == "help" || args.Length == 0)
             {
-                if (args.Length == 2)
+                if (args.Length >= 2)
                 {
                     var help = HelpProvider.HelpProvider.GetHelpForTarget(args[1]);
-                    Logger.Info(help);
+                    Log.Information(help);
                 }
-                else if (args.Length == 1)
+                else if (args.Length <= 1)
                 {
                     var targets = HelpProvider.HelpProvider.GetTargets();
                     var stringBuilder = new StringBuilder("There is a help for targets:" + Environment.NewLine);
                     targets.ForEach(target => stringBuilder = stringBuilder.AppendLine($"- {target}"));
-                    Logger.Info(stringBuilder.ToString());
+                    Log.Information(stringBuilder.ToString());
                 }
                 Environment.Exit(0);
             }
@@ -83,13 +83,13 @@ namespace VirtoCommerce.Build
 
             if (!nukeFiles.Any() && !Directory.Exists(Path.Join(currentDirectory, ".nuke")))
             {
-                Logger.Info("No .nuke file found!");
+                Log.Information("No .nuke file found!");
                 var solutions = Directory.GetFiles(currentDirectory, "*.sln");
 
                 if (solutions.Length == 1)
                 {
                     var solutionFileName = Path.GetFileName(solutions.First());
-                    Logger.Info($"Solution found: {solutionFileName}");
+                    Log.Information($"Solution found: {solutionFileName}");
                     CreateDotNuke(RootDirectory, solutionFileName);
                 }
                 else if (solutions.Length < 1)
@@ -123,7 +123,7 @@ namespace VirtoCommerce.Build
         {
             var dotnukeDir = Path.Join(path, ".nuke");
             var paramsFilePath = Path.Join(dotnukeDir, "parameters.json");
-            EnsureExistingDirectory(dotnukeDir);
+            FileSystemTasks.EnsureExistingDirectory(dotnukeDir);
             var parameters = new NukeParameters { Solution = solutionPath };
             SerializationTasks.JsonSerializeToFile(parameters, paramsFilePath);
         }
@@ -283,32 +283,32 @@ namespace VirtoCommerce.Build
 
         protected GitRepository ModulesRepository => GitRepository.FromUrl(ModulesJsonRepoUrl);
 
-        protected bool IsModule => FileExists(ModuleManifestFile);
+        protected bool IsModule => FileSystemTasks.FileExists(ModuleManifestFile);
         public Target Clean => _ => _
             .Before(Restore)
             .Executes(() =>
             {
                 var searchPattern = new [] { "**/bin", "**/obj" };
-                if (DirectoryExists(SourceDirectory))
+                if (FileSystemTasks.DirectoryExists(SourceDirectory))
                 {
-                    SourceDirectory.GlobDirectories(searchPattern).ForEach(DeleteDirectory);
+                    SourceDirectory.GlobDirectories(searchPattern).ForEach(FileSystemTasks.DeleteDirectory);
 
-                    if (DirectoryExists(TestsDirectory))
+                    if (FileSystemTasks.DirectoryExists(TestsDirectory))
                     {
-                        TestsDirectory.GlobDirectories(searchPattern).ForEach(DeleteDirectory);
+                        TestsDirectory.GlobDirectories(searchPattern).ForEach(FileSystemTasks.DeleteDirectory);
                     }
 
-                    if (DirectoryExists(SamplesDirectory))
+                    if (FileSystemTasks.DirectoryExists(SamplesDirectory))
                     {
-                        SamplesDirectory.GlobDirectories(searchPattern).ForEach(DeleteDirectory);
+                        SamplesDirectory.GlobDirectories(searchPattern).ForEach(FileSystemTasks.DeleteDirectory);
                     }
                 }
                 else
                 {
-                    RootDirectory.GlobDirectories(searchPattern).ForEach(DeleteDirectory);
+                    RootDirectory.GlobDirectories(searchPattern).ForEach(FileSystemTasks.DeleteDirectory);
                 }
 
-                EnsureCleanDirectory(ArtifactsDirectory);
+                FileSystemTasks.EnsureCleanDirectory(ArtifactsDirectory);
             });
 
         public Target Restore => _ => _
@@ -370,20 +370,20 @@ namespace VirtoCommerce.Build
 
                     if (sonarCoverageReportPath == null)
                     {
-                        ControlFlow.Fail("No Coverage Report found");
+                        Assert.Fail("No Coverage Report found");
                     }
 
-                    MoveFile(sonarCoverageReportPath, CoverageReportPath, FileExistsPolicy.Overwrite);
+                    FileSystemTasks.MoveFile(sonarCoverageReportPath, CoverageReportPath, FileExistsPolicy.Overwrite);
                 }
                 else
                 {
-                    Logger.Warn("No Coverage Reports found");
+                    Log.Warning("No Coverage Reports found");
                 }
             });
 
         public static void CustomDotnetLogger(OutputType type, string text)
         {
-            Logger.Info(text);
+            Log.Information(text);
 
             if (text.Contains("error: Response status code does not indicate success: 409"))
             {
@@ -505,7 +505,7 @@ namespace VirtoCommerce.Build
                 return version.GetString();
             }
 
-            ControlFlow.Fail("No version found");
+            Assert.Fail("No version found");
             return "";
         }
 
@@ -522,7 +522,7 @@ namespace VirtoCommerce.Build
 
                     if (string.Compare(response, "y", true, CultureInfo.InvariantCulture) != 0)
                     {
-                        ControlFlow.Fail("Aborted");
+                        Assert.Fail("Aborted");
                     }
                 }
 
@@ -541,7 +541,7 @@ namespace VirtoCommerce.Build
                     : ReleaseVersion;
 
                 var releaseBranchName = $"release/{version}";
-                Logger.Info(Directory.GetCurrentDirectory());
+                Log.Information(Directory.GetCurrentDirectory());
                 GitTasks.Git($"checkout -B {releaseBranchName}");
                 GitTasks.Git($"push -u origin {releaseBranchName}");
             });
@@ -591,7 +591,7 @@ namespace VirtoCommerce.Build
                 GitTasks.Git("pull");
                 IncrementVersionPatch();
                 var hotfixBranchName = $"hotfix/{CustomVersionPrefix}";
-                Logger.Info(Directory.GetCurrentDirectory());
+                Log.Information(Directory.GetCurrentDirectory());
                 GitTasks.Git($"checkout -b {hotfixBranchName}");
                 ChangeProjectVersion(CustomVersionPrefix);
                 var manifestPath = IsModule ? RootDirectory.GetRelativePathTo(ModuleManifestFile) : "";
@@ -653,14 +653,14 @@ namespace VirtoCommerce.Build
         public Target WebPackBuild => _ => _
             .Executes(() =>
             {
-                if (FileExists(WebProject.Directory / "package.json"))
+                if (FileSystemTasks.FileExists(WebProject.Directory / "package.json"))
                 {
                     NpmTasks.Npm("ci", WebProject.Directory);
                     NpmTasks.NpmRun(settings => settings.SetProcessWorkingDirectory(WebProject.Directory).SetCommand("webpack:build"));
                 }
                 else
                 {
-                    Logger.Info("Nothing to build.");
+                    Log.Information("Nothing to build.");
                 }
             });
 
@@ -681,28 +681,28 @@ namespace VirtoCommerce.Build
                 if (IsModule)
                 {
                     //Copy module.manifest and all content directories into a module output folder
-                    CopyFileToDirectory(ModuleManifestFile, ModuleOutputDirectory, FileExistsPolicy.Overwrite);
+                    FileSystemTasks.CopyFileToDirectory(ModuleManifestFile, ModuleOutputDirectory, FileExistsPolicy.Overwrite);
 
                     foreach (var folderName in _moduleContentFolders)
                     {
                         var sourcePath = WebProject.Directory / folderName;
 
-                        if (DirectoryExists(sourcePath))
+                        if (FileSystemTasks.DirectoryExists(sourcePath))
                         {
-                            CopyDirectoryRecursively(sourcePath, ModuleOutputDirectory / folderName, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                            FileSystemTasks.CopyDirectoryRecursively(sourcePath, ModuleOutputDirectory / folderName, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
                         }
                     }
 
                     var ignoredFiles = HttpTasks.HttpDownloadString(GlobalModuleIgnoreFileUrl).SplitLineBreaks();
 
-                    if (FileExists(ModuleIgnoreFile))
+                    if (FileSystemTasks.FileExists(ModuleIgnoreFile))
                     {
                         ignoredFiles = ignoredFiles.Concat(TextTasks.ReadAllLines(ModuleIgnoreFile)).ToArray();
                     }
 
                     ignoredFiles = ignoredFiles.Select(x => x.Trim()).Distinct().ToArray();
 
-                    DeleteFile(ZipFilePath);
+                    FileSystemTasks.DeleteFile(ZipFilePath);
                     //TODO: Exclude all ignored files and *module files not related to compressed module
                     var ignoreModuleFilesRegex = new Regex(@".+Module\..*", RegexOptions.IgnoreCase);
                     var includeModuleFilesRegex = new Regex(@$".*{ModuleManifest.Id}(Module)?\..*", RegexOptions.IgnoreCase);
@@ -712,7 +712,7 @@ namespace VirtoCommerce.Build
                 }
                 else
                 {
-                    DeleteFile(ZipFilePath);
+                    FileSystemTasks.DeleteFile(ZipFilePath);
                     CompressionTasks.CompressZip(ArtifactsDirectory / "publish", ZipFilePath);
                 }
             });
@@ -723,7 +723,7 @@ namespace VirtoCommerce.Build
             {
                 GitTasks.GitLogger = GitLogger;
 
-                if (!DirectoryExists(ModulesLocalDirectory))
+                if (!FileSystemTasks.DirectoryExists(ModulesLocalDirectory))
                 {
                     GitTasks.Git($"clone {ModulesRepository.HttpsUrl} {ModulesLocalDirectory}");
                 }
@@ -827,12 +827,12 @@ namespace VirtoCommerce.Build
                 {
                     foreach (var message in schemaValidationMessages)
                     {
-                        Logger.Normal(message);
+                        Log.Information(message.ToString());
                     }
 
                     if (schemaValidationMessages.Any(t => (string)t["level"] == "error"))
                     {
-                        ControlFlow.Fail("Schema Validation Messages contains error");
+                        Assert.Fail("Schema Validation Messages contains error");
                     }
                 }
             });
@@ -848,44 +848,44 @@ namespace VirtoCommerce.Build
                 {
                     foreach (var message in validationMessages)
                     {
-                        Logger.Normal(message);
+                        Log.Information(message.ToString());
                     }
 
                     if (validationMessages.Any(t => (string)t["level"] == "error"))
                     {
-                        ControlFlow.Fail("Schema Validation Messages contains error");
+                        Assert.Fail("Schema Validation Messages contains error");
                     }
                 }
                 else
                 {
-                    Logger.Warn("There are no validation messages from validator");
+                    Log.Warning("There are no validation messages from validator");
                 }
             });
 
         private async Task<string> SendSwaggerSchemaToValidator(HttpClient httpClient, string schemaPath, string validatorUri)
         {
             var swaggerSchema = await File.ReadAllTextAsync(schemaPath);
-            Logger.Normal($"Swagger schema length: {swaggerSchema.Length}");
+            Log.Information($"Swagger schema length: {swaggerSchema.Length}");
             var requestContent = new StringContent(swaggerSchema, Encoding.UTF8, "application/json");
-            Logger.Normal("Request content created");
+            Log.Information("Request content created");
             var request = new HttpRequestMessage(HttpMethod.Post, validatorUri);
-            Logger.Normal("Request created");
+            Log.Information("Request created");
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             request.Content = requestContent;
             var response = await httpClient.SendAsync(request);
             response.EnsureSuccessStatusCode();
             var result = await response.Content.ReadAsStringAsync();
-            Logger.Normal($"Response from Validator: {result}");
+            Log.Information($"Response from Validator: {result}");
             return result;
         }
 
         public Target SonarQubeStart => _ => _
             .Executes(() =>
             {
-                Logger.Normal($"IsServerBuild = {IsServerBuild}");
+                Log.Information($"IsServerBuild = {IsServerBuild}");
                 var branchName = SonarBranchName ?? GitRepository.Branch;
                 var branchNameTarget = SonarBranchNameTarget ?? GitRepository.Branch;
-                Logger.Info($"BRANCH_NAME = {branchName}");
+                Log.Information($"BRANCH_NAME = {branchName}");
 
                 SonarScannerTasks.SonarScannerBegin(c => c
                     .SetFramework("net5.0")
@@ -946,7 +946,7 @@ namespace VirtoCommerce.Build
                     FileSystemTasks.DeleteDirectory(sonarScannerShRightPath);
                     var sonarScriptDestinationPath = Path.Combine(sonarScannerShRightPath, sonarScript);
                     FileSystemTasks.MoveFile(tmpFile, sonarScriptDestinationPath);
-                    Logger.Info($"{sonarScript} path: {sonarScannerShPath}");
+                    Log.Information($"{sonarScript} path: {sonarScannerShPath}");
                     var chmod = ToolResolver.GetPathTool("chmod");
                     chmod.Invoke($"+x {sonarScriptDestinationPath}");
                 }
@@ -960,18 +960,18 @@ namespace VirtoCommerce.Build
             .DependsOn(SonarQubeStart, SonarQubeEnd)
             .Executes(() =>
             {
-                Logger.Normal("Sonar validation done.");
+                Log.Information("Sonar validation done.");
             });
 
         public Target MassPullAndBuild => _ => _
             .Requires(() => ModulesFolderPath)
             .Executes(() =>
             {
-                if (DirectoryExists(ModulesFolderPath))
+                if (FileSystemTasks.DirectoryExists(ModulesFolderPath))
                 {
                     foreach (var moduleDirectory in Directory.GetDirectories(ModulesFolderPath))
                     {
-                        var isGitRepository = FindParentDirectory(moduleDirectory, x => x.GetDirectories(".git").Any()) != null;
+                        var isGitRepository = FileSystemTasks.FindParentDirectory(moduleDirectory, x => x.GetDirectories(".git").Any()) != null;
 
                         if (isGitRepository)
                         {
@@ -998,11 +998,11 @@ namespace VirtoCommerce.Build
             switch (type)
             {
                 case OutputType.Err:
-                    Logger.Error(text);
+                    Log.Error(text);
                     break;
 
                 case OutputType.Std:
-                    Logger.Info(text);
+                    Log.Information(text);
                     break;
             }
         }
@@ -1073,7 +1073,7 @@ namespace VirtoCommerce.Build
                         _exitCode = 422;
                     }
 
-                    ControlFlow.Fail(ex.Message);
+                    Assert.Fail(ex.Message);
                 }
             });
 
