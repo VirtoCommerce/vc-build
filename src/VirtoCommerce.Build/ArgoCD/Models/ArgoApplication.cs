@@ -6,5 +6,6 @@ namespace VirtoCommerce.Build.ArgoCD.Models
         public ArgoAppPlatformSection Platform { get; set; }
         public ArgoAppStorefrontSection Storefront { get; set; }
         public ArgoAppIngressSection Ingress { get; set; }
+        public ArgoAppAdvancedServiceSection AdvancedService { get; set; }
     }
 }
