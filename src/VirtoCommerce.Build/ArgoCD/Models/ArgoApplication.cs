@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace VirtoCommerce.Build.ArgoCD.Models
 {
     public class ArgoApplication
