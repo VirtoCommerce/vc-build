@@ -56,7 +56,7 @@ namespace VirtoCommerce.Build
               {
                   var argoApp = await argoClient.ApplicationService.GetAsync(app.Name);
                   var argoAppParams = argoApp.Spec.Source.Helm.Parameters;
-                  var parametersToDelete = argoAppParams.Where(p => sectionsToClean.Any(s => p.Name.StartsWith(s)));
+                  var parametersToDelete = argoAppParams.Where(p => sectionsToClean.Any(s => p.Name.StartsWith(s) && !app.ProtectedParameters.Contains(p.Name)));
                   argoAppParams = argoAppParams.Except(parametersToDelete).ToList();
                   var configs = app.Platform.Config.Select(c => new PlatformSection.Config(c.Key, c.Value));
                   List<V1alpha1HelmParameter> secretConfigs = app.Platform.SecretConfig.Select(c => new PlatformSection.SecretConfig(c.Key, c.Value)).ToList<V1alpha1HelmParameter>();
@@ -81,7 +81,7 @@ namespace VirtoCommerce.Build
                       new AdvancedServiceSection.ImageRepository(app.AdvancedService.ImageRepository),
                       new AdvancedServiceSection.ImageTag(app.AdvancedService.ImageTag),
                       new AdvancedServiceSection.IngressPath(app.AdvancedService.IngressPath)
-                  }.Where(p => p.Value != null);
+                  }.Where(p => p.Value != null && !app.ProtectedParameters.Contains(p.Name));
 
                   argoAppParams = argoAppParams.Concat(configs)
                       .Concat(secretConfigs)
