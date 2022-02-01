@@ -65,14 +65,14 @@ namespace VirtoCommerce.Build
                 if (args.Length >= 2)
                 {
                     var help = HelpProvider.HelpProvider.GetHelpForTarget(args[1]);
-                    Log.Information(help);
+                    Console.WriteLine(help);
                 }
                 else if (args.Length <= 1)
                 {
                     var targets = HelpProvider.HelpProvider.GetTargets();
                     var stringBuilder = new StringBuilder("There is a help for targets:" + Environment.NewLine);
                     targets.ForEach(target => stringBuilder = stringBuilder.AppendLine($"- {target}"));
-                    Log.Information(stringBuilder.ToString());
+                    Console.WriteLine(stringBuilder.ToString());
                 }
                 Environment.Exit(0);
             }
@@ -83,13 +83,13 @@ namespace VirtoCommerce.Build
 
             if (!nukeFiles.Any() && !Directory.Exists(Path.Join(currentDirectory, ".nuke")))
             {
-                Log.Information("No .nuke file found!");
+                Console.WriteLine("No .nuke file found!");
                 var solutions = Directory.GetFiles(currentDirectory, "*.sln");
 
                 if (solutions.Length == 1)
                 {
                     var solutionFileName = Path.GetFileName(solutions.First());
-                    Log.Information($"Solution found: {solutionFileName}");
+                    Console.WriteLine($"Solution found: {solutionFileName}");
                     CreateDotNuke(RootDirectory, solutionFileName);
                 }
                 else if (solutions.Length < 1)
