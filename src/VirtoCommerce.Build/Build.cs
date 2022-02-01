@@ -89,8 +89,8 @@ namespace VirtoCommerce.Build
                 if (solutions.Length == 1)
                 {
                     var solutionFileName = Path.GetFileName(solutions.First());
-                    Logger.Info($"Solution found: {solutionFileName}");
-                    CreateDotNuke(RootDirectory, solutionFileName);
+                    Console.WriteLine($"Solution found: {solutionFileName}");
+                    CreateDotNuke(currentDirectory, solutionFileName);
                 }
                 else if (solutions.Length < 1)
                 {
