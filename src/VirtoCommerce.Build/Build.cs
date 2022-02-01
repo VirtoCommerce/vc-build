@@ -65,14 +65,14 @@ namespace VirtoCommerce.Build
                 if (args.Length == 2)
                 {
                     var help = HelpProvider.HelpProvider.GetHelpForTarget(args[1]);
-                    Logger.Info(help);
+                    Console.WriteLine(help);
                 }
                 else if (args.Length == 1)
                 {
                     var targets = HelpProvider.HelpProvider.GetTargets();
                     var stringBuilder = new StringBuilder("There is a help for targets:" + Environment.NewLine);
                     targets.ForEach(target => stringBuilder = stringBuilder.AppendLine($"- {target}"));
-                    Logger.Info(stringBuilder.ToString());
+                    Console.WriteLine(stringBuilder.ToString());
                 }
                 Environment.Exit(0);
             }
@@ -83,7 +83,7 @@ namespace VirtoCommerce.Build
 
             if (!nukeFiles.Any() && !Directory.Exists(Path.Join(currentDirectory, ".nuke")))
             {
-                Logger.Info("No .nuke file found!");
+                Console.WriteLine("No .nuke file found!");
                 var solutions = Directory.GetFiles(currentDirectory, "*.sln");
 
                 if (solutions.Length == 1)
