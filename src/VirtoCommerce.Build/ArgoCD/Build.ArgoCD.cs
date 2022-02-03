@@ -19,7 +19,7 @@ namespace VirtoCommerce.Build
         [Parameter("ArgoCD Server")] public string ArgoServer { get; set; }
         [Parameter("ArgoCD Token")] public string ArgoToken { get; set; }
         [Parameter("Config file for Argo Application Service")] public string ArgoConfigFile { get; set; }
-        [Parameter("Array of Helm parameters")] public V1alpha1HelmParameter[] HelmParameters { get; set; }
+        [Parameter("Array of Helm parameters")] public HelmParameter[] HelmParameters { get; set; }
         [Parameter("Argo Application Name")] public string ArgoAppName { get; set; }
 
         public Target SetHelmParameter => _ => _
@@ -87,11 +87,11 @@ namespace VirtoCommerce.Build
                   var parametersToDelete = argoAppParams.Where(p => sectionsToClean.Any(s => p.Name.StartsWith(s) && !app.ProtectedParameters.Contains(p.Name)));
                   argoAppParams = argoAppParams.Except(parametersToDelete).ToList();
                   var configs = app.Platform.Config.Select(c => new PlatformSection.Config(c.Key, c.Value));
-                  List<V1alpha1HelmParameter> secretConfigs = app.Platform.SecretConfig.Select(c => new PlatformSection.SecretConfig(c.Key, c.Value)).ToList<V1alpha1HelmParameter>();
+                  List<HelmParameter> secretConfigs = app.Platform.SecretConfig.Select(c => new PlatformSection.SecretConfig(c.Key, c.Value)).ToList<HelmParameter>();
                   var storefrontSecretConfigs = app.Storefront.SecretConfig.Select(c => new StorefrontSection.SecretConfig(c.Key, c.Value));
                   var storefrontConfigs = app.Storefront.Config.Select(c => new StorefrontSection.Config(c.Key, c.Value));
                   var secrets = secretConfigs.Concat(storefrontSecretConfigs).Select(s => s.Value).Distinct().Select(s => new PlatformSection.Secret(s));
-                  var helmParameters = new List<V1alpha1HelmParameter>
+                  var helmParameters = new List<HelmParameter>
                   {
                       new PlatformSection.ImageTag(app.Platform.ImageTag),
                       new PlatformSection.Tier(app.Platform.Tier),

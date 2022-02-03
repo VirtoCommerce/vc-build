@@ -1,19 +1,15 @@
 using System;
 using System.ComponentModel;
 using System.Globalization;
-using ArgoClient = ArgoCD.Client;
+using ArgoCD.Client.Models;
 
 namespace VirtoCommerce.Build.ArgoCD.Models
 {
     [Serializable]
     [TypeConverter(typeof(TypeConverter))]
-    public class V1alpha1HelmParameter: ArgoClient.Models.V1alpha1HelmParameter
+    public class HelmParameter: V1alpha1HelmParameter
     {
-        public V1alpha1HelmParameter()
-        {
-        }
-
-        public V1alpha1HelmParameter(bool? forceString = default(bool?), string name = default(string), string value = default(string)) : base(forceString, name, value)
+        public HelmParameter(bool? forceString = default(bool?), string name = default(string), string value = default(string)) : base(forceString, name, value)
         {
         }
 
@@ -35,7 +31,7 @@ namespace VirtoCommerce.Build.ArgoCD.Models
                 {
                     var splited = stringValue.Split("=");
                     if (splited.Length == 2)
-                        return new V1alpha1HelmParameter(false, splited[0], splited[1]);
+                        return new HelmParameter(false, splited[0], splited[1]);
                 }
                 return base.ConvertFrom(context, culture, value);
             }
