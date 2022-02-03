@@ -8,10 +8,9 @@ using Nuke.Common;
 using VirtoCommerce.Build.ArgoCD.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
+using AdvancedServiceSection = VirtoCommerce.Build.ArgoCD.Models.AdvancedService;
 using PlatformSection = VirtoCommerce.Build.ArgoCD.Models.Platform;
 using StorefrontSection = VirtoCommerce.Build.ArgoCD.Models.Storefront;
-using AdvancedServiceSection = VirtoCommerce.Build.ArgoCD.Models.AdvancedService;
-using Serilog;
 
 namespace VirtoCommerce.Build
 {
@@ -44,7 +43,7 @@ namespace VirtoCommerce.Build
                 await argoClient.ApplicationService.UpdateSpecAsync(ArgoAppName, argoApp.Spec);
             });
 
-        private ArgoCDClient CreateArgoCDClient(string token, Uri argoServer)
+        private static ArgoCDClient CreateArgoCDClient(string token, Uri argoServer)
         {
             var httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);

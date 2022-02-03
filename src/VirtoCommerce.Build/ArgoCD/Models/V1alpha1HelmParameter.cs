@@ -13,7 +13,7 @@ namespace VirtoCommerce.Build.ArgoCD.Models
         {
         }
 
-        public V1alpha1HelmParameter(bool? forceString = null, string name = null, string value = null) : base(forceString, name, value)
+        public V1alpha1HelmParameter(bool? forceString = default(bool?), string name = default(string), string value = default(string)) : base(forceString, name, value)
         {
         }
 
@@ -24,7 +24,7 @@ namespace VirtoCommerce.Build.ArgoCD.Models
                 var canParse = false;
                 if(base.CanConvertFrom(context, sourceType))
                 {
-                    canParse = (context.Instance as string).Contains("=");
+                    canParse = (context.Instance as string).Contains('=');
                 }
                 return sourceType == typeof(string) && canParse;
             }
