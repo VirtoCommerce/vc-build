@@ -1,5 +1,3 @@
-using ArgoCD.Client.Models;
-
 namespace VirtoCommerce.Build.ArgoCD.Models.Platform
 {
     public class ImageTag : V1alpha1HelmParameter

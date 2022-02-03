@@ -1,5 +1,3 @@
-using ArgoCD.Client.Models;
-
 namespace VirtoCommerce.Build.ArgoCD.Models.Platform
 {
     public class Config : V1alpha1HelmParameter

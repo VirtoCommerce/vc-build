@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using ArgoCD.Client;
-using ArgoCD.Client.Models;
 using Nuke.Common;
 using VirtoCommerce.Build.ArgoCD.Models;
 using YamlDotNet.Serialization;
@@ -12,6 +11,7 @@ using YamlDotNet.Serialization.NamingConventions;
 using PlatformSection = VirtoCommerce.Build.ArgoCD.Models.Platform;
 using StorefrontSection = VirtoCommerce.Build.ArgoCD.Models.Storefront;
 using AdvancedServiceSection = VirtoCommerce.Build.ArgoCD.Models.AdvancedService;
+using Serilog;
 
 namespace VirtoCommerce.Build
 {
@@ -20,6 +20,39 @@ namespace VirtoCommerce.Build
         [Parameter("ArgoCD Server")] public string ArgoServer { get; set; }
         [Parameter("ArgoCD Token")] public string ArgoToken { get; set; }
         [Parameter("Config file for Argo Application Service")] public string ArgoConfigFile { get; set; }
+        [Parameter("Array of Helm parameters")] public V1alpha1HelmParameter[] HelmParameters { get; set; }
+        [Parameter("Argo Application Name")] public string ArgoAppName { get; set; }
+
+        public Target SetHelmParameter => _ => _
+            .Executes(async () =>
+            {
+                var argoClient = CreateArgoCDClient(ArgoToken ?? Environment.GetEnvironmentVariable("ARGO_TOKEN"), new Uri(ArgoServer));
+                var argoApp = await argoClient.ApplicationService.GetAsync(ArgoAppName);
+                var argoAppParams = argoApp.Spec.Source.Helm.Parameters;
+                foreach(var parameter in HelmParameters)
+                {
+                    var argoParameter = argoAppParams.FirstOrDefault(p => p.Name == parameter.Name);
+                    if(argoParameter != null)
+                    {
+                        argoParameter.Value = parameter.Value;
+                    }
+                    else
+                    {
+                        argoAppParams.Add(parameter);
+                    }
+                }
+                await argoClient.ApplicationService.UpdateSpecAsync(ArgoAppName, argoApp.Spec);
+            });
+
+        private ArgoCDClient CreateArgoCDClient(string token, Uri argoServer)
+        {
+            var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            httpClient.BaseAddress = argoServer;
+            var argoClient = new ArgoCDClient(httpClient, true);
+            argoClient.BaseUri = argoServer;
+            return argoClient;
+        }
 
         public Target ArgoUpdateApplication => _ => _
           .Executes(async () =>
@@ -27,8 +60,8 @@ namespace VirtoCommerce.Build
               var deserializer = new DeserializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).Build();
               var rawYaml = await File.ReadAllTextAsync(ArgoConfigFile);
               var apps = deserializer.Deserialize<IList<ArgoApplication>>(rawYaml);
-              var httpClient = new HttpClient();
               var argoServerUrl = new Uri(ArgoServer);
+              var argoClient = CreateArgoCDClient(ArgoToken ?? Environment.GetEnvironmentVariable("ARGO_TOKEN"), argoServerUrl);
               var sectionsToClean = new string[]
               {
                 "platform.config.",
@@ -48,10 +81,6 @@ namespace VirtoCommerce.Build
                 "theme.name",
                 "advanced.service"
               };
-              httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", ArgoToken ?? Environment.GetEnvironmentVariable("ARGO_TOKEN"));
-              httpClient.BaseAddress = argoServerUrl;
-              var argoClient = new ArgoCDClient(httpClient, true);
-              argoClient.BaseUri = argoServerUrl;
               foreach (var app in apps)
               {
                   var argoApp = await argoClient.ApplicationService.GetAsync(app.Name);

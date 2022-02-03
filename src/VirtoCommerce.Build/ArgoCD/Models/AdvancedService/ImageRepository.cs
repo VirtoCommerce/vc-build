@@ -1,5 +1,3 @@
-using ArgoCD.Client.Models;
-
 namespace VirtoCommerce.Build.ArgoCD.Models.AdvancedService
 {
     public class ImageRepository : V1alpha1HelmParameter

@@ -1,5 +1,3 @@
-using ArgoCD.Client.Models;
-
 namespace VirtoCommerce.Build.ArgoCD.Models.Storefront
 {
     public class SecretConfig : V1alpha1HelmParameter
