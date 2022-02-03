@@ -1,8 +1,6 @@
-using ArgoCD.Client.Models;
-
 namespace VirtoCommerce.Build.ArgoCD.Models.Storefront
 {
-    public class ThemeName : V1alpha1HelmParameter
+    public class ThemeName : HelmParameter
     {
         public ThemeName(string value) : base(false, $"theme.name", value)
         {
