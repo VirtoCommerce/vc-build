@@ -2,15 +2,51 @@ using System;
 using System.ComponentModel;
 using System.Globalization;
 using ArgoCD.Client.Models;
+using Newtonsoft.Json;
+using Nuke.Common.IO;
 
 namespace VirtoCommerce.Build.ArgoCD.Models
 {
-    [Serializable]
     [TypeConverter(typeof(TypeConverter))]
+    [JsonConverter(typeof(HelmJsonConverter))]
     public class HelmParameter: V1alpha1HelmParameter
     {
         public HelmParameter(bool? forceString = default(bool?), string name = default(string), string value = default(string)) : base(forceString, name, value)
         {
+        }
+
+        public override string ToString()
+        {
+            var parameter = new V1alpha1HelmParameter(null, this.Name, this.Value);
+            return SerializationTasks.JsonSerialize(parameter);
+        }
+
+        public class HelmJsonConverter : JsonConverter
+        {
+            public override bool CanConvert(Type objectType)
+            {
+                return true;
+            }
+            public override bool CanRead
+            {
+                get { return false; }
+            }
+
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            {
+                var helmParameter = (HelmParameter)value;
+                writer.WriteStartObject();
+                writer.WritePropertyName("name");
+                writer.WriteValue(helmParameter.Name);
+                writer.WritePropertyName("value");
+                writer.WriteValue(helmParameter.Value);
+                writer.WriteEndObject();
+            }
         }
 
         public class TypeConverter : System.ComponentModel.TypeConverter
@@ -31,10 +67,10 @@ namespace VirtoCommerce.Build.ArgoCD.Models
                 {
                     var splited = stringValue.Split("=");
                     if (splited.Length == 2)
-                        return new HelmParameter(false, splited[0], splited[1]);
+                        return new HelmParameter(null, splited[0], splited[1]);
                 }
                 return base.ConvertFrom(context, culture, value);
-            }
+            } 
         }
     }
 }
