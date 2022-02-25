@@ -57,7 +57,7 @@ namespace VirtoCommerce.Build
 
         public static int Main(string[] args)
         {
-            if(!MSBuildLocator.IsRegistered) MSBuildLocator.RegisterDefaults();
+            if (!MSBuildLocator.IsRegistered) MSBuildLocator.RegisterDefaults();
 
             Environment.SetEnvironmentVariable("NUKE_TELEMETRY_OPTOUT", "1");
             if (args.ElementAtOrDefault(0)?.ToLowerInvariant() == "help" || args.Length == 0)
@@ -97,7 +97,7 @@ namespace VirtoCommerce.Build
                     CreateDotNuke(currentDirectory);
                 }
             }
-            else if(nukeFiles.Any())
+            else if (nukeFiles.Any())
             {
                 var nukeFile = nukeFiles.First();
                 ConvertDotNukeFile(nukeFile);
@@ -128,8 +128,22 @@ namespace VirtoCommerce.Build
             SerializationTasks.JsonSerializeToFile(parameters, paramsFilePath);
         }
 
-        [Solution]
-        public static Solution Solution { get; set; }
+        public static Solution Solution
+        {
+            get
+            {
+                var solutions = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.sln", SearchOption.TopDirectoryOnly);
+                if (solutions.Any())
+                {
+                    return ProjectModelTasks.ParseSolution(solutions.First());
+                }
+                else
+                {
+                    Assert.Fail("No solution files found in the current directory");
+                    return new Solution();
+                }
+            }
+        }
 
         [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
         public static Configuration Configuration { get; set; } = IsLocalBuild ? Configuration.Debug : Configuration.Release;
