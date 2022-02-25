@@ -141,6 +141,11 @@ namespace VirtoCommerce.Build
             }
         }
 
+        private bool IsModulesInstallation()
+        {
+            return !PlatformParameter && (!Module?.IsEmpty() ?? false);
+        }
+
         private bool PlatformVersionChanged()
         {
             var manifest = PackageManager.FromFile(PackageManifestPath);
@@ -148,7 +153,7 @@ namespace VirtoCommerce.Build
         }
 
         public Target InstallPlatform => _ => _
-            .OnlyWhenDynamic(() => PlatformVersionChanged())
+            .OnlyWhenDynamic(() => PlatformVersionChanged() && !IsModulesInstallation())
             .Executes(async () =>
             {
                 var packageManifest = PackageManager.FromFile(PackageManifestPath);
