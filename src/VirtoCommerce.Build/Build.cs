@@ -137,7 +137,11 @@ namespace VirtoCommerce.Build
                 {
                     return ProjectModelTasks.ParseSolution(solutions.First());
                 }
-                else return null;
+                else
+                {
+                    Assert.Fail("No solution files found in the current directory");
+                    return new Solution();
+                }
             }
         }
 
