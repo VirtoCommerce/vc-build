@@ -57,7 +57,7 @@ namespace VirtoCommerce.Build
 
         public static int Main(string[] args)
         {
-            if(!MSBuildLocator.IsRegistered) MSBuildLocator.RegisterDefaults();
+            if (!MSBuildLocator.IsRegistered) MSBuildLocator.RegisterDefaults();
 
             Environment.SetEnvironmentVariable("NUKE_TELEMETRY_OPTOUT", "1");
             if (args.ElementAtOrDefault(0)?.ToLowerInvariant() == "help" || args.Length == 0)
@@ -65,14 +65,14 @@ namespace VirtoCommerce.Build
                 if (args.Length >= 2)
                 {
                     var help = HelpProvider.HelpProvider.GetHelpForTarget(args[1]);
-                    Log.Information(help);
+                    Console.WriteLine(help);
                 }
                 else if (args.Length <= 1)
                 {
                     var targets = HelpProvider.HelpProvider.GetTargets();
                     var stringBuilder = new StringBuilder("There is a help for targets:" + Environment.NewLine);
                     targets.ForEach(target => stringBuilder = stringBuilder.AppendLine($"- {target}"));
-                    Log.Information(stringBuilder.ToString());
+                    Console.WriteLine(stringBuilder.ToString());
                 }
                 Environment.Exit(0);
             }
@@ -83,21 +83,21 @@ namespace VirtoCommerce.Build
 
             if (!nukeFiles.Any() && !Directory.Exists(Path.Join(currentDirectory, ".nuke")))
             {
-                Log.Information("No .nuke file found!");
+                Console.WriteLine("No .nuke file found!");
                 var solutions = Directory.GetFiles(currentDirectory, "*.sln");
 
                 if (solutions.Length == 1)
                 {
                     var solutionFileName = Path.GetFileName(solutions.First());
-                    Log.Information($"Solution found: {solutionFileName}");
-                    CreateDotNuke(RootDirectory, solutionFileName);
+                    Console.WriteLine($"Solution found: {solutionFileName}");
+                    CreateDotNuke(currentDirectory, solutionFileName);
                 }
                 else if (solutions.Length < 1)
                 {
                     CreateDotNuke(currentDirectory);
                 }
             }
-            else if(nukeFiles.Any())
+            else if (nukeFiles.Any())
             {
                 var nukeFile = nukeFiles.First();
                 ConvertDotNukeFile(nukeFile);
@@ -128,8 +128,22 @@ namespace VirtoCommerce.Build
             SerializationTasks.JsonSerializeToFile(parameters, paramsFilePath);
         }
 
-        [Solution]
-        public static Solution Solution { get; set; }
+        public static Solution Solution
+        {
+            get
+            {
+                var solutions = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.sln", SearchOption.TopDirectoryOnly);
+                if (solutions.Any())
+                {
+                    return ProjectModelTasks.ParseSolution(solutions.First());
+                }
+                else
+                {
+                    Assert.Fail("No solution files found in the current directory");
+                    return new Solution();
+                }
+            }
+        }
 
         [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
         public static Configuration Configuration { get; set; } = IsLocalBuild ? Configuration.Debug : Configuration.Release;
