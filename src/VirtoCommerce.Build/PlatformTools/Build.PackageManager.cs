@@ -141,7 +141,7 @@ namespace VirtoCommerce.Build
             }
         }
 
-        private bool IsModulesInstallation()
+        private static bool IsModulesInstallation()
         {
             return !PlatformParameter && (!Module?.IsEmpty() ?? false);
         }
