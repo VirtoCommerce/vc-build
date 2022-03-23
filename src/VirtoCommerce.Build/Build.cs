@@ -460,7 +460,13 @@ namespace VirtoCommerce.Build
                     using (var writer = new Utf8StringWriter())
                     {
                         var xmlSerializer = new XmlSerializer(typeof(ModuleManifest));
-                        xmlSerializer.Serialize(writer, manifest);
+                        var xmlWriterSettings = new XmlWriterSettings()
+                        {
+                            Indent = true,
+                            Encoding = Encoding.UTF8
+                        };
+                        var xmlWriter = XmlWriter.Create(writer, xmlWriterSettings);
+                        xmlSerializer.Serialize(xmlWriter, manifest);
                         File.WriteAllText(ModuleManifestFile, writer.ToString(), Encoding.UTF8);
                     }
                 }
