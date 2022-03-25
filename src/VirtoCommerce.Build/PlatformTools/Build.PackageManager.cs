@@ -38,6 +38,13 @@ namespace VirtoCommerce.Build
         [Parameter("Azure PAT")]
         public static string AzureToken { get; set; }
 
+        [Parameter("Get bundle")]
+        public static bool Stable { get; set; }
+        [Parameter("Bundle name", Name = "v")]
+        public static string BundleName { get; set; }
+        [Parameter("Url to Bundles file")]
+        public static string BundlesUrl { get; set; } = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/bundles/stable.json";
+
         public Target Init => _ => _
             .Executes(async () =>
             {
@@ -379,7 +386,17 @@ namespace VirtoCommerce.Build
         {
             ManifestBase packageManifest;
             var platformWebDllPath = Path.Combine(Directory.GetParent(packageManifestPath).FullName, "VirtoCommerce.Platform.Web.dll");
-            if (!File.Exists(packageManifestPath) && File.Exists(platformWebDllPath))
+            if (Stable)
+            {
+                SkipDependencySolving = true;
+                if (File.Exists(packageManifestPath))
+                {
+                    Assert.Fail($"Manifest already exists at {packageManifestPath}");
+                }
+                await DownloadBundleManifest(BundleName, packageManifestPath);
+                packageManifest = PackageManager.FromFile(packageManifestPath);
+            }
+            else if (!File.Exists(packageManifestPath) && File.Exists(platformWebDllPath))
             {
                 var discoveryAbsolutePath = Path.GetFullPath(GetDiscoveryPath());
                 packageManifest = CreateManifestFromEnvironment(RootDirectory, (AbsolutePath)discoveryAbsolutePath);
@@ -396,6 +413,20 @@ namespace VirtoCommerce.Build
                 packageManifest = PackageManager.FromFile(PackageManifestPath);
             }
             return packageManifest;
+        }
+
+        private async Task DownloadBundleManifest(string bundleName, string outFile)
+        {
+            var rawBundlesFile = await HttpTasks.HttpDownloadStringAsync(BundlesUrl);
+            var bundlesDictionary = SerializationTasks.JsonDeserialize<Dictionary<string,string>>(rawBundlesFile);
+            KeyValuePair<string, string> bundle;
+            if (string.IsNullOrEmpty(bundleName))
+                bundle = bundlesDictionary.LastOrDefault();
+             else
+                bundle = bundlesDictionary.FirstOrDefault(kv => kv.Key == bundleName);
+
+            var manifestUrl = bundle.Value;
+            await HttpTasks.HttpDownloadFileAsync(manifestUrl, outFile);
         }
 
         private static ManifestBase CreateManifestFromEnvironment(AbsolutePath platformPath, AbsolutePath discoveryPath)
