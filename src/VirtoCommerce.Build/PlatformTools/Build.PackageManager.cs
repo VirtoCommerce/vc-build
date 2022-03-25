@@ -415,7 +415,7 @@ namespace VirtoCommerce.Build
             return packageManifest;
         }
 
-        private async Task DownloadBundleManifest(string bundleName, string outFile)
+        private static async Task DownloadBundleManifest(string bundleName, string outFile)
         {
             var rawBundlesFile = await HttpTasks.HttpDownloadStringAsync(BundlesUrl);
             var bundlesDictionary = SerializationTasks.JsonDeserialize<Dictionary<string,string>>(rawBundlesFile);
