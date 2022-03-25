@@ -54,6 +54,16 @@ vc-build install -module VirtoCommerce.Cart -version 3.12.0
 vc-build install -module VirtoCommerce.Cart:3.12.0 VirtoCommerce.Core:3.20.0
 ```
 
+- `vc-build install -stable [-v <bundle name> -BundlesUrl <custom url to bundles json>]`
+Install also supports the work with bundles. Bundles file is json object with key-value pairs that contains names of bundles and urls to their manifests.
+
+### Examples:
+```console
+vc-build install -stable # will install modules from the lates bundle
+vc-build install -stable -v "2" # will install modules from the bundle with the name 2
+vc-build install -stable -bundlesUrl https://somedomain.com/bundles.json # will use custom url for bundles search
+```
+
 ## Update
 
 ```console
