@@ -41,7 +41,7 @@ namespace VirtoCommerce.Build
             }
         });
 
-        private bool CheckAppServiceStatus(string expected, string actual)
+        private static bool CheckAppServiceStatus(string expected, string actual)
         {
             if (expected == actual || string.IsNullOrEmpty(expected))
                 return true;
