@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using ArgoCD.Client;
 using Nuke.Common;
+using Serilog;
 using VirtoCommerce.Build.ArgoCD.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -21,6 +22,32 @@ namespace VirtoCommerce.Build
         [Parameter("Config file for Argo Application Service")] public string ArgoConfigFile { get; set; }
         [Parameter("Array of Helm parameters")] public HelmParameter[] HelmParameters { get; set; }
         [Parameter("Argo Application Name")] public string ArgoAppName { get; set; }
+        [Parameter("Health Status that need to be awaited")] public string HealthStatus { get; set; }
+        [Parameter("SyncStatus that need to be awaited")] public string SyncStatus { get; set; }
+        [Parameter("Delay between requests in seconds")] public int Delay { get; set; } = 1;
+        [Parameter("Number of attempts before fail")] public int AttempsNumber { get; set; } = 100;
+
+        public Target WaitFor => _ => _
+        .Executes(() => {
+            var argoClient = CreateArgoCDClient(ArgoToken ?? Environment.GetEnvironmentVariable("ARGO_TOKEN"), new Uri(ArgoServer));
+            for(int i =0; i< AttempsNumber; i++)
+            {
+                Log.Information($"Attemp #{i+1}");
+                var argoApp = argoClient.ApplicationService.GetAsync(ArgoAppName).GetAwaiter().GetResult();
+                Log.Information($"Actual Health Status is {argoApp.Status.Health.Status} - expected is {HealthStatus ?? "Not expected"}\n Actual Sync Status is {argoApp.Status.Sync.Status} - expected is {SyncStatus ?? "Not expected"}");
+                if (CheckAppServiceStatus(HealthStatus, argoApp.Status.Health.Status) && CheckAppServiceStatus(SyncStatus, argoApp.Status.Sync.Status))
+                    break;
+                System.Threading.Thread.Sleep(Delay * 1000);
+            }
+        });
+
+        private static bool CheckAppServiceStatus(string expected, string actual)
+        {
+            if (expected == actual || string.IsNullOrEmpty(expected))
+                return true;
+
+            return false;
+        }
 
         public Target SetHelmParameter => _ => _
             .Executes(async () =>
