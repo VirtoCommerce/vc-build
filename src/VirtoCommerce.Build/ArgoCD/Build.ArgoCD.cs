@@ -9,7 +9,6 @@ using Serilog;
 using VirtoCommerce.Build.ArgoCD.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
-using AdvancedServiceSection = VirtoCommerce.Build.ArgoCD.Models.AdvancedService;
 using PlatformSection = VirtoCommerce.Build.ArgoCD.Models.Platform;
 using StorefrontSection = VirtoCommerce.Build.ArgoCD.Models.Storefront;
 
@@ -105,7 +104,7 @@ namespace VirtoCommerce.Build
                 "ingress.storefront_hostname",
                 "theme.url",
                 "theme.name",
-                "advanced.service"
+                "custom.app"
               };
               foreach (var app in apps)
               {
@@ -131,13 +130,13 @@ namespace VirtoCommerce.Build
                       new StorefrontSection.ImageRepository(app.Storefront.ImageRepository),
                       new StorefrontSection.IngressHostname(app.Storefront.Ingress),
                       new StorefrontSection.ThemeUrl(app.Storefront.ThemeUrl),
-                      new StorefrontSection.ThemeName(app.Storefront.ThemeName),
-                      new AdvancedServiceSection.Enabled(app.AdvancedService.Enabled),
-                      new AdvancedServiceSection.Name(app.AdvancedService.Name),
-                      new AdvancedServiceSection.ImageRepository(app.AdvancedService.ImageRepository),
-                      new AdvancedServiceSection.ImageTag(app.AdvancedService.ImageTag),
-                      new AdvancedServiceSection.IngressPath(app.AdvancedService.IngressPath)
-                  }.Where(p => p.Value != null && !app.ProtectedParameters.Contains(p.Name));
+                      new StorefrontSection.ThemeName(app.Storefront.ThemeName)
+                  };
+                  foreach(var (customAppName, customAppParameters) in app.CustomApps)
+                  {
+                      helmParameters.AddRange(customAppParameters.GetParameters(customAppName));
+                  }
+                  helmParameters = helmParameters.Where(p => p.Value != null && !app.ProtectedParameters.Contains(p.Name)).ToList();
 
                   argoAppParams = argoAppParams.Concat(configs)
                       .Concat(secretConfigs)
