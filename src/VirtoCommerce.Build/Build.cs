@@ -959,12 +959,14 @@ namespace VirtoCommerce.Build
                 {
                     const string sonarScript = "sonar-scanner";
                     var sonarScannerShPath = ToolPathResolver.GetPackageExecutable(packageId: "dotnet-sonarscanner",
-                        packageExecutable: sonarScript, framework: framework).Replace("netcoreapp2.0", "net5.0");
+                        packageExecutable: sonarScript, framework: framework)
+                        .Replace("netcoreapp2.0", "net5.0")
+                        .Replace("netcoreapp3.0", "net5.0");
                     var sonarScannerShRightPath = Directory.GetParent(sonarScannerShPath)?.Parent?.FullName ?? string.Empty;
                     var tmpFile = TemporaryDirectory / sonarScript;
                     FileSystemTasks.MoveFile(sonarScannerShPath, tmpFile);
                     FileSystemTasks.DeleteDirectory(sonarScannerShRightPath);
-                    var sonarScriptDestinationPath = sonarScannerShRightPath; //Path.Combine(sonarScannerShRightPath, sonarScript);
+                    var sonarScriptDestinationPath = Path.Combine(sonarScannerShRightPath, sonarScript);
                     FileSystemTasks.MoveFile(tmpFile, sonarScriptDestinationPath);
                     Log.Information($"{sonarScript} path: {sonarScriptDestinationPath}");
                     var chmod = ToolResolver.GetPathTool("chmod");
