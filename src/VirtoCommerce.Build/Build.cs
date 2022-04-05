@@ -964,9 +964,9 @@ namespace VirtoCommerce.Build
                     var tmpFile = TemporaryDirectory / sonarScript;
                     FileSystemTasks.MoveFile(sonarScannerShPath, tmpFile);
                     FileSystemTasks.DeleteDirectory(sonarScannerShRightPath);
-                    var sonarScriptDestinationPath = Path.Combine(sonarScannerShRightPath, sonarScript);
+                    var sonarScriptDestinationPath = sonarScannerShRightPath; //Path.Combine(sonarScannerShRightPath, sonarScript);
                     FileSystemTasks.MoveFile(tmpFile, sonarScriptDestinationPath);
-                    Log.Information($"{sonarScript} path: {sonarScannerShPath}");
+                    Log.Information($"{sonarScript} path: {sonarScriptDestinationPath}");
                     var chmod = ToolResolver.GetPathTool("chmod");
                     chmod.Invoke($"+x {sonarScriptDestinationPath}");
                 }
