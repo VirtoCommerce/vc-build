@@ -139,7 +139,7 @@ namespace VirtoCommerce.Build
                 }
                 else
                 {
-                    Assert.Fail("No solution files found in the current directory");
+                    Log.Warning("No solution files found in the current directory");
                     return new Solution();
                 }
             }
@@ -279,7 +279,7 @@ namespace VirtoCommerce.Build
         protected string VersionSuffix => MSBuildProject?.GetProperty("VersionSuffix")?.EvaluatedValue;
         protected string ReleaseVersion => MSBuildProject?.GetProperty("PackageVersion")?.EvaluatedValue ?? WebProject.GetProperty("Version");
 
-        protected bool IsTheme => Solution == null;
+        protected bool IsTheme => string.IsNullOrEmpty(Solution?.Directory);
 
         protected ModuleManifest ModuleManifest => ManifestReader.Read(ModuleManifestFile);
 
