@@ -955,21 +955,21 @@ namespace VirtoCommerce.Build
             .Executes(() =>
             {
                 const string framework = "net5.0";
-                //if (OperatingSystem.IsLinux())
-                //{
-                //    const string sonarScript = "sonar-scanner";
-                //    var sonarScannerShPath = ToolPathResolver.GetPackageExecutable(packageId: "dotnet-sonarscanner",
-                //        packageExecutable: sonarScript, framework: framework).Replace("netcoreapp2.0", "net5.0");
-                //    var sonarScannerShRightPath = Directory.GetParent(sonarScannerShPath)?.Parent?.FullName ?? string.Empty;
-                //    var tmpFile = TemporaryDirectory / sonarScript;
-                //    FileSystemTasks.MoveFile(sonarScannerShPath, tmpFile);
-                //    FileSystemTasks.DeleteDirectory(sonarScannerShRightPath);
-                //    var sonarScriptDestinationPath = Path.Combine(sonarScannerShRightPath, sonarScript);
-                //    FileSystemTasks.MoveFile(tmpFile, sonarScriptDestinationPath);
-                //    Log.Information($"{sonarScript} path: {sonarScannerShPath}");
-                //    var chmod = ToolResolver.GetPathTool("chmod");
-                //    chmod.Invoke($"+x {sonarScriptDestinationPath}");
-                //}
+                if (OperatingSystem.IsLinux())
+                {
+                    const string sonarScript = "sonar-scanner";
+                    var sonarScannerShPath = ToolPathResolver.GetPackageExecutable(packageId: "dotnet-sonarscanner",
+                        packageExecutable: sonarScript, framework: framework).Replace("netcoreapp2.0", "net5.0");
+                    var sonarScannerShRightPath = Directory.GetParent(sonarScannerShPath)?.Parent?.FullName ?? string.Empty;
+                    var tmpFile = TemporaryDirectory / sonarScript;
+                    FileSystemTasks.MoveFile(sonarScannerShPath, tmpFile);
+                    FileSystemTasks.DeleteDirectory(sonarScannerShRightPath);
+                    var sonarScriptDestinationPath = Path.Combine(sonarScannerShRightPath, sonarScript);
+                    FileSystemTasks.MoveFile(tmpFile, sonarScriptDestinationPath);
+                    Log.Information($"{sonarScript} path: {sonarScannerShPath}");
+                    var chmod = ToolResolver.GetPathTool("chmod");
+                    chmod.Invoke($"+x {sonarScriptDestinationPath}");
+                }
 
                 SonarScannerTasks.SonarScannerEnd(c => c
                     .SetFramework(framework)
