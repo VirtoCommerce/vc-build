@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Newtonsoft.Json;
 
 namespace VirtoCommerce.Build.ArgoCD.Models
 {
@@ -71,7 +70,7 @@ namespace VirtoCommerce.Build.ArgoCD.Models
             return parameters;
         }
 
-        private List<HelmParameter> ConvertToPathParameters(List<string> parameters, string name)
+        private static List<HelmParameter> ConvertToPathParameters(List<string> parameters, string name)
         {
             var result = new List<HelmParameter>();
             for(int i = 0; i < parameters.Count; i++)
