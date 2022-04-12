@@ -16,33 +16,33 @@ namespace VirtoCommerce.Build
         private Regex _moduleNameRegEx = new Regex(@"(VirtoCommerce.+)Module", RegexOptions.Compiled);
 
         public Target MatchVersions => _ => _
-            .Executes(() =>
-            {
-                var allPackages = new List<PackageItem>();
-                var allProjects = Solution.GetProjects("*");
+             .Executes(() =>
+             {
+                 var allPackages = new List<PackageItem>();
+                 var allProjects = Solution.GetProjects("*");
 
-                foreach (var project in allProjects)
-                {
-                    var packagesInfo = GetProjectPackages(project);
-                    allPackages.AddRange(packagesInfo);
-                }
+                 foreach (var project in allProjects)
+                 {
+                     var packagesInfo = GetProjectPackages(project);
+                     allPackages.AddRange(packagesInfo);
+                 }
 
-                var errors = new List<string>();
+                 var errors = new List<string>();
 
-                var platformErrors = ValdatePlatformVersion(allPackages);
-                errors.AddRange(platformErrors);
+                 var platformErrors = ValdatePlatformVersion(allPackages);
+                 errors.AddRange(platformErrors);
 
-                var dependencyVerionErrors = ValidateModuleDependenciesVersions(allPackages);
-                errors.AddRange(dependencyVerionErrors);
+                 var dependencyVerionErrors = ValidateModuleDependenciesVersions(allPackages);
+                 errors.AddRange(dependencyVerionErrors);
 
-                var missedDependenciesErrors = ValidateForMissedDependencies(allPackages);
-                errors.AddRange(missedDependenciesErrors);
+                 var missedDependenciesErrors = ValidateForMissedDependencies(allPackages);
+                 errors.AddRange(missedDependenciesErrors);
 
-                if (errors.Any())
-                {
-                    Assert.Fail(errors.Join(Environment.NewLine));
-                }
-            });
+                 if (errors.Any())
+                 {
+                     Assert.Fail(errors.Join(Environment.NewLine));
+                 }
+             });
 
         /// <summary>
         /// Get list of VirtoCommerce packages (platform and module)

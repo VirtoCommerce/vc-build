@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace VirtoCommerce.Build.ArgoCD.Models
+namespace ArgoCD.Models
 {
     public class ArgoAppStorefrontSection
     {

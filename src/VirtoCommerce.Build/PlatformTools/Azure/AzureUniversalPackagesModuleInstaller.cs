@@ -5,10 +5,11 @@ using System.Threading.Tasks;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
+using VirtoCommerce.Build.PlatformTools;
 
-namespace VirtoCommerce.Build.PlatformTools.Azure
+namespace PlatformTools.Azure
 {
-    internal class AzureUniversalPackagesModuleInstaller: IModulesInstaller
+    internal class AzureUniversalPackagesModuleInstaller : IModulesInstaller
     {
         readonly string token;
         readonly string discoveryPath;

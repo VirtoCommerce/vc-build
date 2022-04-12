@@ -16,10 +16,10 @@ namespace VirtoCommerce.Build
         public static string AppsettingsPath { get; set; } = RootDirectory / "appsettings.json";
 
         public Target InitPlatform => _ => _
-            .Executes(() =>
-            {
-                var configuration = AppSettings.GetConfiguration(RootDirectory, AppsettingsPath);
-                LocalModuleCatalog.GetCatalog(DiscoveryPath.EmptyToNull() ?? configuration.GetModulesDiscoveryPath(), ProbingPath);
-            });
+             .Executes(() =>
+             {
+                 var configuration = AppSettings.GetConfiguration(RootDirectory, AppsettingsPath);
+                 LocalModuleCatalog.GetCatalog(DiscoveryPath.EmptyToNull() ?? configuration.GetModulesDiscoveryPath(), ProbingPath);
+             });
     }
 }

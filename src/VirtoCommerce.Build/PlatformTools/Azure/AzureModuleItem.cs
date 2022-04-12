@@ -1,6 +1,4 @@
-using PlatformTools;
-
-namespace VirtoCommerce.Build.PlatformTools.Azure
+namespace PlatformTools.Azure
 {
     internal class AzureModuleItem : ModuleItem
     {

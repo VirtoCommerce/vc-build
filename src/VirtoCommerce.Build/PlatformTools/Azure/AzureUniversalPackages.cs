@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using PlatformTools;
+using VirtoCommerce.Build.PlatformTools;
 
-namespace VirtoCommerce.Build.PlatformTools.Azure
+namespace PlatformTools.Azure
 {
     internal class AzureUniversalPackages : ModuleSource
     {
@@ -12,4 +12,3 @@ namespace VirtoCommerce.Build.PlatformTools.Azure
         public List<ModuleItem> Modules { get; set; }
     }
 }
-

@@ -5,19 +5,19 @@ using ArgoCD.Client.Models;
 using Newtonsoft.Json;
 using Nuke.Common.IO;
 
-namespace VirtoCommerce.Build.ArgoCD.Models
+namespace ArgoCD.Models
 {
     [TypeConverter(typeof(TypeConverter))]
     [JsonConverter(typeof(HelmJsonConverter))]
-    public class HelmParameter: V1alpha1HelmParameter
+    public class HelmParameter : V1alpha1HelmParameter
     {
-        public HelmParameter(bool? forceString = default(bool?), string name = default(string), string value = default(string)) : base(forceString, name, value)
+        public HelmParameter(bool? forceString = default, string name = default, string value = default) : base(forceString, name, value)
         {
         }
 
         public override string ToString()
         {
-            var parameter = new V1alpha1HelmParameter(null, this.Name, this.Value);
+            var parameter = new V1alpha1HelmParameter(null, Name, Value);
             return SerializationTasks.JsonSerialize(parameter);
         }
 
@@ -54,7 +54,7 @@ namespace VirtoCommerce.Build.ArgoCD.Models
             public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
             {
                 var canParse = false;
-                if(base.CanConvertFrom(context, sourceType))
+                if (base.CanConvertFrom(context, sourceType))
                 {
                     canParse = (context.Instance as string).Contains('=');
                 }
@@ -63,14 +63,14 @@ namespace VirtoCommerce.Build.ArgoCD.Models
 
             public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
             {
-                if(value is string stringValue)
+                if (value is string stringValue)
                 {
                     var splited = stringValue.Split("=");
                     if (splited.Length == 2)
                         return new HelmParameter(null, splited[0], splited[1]);
                 }
                 return base.ConvertFrom(context, culture, value);
-            } 
+            }
         }
     }
 }

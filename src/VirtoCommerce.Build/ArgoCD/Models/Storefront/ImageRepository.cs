@@ -1,4 +1,4 @@
-namespace VirtoCommerce.Build.ArgoCD.Models.Storefront
+namespace ArgoCD.Models.Storefront
 {
     public class ImageRepository : HelmParameter
     {
