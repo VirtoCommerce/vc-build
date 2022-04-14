@@ -8,7 +8,7 @@ namespace PlatformTools.Azure
         public string Organization { get; set; }
         public string Project { get; set; }
         public List<AzureModuleItem> Modules { get; set; }
-        public override string Name { get; set; } = "AzurePipelineArtifacts";
+        public override string Name { get; set; } = nameof(AzurePipelineArtifacts);
     }
 }
 
