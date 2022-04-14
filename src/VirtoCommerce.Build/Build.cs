@@ -272,6 +272,7 @@ namespace VirtoCommerce.Build
         protected static Project WebProject => Solution?.AllProjects.FirstOrDefault(x => x.Name.EndsWith(DefaultProject) || x.Name.EndsWith("VirtoCommerce.Storefront") || x.Name.EndsWith("VirtoCommerce.Build"));
         protected static AbsolutePath ModuleManifestFile => WebProject?.Directory / "module.manifest";
         protected AbsolutePath ModuleIgnoreFile => RootDirectory / "module.ignore";
+        protected AbsolutePath ModuleKeepFile => RootDirectory / "module.keep";
         protected static AbsolutePath WebDirectory => WebProject?.Directory;
 
         protected static Microsoft.Build.Evaluation.Project MSBuildProject => WebProject?.GetMSBuildProject();
@@ -722,13 +723,19 @@ namespace VirtoCommerce.Build
 
                     ignoredFiles = ignoredFiles.Select(x => x.Trim()).Distinct().ToArray();
 
+                    var keepFiles = Array.Empty<string>();
+                    if (FileSystemTasks.FileExists(ModuleKeepFile))
+                    {
+                        keepFiles = TextTasks.ReadAllLines(ModuleKeepFile).ToArray();
+                    }
+
                     FileSystemTasks.DeleteFile(ZipFilePath);
                     //TODO: Exclude all ignored files and *module files not related to compressed module
                     var ignoreModuleFilesRegex = new Regex(@".+Module\..*", RegexOptions.IgnoreCase);
                     var includeModuleFilesRegex = new Regex(@$".*{ModuleManifest.Id}(Module)?\..*", RegexOptions.IgnoreCase);
 
                     CompressionTasks.CompressZip(ModuleOutputDirectory, ZipFilePath, x => !ignoredFiles.Contains(x.Name, StringComparer.OrdinalIgnoreCase) && !ignoreModuleFilesRegex.IsMatch(x.Name)
-                                                                                          || includeModuleFilesRegex.IsMatch(x.Name));
+                                                                                          || includeModuleFilesRegex.IsMatch(x.Name) || keepFiles.Contains(x.Name, StringComparer.OrdinalIgnoreCase));
                 }
                 else
                 {
