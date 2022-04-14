@@ -1,12 +1,9 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AzureBlobs = Azure.Storage.Blobs;
-using VirtoCommerce.Build.PlatformTools;
 using System.IO;
 using System.IO.Compression;
+using System.Threading.Tasks;
+using VirtoCommerce.Build.PlatformTools;
+using AzureBlobs = Azure.Storage.Blobs;
 
 namespace PlatformTools.Azure
 {
@@ -25,7 +22,7 @@ namespace PlatformTools.Azure
             return InnerInstall((AzureBlob)source, _discoveryPath);
         }
 
-        protected async Task InnerInstall(AzureBlob source, string destination)
+        protected Task InnerInstall(AzureBlob source, string destination)
         {
             var blobClientOptions = new AzureBlobs.BlobClientOptions();
             if(!string.IsNullOrEmpty(_token))
@@ -44,6 +41,7 @@ namespace PlatformTools.Azure
                 containerClient.GetBlobClient(module.BlobName).DownloadTo(zipPath);
                 ZipFile.ExtractToDirectory(zipPath, moduleDestination);
             }
+            return Task.CompletedTask;
         }
     }
 }

@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Nuke.Common;
-using System.Linq;
 
 namespace VirtoCommerce.Build
 {
