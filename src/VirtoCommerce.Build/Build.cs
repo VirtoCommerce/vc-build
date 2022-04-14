@@ -274,6 +274,7 @@ internal partial class Build : NukeBuild
     protected static Project WebProject => Solution?.AllProjects.FirstOrDefault(x => x.Name.EndsWith(DefaultProject) || x.Name.EndsWith("VirtoCommerce.Storefront") || x.Name.EndsWith("VirtoCommerce.Build"));
     protected static AbsolutePath ModuleManifestFile => WebProject?.Directory / "module.manifest";
     protected AbsolutePath ModuleIgnoreFile => RootDirectory / "module.ignore";
+    protected AbsolutePath ModuleKeepFile => RootDirectory / "module.keep";
     protected static AbsolutePath WebDirectory => WebProject?.Directory;
 
     protected static Microsoft.Build.Evaluation.Project MSBuildProject => WebProject?.GetMSBuildProject();
@@ -698,47 +699,53 @@ internal partial class Build : NukeBuild
          });
 
     public Target Compress => _ => _
-         .DependsOn(Clean, WebPackBuild, Test, Publish)
-         .Executes(() =>
-         {
-             if (IsModule)
-             {
+        .DependsOn(Clean, WebPackBuild, Test, Publish)
+        .Executes(() =>
+        {
+            if (IsModule)
+            {
                 //Copy module.manifest and all content directories into a module output folder
                 FileSystemTasks.CopyFileToDirectory(ModuleManifestFile, ModuleOutputDirectory, FileExistsPolicy.Overwrite);
 
-                 foreach (var folderName in _moduleContentFolders)
-                 {
-                     var sourcePath = WebProject.Directory / folderName;
+                foreach (var folderName in _moduleContentFolders)
+                {
+                    var sourcePath = WebProject.Directory / folderName;
 
-                     if (FileSystemTasks.DirectoryExists(sourcePath))
-                     {
-                         FileSystemTasks.CopyDirectoryRecursively(sourcePath, ModuleOutputDirectory / folderName, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-                     }
-                 }
+                    if (FileSystemTasks.DirectoryExists(sourcePath))
+                    {
+                        FileSystemTasks.CopyDirectoryRecursively(sourcePath, ModuleOutputDirectory / folderName, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                    }
+                }
 
-                 var ignoredFiles = HttpTasks.HttpDownloadString(GlobalModuleIgnoreFileUrl).SplitLineBreaks();
+                var ignoredFiles = HttpTasks.HttpDownloadString(GlobalModuleIgnoreFileUrl).SplitLineBreaks();
 
-                 if (FileSystemTasks.FileExists(ModuleIgnoreFile))
-                 {
-                     ignoredFiles = ignoredFiles.Concat(TextTasks.ReadAllLines(ModuleIgnoreFile)).ToArray();
-                 }
+                if (FileSystemTasks.FileExists(ModuleIgnoreFile))
+                {
+                    ignoredFiles = ignoredFiles.Concat(TextTasks.ReadAllLines(ModuleIgnoreFile)).ToArray();
+                }
 
-                 ignoredFiles = ignoredFiles.Select(x => x.Trim()).Distinct().ToArray();
+                ignoredFiles = ignoredFiles.Select(x => x.Trim()).Distinct().ToArray();
 
-                 FileSystemTasks.DeleteFile(ZipFilePath);
+                var keepFiles = Array.Empty<string>();
+                if (FileSystemTasks.FileExists(ModuleKeepFile))
+                {
+                    keepFiles = TextTasks.ReadAllLines(ModuleKeepFile).ToArray();
+                }
+
+                FileSystemTasks.DeleteFile(ZipFilePath);
                 //TODO: Exclude all ignored files and *module files not related to compressed module
                 var ignoreModuleFilesRegex = new Regex(@".+Module\..*", RegexOptions.IgnoreCase);
-                 var includeModuleFilesRegex = new Regex(@$".*{ModuleManifest.Id}(Module)?\..*", RegexOptions.IgnoreCase);
+                var includeModuleFilesRegex = new Regex(@$".*{ModuleManifest.Id}(Module)?\..*", RegexOptions.IgnoreCase);
 
-                 CompressionTasks.CompressZip(ModuleOutputDirectory, ZipFilePath, x => !ignoredFiles.Contains(x.Name, StringComparer.OrdinalIgnoreCase) && !ignoreModuleFilesRegex.IsMatch(x.Name)
-                                                                                       || includeModuleFilesRegex.IsMatch(x.Name));
-             }
-             else
-             {
-                 FileSystemTasks.DeleteFile(ZipFilePath);
-                 CompressionTasks.CompressZip(ArtifactsDirectory / "publish", ZipFilePath);
-             }
-         });
+                CompressionTasks.CompressZip(ModuleOutputDirectory, ZipFilePath, x => !ignoredFiles.Contains(x.Name, StringComparer.OrdinalIgnoreCase) && !ignoreModuleFilesRegex.IsMatch(x.Name)
+                                                                                      || includeModuleFilesRegex.IsMatch(x.Name) || keepFiles.Contains(x.Name, StringComparer.OrdinalIgnoreCase));
+            }
+            else
+            {
+                FileSystemTasks.DeleteFile(ZipFilePath);
+                CompressionTasks.CompressZip(ArtifactsDirectory / "publish", ZipFilePath);
+            }
+        });
 
     public Target GetManifestGit => _ => _
          .Before(UpdateManifest)
