@@ -1,4 +1,4 @@
-namespace VirtoCommerce.Build.ArgoCD.Models.Platform
+namespace ArgoCD.Models.Platform
 {
     public class SecretConfig : HelmParameter
     {
@@ -7,4 +7,3 @@ namespace VirtoCommerce.Build.ArgoCD.Models.Platform
         }
     }
 }
-

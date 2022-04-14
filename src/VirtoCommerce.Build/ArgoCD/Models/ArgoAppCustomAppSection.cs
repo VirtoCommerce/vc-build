@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace VirtoCommerce.Build.ArgoCD.Models
+namespace ArgoCD.Models
 {
     public class ArgoAppCustomAppSection
     {
@@ -73,7 +73,7 @@ namespace VirtoCommerce.Build.ArgoCD.Models
         private static List<HelmParameter> ConvertToPathParameters(List<string> parameters, string name)
         {
             var result = new List<HelmParameter>();
-            for(int i = 0; i < parameters.Count; i++)
+            for (var i = 0; i < parameters.Count; i++)
             {
                 result.Add(new HelmParameter(name: $"{name}[{i}]", value: parameters[i]));
             }

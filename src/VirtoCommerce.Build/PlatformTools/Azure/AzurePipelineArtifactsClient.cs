@@ -6,9 +6,9 @@ using Microsoft.Extensions.Options;
 using VirtoCommerce.Platform.Core.Modularity;
 using VirtoCommerce.Platform.Modules.External;
 
-namespace VirtoCommerce.Build.PlatformTools.Azure
+namespace PlatformTools.Azure
 {
-    public class AzurePipelineArtifactsClient: IExternalModulesClient
+    public class AzurePipelineArtifactsClient : IExternalModulesClient
     {
         private readonly ExternalModuleCatalogOptions _options;
 

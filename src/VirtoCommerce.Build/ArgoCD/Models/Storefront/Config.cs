@@ -1,4 +1,4 @@
-namespace VirtoCommerce.Build.ArgoCD.Models.Storefront
+namespace ArgoCD.Models.Storefront
 {
     public class Config : HelmParameter
     {
@@ -7,4 +7,3 @@ namespace VirtoCommerce.Build.ArgoCD.Models.Storefront
         }
     }
 }
-

@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 using Nuke.Common.IO;
 using Octokit;
 using Serilog;
+using VirtoCommerce.Build.PlatformTools;
 
-namespace VirtoCommerce.Build.PlatformTools.Github
+namespace PlatformTools.Github
 {
     internal class GithubPrivateModulesInstaller : IModulesInstaller
     {
@@ -46,7 +47,7 @@ namespace VirtoCommerce.Build.PlatformTools.Github
                 if (asset == null)
                 {
                     Log.Error($"{module.Id}:{module.Version} has no assets");
-                    continue ;
+                    continue;
                 }
                 Log.Information($"Downloading {module.Id}");
                 await HttpTasks.HttpDownloadFileAsync(asset.Url, zipDestination, clientConfigurator: c =>

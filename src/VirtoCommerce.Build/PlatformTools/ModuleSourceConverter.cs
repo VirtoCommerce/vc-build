@@ -2,14 +2,14 @@ using System;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
-using VirtoCommerce.Build.PlatformTools.Azure;
-using VirtoCommerce.Build.PlatformTools.Github;
+using PlatformTools.Azure;
+using PlatformTools.Github;
 
 namespace VirtoCommerce.Build.PlatformTools
 {
-    public class ModuleSourceConverter: JsonConverter
+    public class ModuleSourceConverter : JsonConverter
     {
-        static JsonSerializerSettings SpecifiedSubclassConversion = new JsonSerializerSettings() { ContractResolver = new ModuleSourceSpecifiedConcreteClassConverter() };
+        private static JsonSerializerSettings SpecifiedSubclassConversion = new JsonSerializerSettings() { ContractResolver = new ModuleSourceSpecifiedConcreteClassConverter() };
 
         public override bool CanConvert(Type objectType)
         {
@@ -24,12 +24,16 @@ namespace VirtoCommerce.Build.PlatformTools
             {
                 case nameof(GithubReleases):
                     return JsonConvert.DeserializeObject<GithubReleases>(jo.ToString(), SpecifiedSubclassConversion);
+
                 case nameof(AzurePipelineArtifacts):
                     return JsonConvert.DeserializeObject<AzurePipelineArtifacts>(jo.ToString(), SpecifiedSubclassConversion);
+
                 case nameof(AzureUniversalPackages):
                     return JsonConvert.DeserializeObject<AzureUniversalPackages>(jo.ToString(), SpecifiedSubclassConversion);
+
                 case nameof(GithubPrivateRepos):
                     return JsonConvert.DeserializeObject<GithubPrivateRepos>(jo.ToString(), SpecifiedSubclassConversion);
+
                 default:
                     throw new TypeLoadException($"Unknown module source: {sourceName}");
             }
@@ -57,4 +61,3 @@ namespace VirtoCommerce.Build.PlatformTools
         }
     }
 }
-

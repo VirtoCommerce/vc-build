@@ -9,10 +9,10 @@ using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Utilities.Collections;
 using PlatformTools;
+using PlatformTools.Azure;
+using PlatformTools.Github;
 using Serilog;
 using VirtoCommerce.Build.PlatformTools;
-using VirtoCommerce.Build.PlatformTools.Azure;
-using VirtoCommerce.Build.PlatformTools.Github;
 using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.Platform.Core.Modularity;
 
@@ -40,86 +40,87 @@ namespace VirtoCommerce.Build
 
         [Parameter("Get bundle")]
         public static bool Stable { get; set; }
+
         [Parameter("Bundle name", Name = "v")]
         public static string BundleName { get; set; }
+
         [Parameter("Url to Bundles file")]
         public static string BundlesUrl { get; set; } = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/bundles/stable.json";
 
         public Target Init => _ => _
-            .Executes(async () =>
-            {
-                var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
-                var packageManifest = PackageManager.CreatePackageManifest(platformRelease.TagName, platformRelease.Assets.First().BrowserDownloadUrl);
-                PackageManager.ToFile(packageManifest, PackageManifestPath);
-            });
+             .Executes(async () =>
+             {
+                 var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
+                 var packageManifest = PackageManager.CreatePackageManifest(platformRelease.TagName, platformRelease.Assets.First().BrowserDownloadUrl);
+                 PackageManager.ToFile(packageManifest, PackageManifestPath);
+             });
 
         public Target Install => _ => _
-            .Triggers(InstallPlatform, InstallModules)
-            .Executes(async () =>
-            {
-                ManifestBase packageManifest = await OpenOrCreateManifets(PackageManifestPath);
-                List<string> githubModuleSources = PackageManager.GetGithubModuleManifests(packageManifest);
-                List<ModuleItem> modules = PackageManager.GetGithubModules(packageManifest);
+             .Triggers(InstallPlatform, InstallModules)
+             .Executes(async () =>
+             {
+                 ManifestBase packageManifest = await OpenOrCreateManifets(PackageManifestPath);
+                 List<string> githubModuleSources = PackageManager.GetGithubModuleManifests(packageManifest);
+                 List<ModuleItem> modules = PackageManager.GetGithubModules(packageManifest);
 
+                 var localModuleCatalog = LocalModuleCatalog.GetCatalog(GetDiscoveryPath(), ProbingPath);
+                 var externalModuleCatalog = ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubModuleSources);
 
-                var localModuleCatalog = LocalModuleCatalog.GetCatalog(GetDiscoveryPath(), ProbingPath);
-                var externalModuleCatalog = ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubModuleSources);
+                 if (Module?.Length > 0 && !PlatformParameter)
+                 {
+                     foreach (var module in ParseModuleParameter(Module))
+                     {
+                         var externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().FirstOrDefault(m => m.Id.EqualsInvariant(module.Id));
 
-                if (Module?.Length > 0 && !PlatformParameter)
-                {
-                    foreach (var module in ParseModuleParameter(Module))
-                    {
-                        var externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().FirstOrDefault(m => m.Id.EqualsInvariant(module.Id));
+                         if (externalModule == null)
+                         {
+                             Log.Error($"Cannot find a module with ID '{module.Id}'");
+                             continue;
+                         }
 
-                        if (externalModule == null)
-                        {
-                            Log.Error($"Cannot find a module with ID '{module.Id}'");
-                            continue;
-                        }
+                         if (!string.IsNullOrEmpty(module.Version) && externalModule.Version < new SemanticVersion(new Version(module.Version)))
+                         {
+                             Log.Error($"The latest available version of module {module.Id} is {externalModule.Version}, but entered: {module.Version}");
+                             continue;
+                         }
 
-                        if (!string.IsNullOrEmpty(module.Version) && externalModule.Version < new SemanticVersion(new Version(module.Version)))
-                        {
-                            Log.Error($"The latest available version of module {module.Id} is {externalModule.Version}, but entered: {module.Version}");
-                            continue;
-                        }
+                         module.Id = externalModule.Id;
+                         module.Version = module.Version.EmptyToNull() ?? externalModule.Version.ToString();
 
-                        module.Id = externalModule.Id;
-                        module.Version = module.Version.EmptyToNull() ?? externalModule.Version.ToString();
+                         var existingModule = modules.FirstOrDefault(m => m.Id == module.Id);
 
-                        var existingModule = modules.FirstOrDefault(m => m.Id == module.Id);
+                         if (existingModule == null)
+                         {
+                             Log.Information($"Add {module.Id}:{module.Version}");
+                             modules.Add(module);
+                         }
+                         else
+                         {
+                             if (new Version(existingModule.Version) > new Version(module.Version))
+                             {
+                                 Log.Error($"{module.Id}: Module downgrading isn't supported");
+                                 continue;
+                             }
 
-                        if (existingModule == null)
-                        {
-                            Log.Information($"Add {module.Id}:{module.Version}");
-                            modules.Add(module);
-                        }
-                        else
-                        {
-                            if (new Version(existingModule.Version) > new Version(module.Version))
-                            {
-                                Log.Error($"{module.Id}: Module downgrading isn't supported");
-                                continue;
-                            }
+                             Log.Information($"Change version: {existingModule.Version} -> {module.Version}");
+                             existingModule.Version = module.Version;
+                         }
+                     }
+                 }
+                 else if (!PlatformParameter && !modules.Any() && !FileSystemTasks.FileExists((AbsolutePath)Path.GetFullPath(PackageManifestPath)))
+                 {
+                     Log.Information("Add group: commerce");
+                     var commerceModules = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.Groups.Contains("commerce")).Select(m => new ModuleItem(m.Id, m.Version.ToString()));
+                     modules.AddRange(commerceModules);
+                 }
+                 else if (PlatformParameter)
+                 {
+                     var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
+                     packageManifest.PlatformVersion = platformRelease.TagName;
+                 }
 
-                            Log.Information($"Change version: {existingModule.Version} -> {module.Version}");
-                            existingModule.Version = module.Version;
-                        }
-                    }
-                }
-                else if (!PlatformParameter && !modules.Any() && !FileSystemTasks.FileExists((AbsolutePath)Path.GetFullPath(PackageManifestPath)))
-                {
-                    Log.Information("Add group: commerce");
-                    var commerceModules = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.Groups.Contains("commerce")).Select(m => new ModuleItem(m.Id, m.Version.ToString()));
-                    modules.AddRange(commerceModules);
-                }
-                else if (PlatformParameter)
-                {
-                    var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
-                    packageManifest.PlatformVersion = platformRelease.TagName;
-                }
-
-                PackageManager.ToFile(packageManifest);
-            });
+                 PackageManager.ToFile(packageManifest);
+             });
 
         private IEnumerable<ModuleItem> ParseModuleParameter(string[] moduleStrings)
         {
@@ -160,12 +161,12 @@ namespace VirtoCommerce.Build
         }
 
         public Target InstallPlatform => _ => _
-            .OnlyWhenDynamic(() => PlatformVersionChanged() && !IsModulesInstallation())
-            .Executes(async () =>
-            {
-                var packageManifest = PackageManager.FromFile(PackageManifestPath);
-                await InstallPlatformAsync(packageManifest.PlatformVersion);
-            });
+             .OnlyWhenDynamic(() => PlatformVersionChanged() && !IsModulesInstallation())
+             .Executes(async () =>
+             {
+                 var packageManifest = PackageManager.FromFile(PackageManifestPath);
+                 await InstallPlatformAsync(packageManifest.PlatformVersion);
+             });
 
         private static async Task InstallPlatformAsync(string platformVersion)
         {
@@ -188,7 +189,7 @@ namespace VirtoCommerce.Build
                 tempFile = Path.GetTempFileName();
                 FileSystemTasks.MoveFile(AppsettingsPath, tempFile, FileExistsPolicy.Overwrite);
             }
-                
+
             CompressionTasks.Uncompress(platformZip, RootDirectory);
             FileSystemTasks.DeleteFile(platformZip);
 
@@ -229,103 +230,103 @@ namespace VirtoCommerce.Build
         }
 
         public Target InstallModules => _ => _
-            .After(InstallPlatform)
-            .OnlyWhenDynamic(() => !PlatformParameter)
-            .Executes(async () =>
-            {
-                var packageManifest = PackageManager.FromFile(PackageManifestPath);
-                List<ModuleSource> moduleSources = PackageManager.GetModuleSources(packageManifest).Where(s => s is not GithubReleases).ToList();
-                var githubReleases = PackageManager.GetGithubModulesSource(packageManifest);
-                var discoveryPath = GetDiscoveryPath();
-                var localModuleCatalog = LocalModuleCatalog.GetCatalog(discoveryPath, ProbingPath);
-                var externalModuleCatalog = ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubReleases.ModuleSources);
-                var moduleInstaller = ModuleInstallerFacade.GetModuleInstaller(discoveryPath, ProbingPath, GitHubToken, githubReleases.ModuleSources);
-                var modulesToInstall = new List<ManifestModuleInfo>();
-                var alreadyInstalledModules = localModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.IsInstalled);
+             .After(InstallPlatform)
+             .OnlyWhenDynamic(() => !PlatformParameter)
+             .Executes(async () =>
+             {
+                 var packageManifest = PackageManager.FromFile(PackageManifestPath);
+                 List<ModuleSource> moduleSources = PackageManager.GetModuleSources(packageManifest).Where(s => s is not GithubReleases).ToList();
+                 var githubReleases = PackageManager.GetGithubModulesSource(packageManifest);
+                 var discoveryPath = GetDiscoveryPath();
+                 var localModuleCatalog = LocalModuleCatalog.GetCatalog(discoveryPath, ProbingPath);
+                 var externalModuleCatalog = ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubReleases.ModuleSources);
+                 var moduleInstaller = ModuleInstallerFacade.GetModuleInstaller(discoveryPath, ProbingPath, GitHubToken, githubReleases.ModuleSources);
+                 var modulesToInstall = new List<ManifestModuleInfo>();
+                 var alreadyInstalledModules = localModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.IsInstalled);
 
-                foreach (var module in githubReleases.Modules)
-                {
-                    var externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().FirstOrDefault(m => m.Id == module.Id);
+                 foreach (var module in githubReleases.Modules)
+                 {
+                     var externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().FirstOrDefault(m => m.Id == module.Id);
 
-                    if (externalModule == null)
-                    {
-                        Assert.Fail($"No module {module.Id} found");
-                        return;
-                    }
+                     if (externalModule == null)
+                     {
+                         Assert.Fail($"No module {module.Id} found");
+                         return;
+                     }
 
-                    if (alreadyInstalledModules.Any(installedModule => installedModule.ModuleName == module.Id && installedModule.Version.ToString() == module.Version))
-                    {
-                        continue;
-                    }
+                     if (alreadyInstalledModules.Any(installedModule => installedModule.ModuleName == module.Id && installedModule.Version.ToString() == module.Version))
+                     {
+                         continue;
+                     }
 
-                    var currentModule = new ModuleManifest
-                    {
-                        Id = module.Id,
-                        Version = module.Version,
-                        Dependencies = SkipDependencySolving
-                            ? null
-                            : externalModule.Dependencies.Select(d => new ManifestDependency
-                            {
-                                Id = d.Id,
-                                Version = d.Version.ToString(),
-                            }).ToArray(),
-                        PackageUrl = externalModule.Ref.Replace(externalModule.Version.ToString(), module.Version),
-                        Authors = externalModule.Authors.ToArray(),
-                        PlatformVersion = externalModule.PlatformVersion.ToString(),
-                        Incompatibilities = externalModule.Incompatibilities.Select(d => new ManifestDependency
-                        {
-                            Id = d.Id,
-                            Version = d.Version.ToString(),
-                        }).ToArray(),
-                        Groups = externalModule.Groups.Select(g => g).ToArray(),
-                        Copyright = externalModule.Copyright,
-                        Description = externalModule.Description,
-                        IconUrl = externalModule.IconUrl,
-                        Owners = externalModule.Owners.ToArray(),
-                        ProjectUrl = externalModule.ProjectUrl,
-                        ReleaseNotes = externalModule.ReleaseNotes,
-                        Tags = externalModule.Tags,
-                        Title = externalModule.Title,
-                        VersionTag = externalModule.VersionTag,
-                        LicenseUrl = externalModule.LicenseUrl,
-                        ModuleType = externalModule.ModuleType,
-                        RequireLicenseAcceptance = externalModule.RequireLicenseAcceptance,
-                        UseFullTypeNameInSwagger = externalModule.UseFullTypeNameInSwagger,
-                    };
+                     var currentModule = new ModuleManifest
+                     {
+                         Id = module.Id,
+                         Version = module.Version,
+                         Dependencies = SkipDependencySolving
+                             ? null
+                             : externalModule.Dependencies.Select(d => new ManifestDependency
+                             {
+                                 Id = d.Id,
+                                 Version = d.Version.ToString(),
+                             }).ToArray(),
+                         PackageUrl = externalModule.Ref.Replace(externalModule.Version.ToString(), module.Version),
+                         Authors = externalModule.Authors.ToArray(),
+                         PlatformVersion = externalModule.PlatformVersion.ToString(),
+                         Incompatibilities = externalModule.Incompatibilities.Select(d => new ManifestDependency
+                         {
+                             Id = d.Id,
+                             Version = d.Version.ToString(),
+                         }).ToArray(),
+                         Groups = externalModule.Groups.Select(g => g).ToArray(),
+                         Copyright = externalModule.Copyright,
+                         Description = externalModule.Description,
+                         IconUrl = externalModule.IconUrl,
+                         Owners = externalModule.Owners.ToArray(),
+                         ProjectUrl = externalModule.ProjectUrl,
+                         ReleaseNotes = externalModule.ReleaseNotes,
+                         Tags = externalModule.Tags,
+                         Title = externalModule.Title,
+                         VersionTag = externalModule.VersionTag,
+                         LicenseUrl = externalModule.LicenseUrl,
+                         ModuleType = externalModule.ModuleType,
+                         RequireLicenseAcceptance = externalModule.RequireLicenseAcceptance,
+                         UseFullTypeNameInSwagger = externalModule.UseFullTypeNameInSwagger,
+                     };
 
-                    var moduleInfo = new ManifestModuleInfo().LoadFromManifest(currentModule);
-                    modulesToInstall.Add(moduleInfo);
-                }
+                     var moduleInfo = new ManifestModuleInfo().LoadFromManifest(currentModule);
+                     modulesToInstall.Add(moduleInfo);
+                 }
 
-                var progress = new Progress<ProgressMessage>(m => Log.Information(m.Message));
+                 var progress = new Progress<ProgressMessage>(m => Log.Information(m.Message));
 
-                if (!SkipDependencySolving)
-                {
-                    var missingModules = externalModuleCatalog
-                        .CompleteListWithDependencies(modulesToInstall)
-                        .Except(modulesToInstall)
-                        .OfType<ManifestModuleInfo>()
-                        .Except(alreadyInstalledModules)
-                        .ToList();
+                 if (!SkipDependencySolving)
+                 {
+                     var missingModules = externalModuleCatalog
+                         .CompleteListWithDependencies(modulesToInstall)
+                         .Except(modulesToInstall)
+                         .OfType<ManifestModuleInfo>()
+                         .Except(alreadyInstalledModules)
+                         .ToList();
 
-                    modulesToInstall.AddRange(missingModules);
-                }
-                modulesToInstall.ForEach(module =>
-                {
-                    module.DependsOn.Clear();
-                });
-                moduleInstaller.Install(modulesToInstall, progress);
+                     modulesToInstall.AddRange(missingModules);
+                 }
+                 modulesToInstall.ForEach(module =>
+                 {
+                     module.DependsOn.Clear();
+                 });
+                 moduleInstaller.Install(modulesToInstall, progress);
 
-                foreach(var moduleSource in moduleSources)
-                {
-                    var installer = GetModuleInstaller(moduleSource);
-                    await installer.Install(moduleSource);
-                }
-                AbsolutePath absoluteDiscoveryPath = (AbsolutePath)Path.GetFullPath(discoveryPath);
-                var zipFiles = absoluteDiscoveryPath.GlobFiles("**/*.zip");
-                zipFiles.ForEach(f => FileSystemTasks.DeleteFile(f));
-                localModuleCatalog.Reload();
-            });
+                 foreach (var moduleSource in moduleSources)
+                 {
+                     var installer = GetModuleInstaller(moduleSource);
+                     await installer.Install(moduleSource);
+                 }
+                 AbsolutePath absoluteDiscoveryPath = (AbsolutePath)Path.GetFullPath(discoveryPath);
+                 var zipFiles = absoluteDiscoveryPath.GlobFiles("**/*.zip");
+                 zipFiles.ForEach(f => FileSystemTasks.DeleteFile(f));
+                 localModuleCatalog.Reload();
+             });
 
         private IModulesInstaller GetModuleInstaller(ModuleSource moduleSource) => moduleSource switch
         {
@@ -336,51 +337,51 @@ namespace VirtoCommerce.Build
         };
 
         public Target Uninstall => _ => _
-            .Executes(() =>
-            {
-                var discoveryPath = GetDiscoveryPath();
-                var packageManifest = PackageManager.FromFile(PackageManifestPath);
-                var localModulesCatalog = LocalModuleCatalog.GetCatalog(discoveryPath, ProbingPath);
-                var githubModules = PackageManager.GetGithubModules(packageManifest);
-                FileSystemTasks.DeleteDirectory(ProbingPath);
-                Module.ForEach(m => FileSystemTasks.DeleteDirectory(Path.Combine(discoveryPath, m)));
-                githubModules.RemoveAll(m => Module.Contains(m.Id));
-                PackageManager.ToFile(packageManifest);
-                localModulesCatalog.Reload();
-            });
+             .Executes(() =>
+             {
+                 var discoveryPath = GetDiscoveryPath();
+                 var packageManifest = PackageManager.FromFile(PackageManifestPath);
+                 var localModulesCatalog = LocalModuleCatalog.GetCatalog(discoveryPath, ProbingPath);
+                 var githubModules = PackageManager.GetGithubModules(packageManifest);
+                 FileSystemTasks.DeleteDirectory(ProbingPath);
+                 Module.ForEach(m => FileSystemTasks.DeleteDirectory(Path.Combine(discoveryPath, m)));
+                 githubModules.RemoveAll(m => Module.Contains(m.Id));
+                 PackageManager.ToFile(packageManifest);
+                 localModulesCatalog.Reload();
+             });
 
         public Target Update => _ => _
-            .Triggers(InstallPlatform, InstallModules)
-            .Executes(async () =>
-            {
-                var packageManifest = await OpenOrCreateManifets(PackageManifestPath);
-                var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
-                var githubModules = PackageManager.GetGithubModules(packageManifest);
-                var githubModuleManifests = PackageManager.GetGithubModuleManifests(packageManifest);
-                packageManifest.PlatformVersion = platformRelease.TagName;
+             .Triggers(InstallPlatform, InstallModules)
+             .Executes(async () =>
+             {
+                 var packageManifest = await OpenOrCreateManifets(PackageManifestPath);
+                 var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
+                 var githubModules = PackageManager.GetGithubModules(packageManifest);
+                 var githubModuleManifests = PackageManager.GetGithubModuleManifests(packageManifest);
+                 packageManifest.PlatformVersion = platformRelease.TagName;
 
-                if (!PlatformParameter)
-                {
-                    var localModuleCatalog = LocalModuleCatalog.GetCatalog(GetDiscoveryPath(), ProbingPath);
-                    var externalModuleCatalog = ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubModuleManifests);
+                 if (!PlatformParameter)
+                 {
+                     var localModuleCatalog = LocalModuleCatalog.GetCatalog(GetDiscoveryPath(), ProbingPath);
+                     var externalModuleCatalog = ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubModuleManifests);
 
-                    foreach (var module in githubModules)
-                    {
-                        var externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.Id == module.Id).FirstOrDefault(m => m.Ref.Contains("github.com"));
+                     foreach (var module in githubModules)
+                     {
+                         var externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.Id == module.Id).FirstOrDefault(m => m.Ref.Contains("github.com"));
 
-                        if (externalModule == null)
-                        {
-                            var errorMessage = $"No module {module.Id} found";
-                            Assert.Fail(errorMessage);
-                            throw new ArgumentNullException(errorMessage); // for sonarQube
+                         if (externalModule == null)
+                         {
+                             var errorMessage = $"No module {module.Id} found";
+                             Assert.Fail(errorMessage);
+                             throw new ArgumentNullException(errorMessage); // for sonarQube
                         }
 
-                        module.Version = externalModule.Version.ToString();
-                    }
-                }
+                         module.Version = externalModule.Version.ToString();
+                     }
+                 }
 
-                PackageManager.ToFile(packageManifest);
-            });
+                 PackageManager.ToFile(packageManifest);
+             });
 
         private async Task<ManifestBase> OpenOrCreateManifets(string packageManifestPath)
         {
@@ -418,11 +419,11 @@ namespace VirtoCommerce.Build
         private static async Task DownloadBundleManifest(string bundleName, string outFile)
         {
             var rawBundlesFile = await HttpTasks.HttpDownloadStringAsync(BundlesUrl);
-            var bundlesDictionary = SerializationTasks.JsonDeserialize<Dictionary<string,string>>(rawBundlesFile);
+            var bundlesDictionary = SerializationTasks.JsonDeserialize<Dictionary<string, string>>(rawBundlesFile);
             KeyValuePair<string, string> bundle;
             if (string.IsNullOrEmpty(bundleName))
                 bundle = bundlesDictionary.LastOrDefault();
-             else
+            else
                 bundle = bundlesDictionary.FirstOrDefault(kv => kv.Key == bundleName);
 
             var manifestUrl = bundle.Value;

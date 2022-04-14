@@ -1,4 +1,4 @@
-namespace VirtoCommerce.Build.ArgoCD.Models.Platform
+namespace ArgoCD.Models.Platform
 {
     public class Config : HelmParameter
     {

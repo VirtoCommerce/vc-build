@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.IO;
 
-namespace VirtoCommerce.Build.PlatformTools.Azure
+namespace PlatformTools.Azure
 {
     public class AzureDevClient
     {
@@ -23,7 +23,7 @@ namespace VirtoCommerce.Build.PlatformTools.Azure
             var build = await client.GetLatestBuildAsync(project, definitionName, branch);
             var artifacts = await client.GetArtifactsAsync(project, build.Id);
             var result = artifacts.FirstOrDefault().Resource.DownloadUrl;
-            
+
             return new Uri(result);
         }
 
