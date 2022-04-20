@@ -1,7 +1,9 @@
 using System;
 using System.IO;
 using System.IO.Compression;
+using System.Text;
 using System.Threading.Tasks;
+using Azure.Storage;
 using VirtoCommerce.Build.PlatformTools;
 using AzureBlobs = Azure.Storage.Blobs;
 
@@ -25,20 +27,15 @@ namespace PlatformTools.Azure
         protected Task InnerInstall(AzureBlob source, string destination)
         {
             var blobClientOptions = new AzureBlobs.BlobClientOptions();
-            if(!string.IsNullOrEmpty(_token))
-            {
-                var key = new AzureBlobs.Models.CustomerProvidedKey(_token);
-                blobClientOptions.CustomerProvidedKey = key;
-            }
-
-            var blobServiceClient = new AzureBlobs.BlobServiceClient(new Uri(source.ServiceUri), blobClientOptions);
+            var blobServiceClient = new AzureBlobs.BlobServiceClient(new Uri($"{source.ServiceUri}?{_token}"), blobClientOptions);
             var containerClient = blobServiceClient.GetBlobContainerClient(source.Container);
             foreach (var module in source.Modules)
             {
                 var zipName = $"{module.BlobName}.zip";
                 var zipPath = Path.Join(destination, zipName);
                 var moduleDestination = Path.Join(destination, module.BlobName);
-                containerClient.GetBlobClient(module.BlobName).DownloadTo(zipPath);
+                var blobClient = containerClient.GetBlobClient(module.BlobName);
+                blobClient.DownloadTo(zipPath);
                 ZipFile.ExtractToDirectory(zipPath, moduleDestination);
             }
             return Task.CompletedTask;

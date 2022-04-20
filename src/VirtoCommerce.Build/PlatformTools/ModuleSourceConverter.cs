@@ -33,6 +33,8 @@ namespace VirtoCommerce.Build.PlatformTools
 
                 case nameof(GithubPrivateRepos):
                     return JsonConvert.DeserializeObject<GithubPrivateRepos>(jo.ToString(), SpecifiedSubclassConversion);
+                case nameof(AzureBlob):
+                    return JsonConvert.DeserializeObject<AzureBlob>(jo.ToString(), SpecifiedSubclassConversion);
 
                 default:
                     throw new TypeLoadException($"Unknown module source: {sourceName}");
