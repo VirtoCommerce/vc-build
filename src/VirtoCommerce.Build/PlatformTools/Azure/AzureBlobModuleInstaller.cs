@@ -1,9 +1,7 @@
 using System;
 using System.IO;
 using System.IO.Compression;
-using System.Text;
 using System.Threading.Tasks;
-using Azure.Storage;
 using VirtoCommerce.Build.PlatformTools;
 using AzureBlobs = Azure.Storage.Blobs;
 
