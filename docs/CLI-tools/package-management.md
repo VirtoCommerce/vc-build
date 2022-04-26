@@ -98,3 +98,9 @@ It also removes uninstalled modules from your `vc-package.json` file.
 ```console
 vc-build uninstall -module VirtoCommerce.Cart
 ```
+
+## Configure
+```console
+vc-build configure -sql <sql connection string> -redis <redis connection string> -AzureBlob <container connection string> [-appsettingsPath ./appsettings.json]
+```
+This command will check given connection strings and update appsettings.json
