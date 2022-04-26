@@ -3,11 +3,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [3.3.0] - 2022-04-26
+### Added
+- Support for traffic rules
+- Ability to forcibly keep specified files
+- Support for Azure Blob modules source
+### Fixed
+- IsTheme parameter
+
+## [3.2.0] - 2022-03-31
+### Added
+- Bundles support
+- WaitFor target
+### Fixed
+- indents for module.manifest serialization
+
+## [3.1.0] - 2022-02-25
+### Added
+- SetHelmParameter Target
+- Support for protected parameters
+- Support for advanced section
+
 ## [3.0.0] - 2022-01-28
-## Changed
+### Changed
 - Target framework is net6
 - Help command is the default command
-## Fixed
+### Fixed
 - Help command
 - Minor fixes
 
