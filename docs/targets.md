@@ -210,3 +210,11 @@ Gets parameters: ArgoServer, ArgoToken(or as an alternative - ARGO_TOKEN environ
 vc-build ArgoUpdateApplication -ArgoConfigFile ./environments.yml -ArgoServer https://argoserver.com
 ```
 :::
+:::
+## Configure
+Validates and updates a connection string in the appsettings.json
+Gets parameters: Sql, Redis, AzureBlob, AppsettingsPath (./appsettings.json by default)
+```console
+vc-build Configure -Sql "MsSql connection string"  -Redis "Redis connection string" -AzureBlob "Container connection stirng"
+```
+:::
