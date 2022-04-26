@@ -45,12 +45,12 @@ namespace VirtoCommerce.Build
             }
         }
 
-        private void UpdateAzureBlobConnectionString(string value)
+        private static void UpdateAzureBlobConnectionString(string value)
         {
             UpdateContentConnectionString("AzureBlobStorage", value);
         }
 
-        private void UpdateContentConnectionString(string provider, string value)
+        private static void UpdateContentConnectionString(string provider, string value)
         {
             var appsettingsObject = SerializationTasks.JsonDeserializeFromFile(AppsettingsPath);
             var contentSection = appsettingsObject["Content"];
@@ -59,17 +59,17 @@ namespace VirtoCommerce.Build
             SerializationTasks.JsonSerializeToFile(appsettingsObject, AppsettingsPath);
         }
 
-        private void UpdateRedisConnectionString(string value)
+        private static void UpdateRedisConnectionString(string value)
         {
             UpdateConnectionString("RedisConnectionString", value);
         }
 
-        private void UpdateMsSqlConnectionString(string value)
+        private static void UpdateMsSqlConnectionString(string value)
         {
             UpdateConnectionString("VirtoCommerce", value);
         }
 
-        private void UpdateConnectionString(string name, string value)
+        private static void UpdateConnectionString(string name, string value)
         {
             var appsettingsObject = SerializationTasks.JsonDeserializeFromFile(AppsettingsPath);
             var connStrings = appsettingsObject["ConnectionStrings"];
