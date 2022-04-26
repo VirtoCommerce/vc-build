@@ -6,6 +6,7 @@ using StackExchange.Redis;
 
 namespace PlatformTools.Validation
 {
+    [TypeConverter(typeof(TypeConverter))]
     public class RedisConnectionString: ConnectionString
     {
 
