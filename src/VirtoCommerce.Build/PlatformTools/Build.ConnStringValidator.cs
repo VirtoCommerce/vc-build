@@ -10,41 +10,40 @@ namespace VirtoCommerce.Build
         [Parameter("Redis Connection String")] public RedisConnectionString Redis { get; set; }
         [Parameter("Azure Blob Connection String")] public AzureBlobConnectionString AzureBlob { get; set; }
 
-        Target Configure => _ => _
-        .Executes(() =>
-        {
-            if (!Sql?.IsEmpty() ?? false)
-            {
-                var validationResult = Sql.Validate();
-                if(validationResult != string.Empty)
-                    Assert.Fail(validationResult);
-                else
-                {
-                    UpdateMsSqlConnectionString(Sql.GetConnectionString());
-                }
+        private Target Configure => _ => _
+         .Executes(() =>
+         {
+             CheckAndUpdateConnectionString(Sql);
+             CheckAndUpdateConnectionString(Redis);
+             CheckAndUpdateConnectionString(AzureBlob);
+         });
 
-            }
-            if(!Redis?.IsEmpty() ?? false)
-            {
-                var validationResult = Redis.Validate();
-                if (validationResult != string.Empty)
-                    Assert.Fail(validationResult);
-                else
-                {
-                    UpdateRedisConnectionString(Redis.GetConnectionString());
-                }
-            }
-            if(!AzureBlob?.IsEmpty() ?? false)
+        private void CheckAndUpdateConnectionString(ConnectionString connectionString)
+        {
+            if (!connectionString?.IsEmpty() ?? false)
             {
                 var validationResult = AzureBlob.Validate();
                 if (validationResult != string.Empty)
-                    Assert.Fail(validationResult);
-                else
                 {
-                    UpdateAzureBlobConnectionString(AzureBlob.GetConnectionString());
+                    Assert.Fail(validationResult);
+                }
+
+                switch (connectionString)
+                {
+                    case MsSqlConnectionString mssql:
+                        UpdateMsSqlConnectionString(mssql.GetConnectionString());
+                        break;
+
+                    case RedisConnectionString redis:
+                        UpdateRedisConnectionString(redis.GetConnectionString());
+                        break;
+
+                    case AzureBlobConnectionString azureBlob:
+                        UpdateAzureBlobConnectionString(azureBlob.GetConnectionString());
+                        break;
                 }
             }
-        });
+        }
 
         private void UpdateAzureBlobConnectionString(string value)
         {
