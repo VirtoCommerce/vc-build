@@ -24,7 +24,9 @@ namespace PlatformTools.Validation
                 }
 
                 if (value is null)
+                {
                     return null;
+                }
 
                 return base.ConvertFrom(context, culture, value);
             }

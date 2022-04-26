@@ -3,7 +3,7 @@ namespace PlatformTools.Validation
     public abstract class ConnectionString
     {
         protected string _connectionString;
-        public ConnectionString(string connectionString)
+        protected ConnectionString(string connectionString)
         {
             _connectionString = connectionString;
         }
