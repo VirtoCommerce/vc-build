@@ -68,7 +68,9 @@ namespace Cloud.Models
                 {
                     var splited = stringValue.Split("=");
                     if (splited.Length == 2)
+                    {
                         return new HelmParameter(null, splited[0], splited[1]);
+                    }
                 }
                 return base.ConvertFrom(context, culture, value);
             }

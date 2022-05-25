@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Threading.Tasks;
 using ArgoCD.Client;
+using Cloud.Models;
+using Cloud.Models.Platform;
 using Nuke.Common;
 using Serilog;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
-using Cloud.Models.Platform;
 using Storefront = Cloud.Models.Storefront;
-using Cloud.Models;
 
 namespace VirtoCommerce.Build
 {
@@ -31,24 +32,29 @@ namespace VirtoCommerce.Build
         [Parameter("App Project Name")] public string AppProject { get; set; }
 
         public Target WaitFor => _ => _
-         .Executes(() =>
+         .Executes(async () =>
          {
              var argoClient = CreateArgoCDClient(ArgoToken ?? Environment.GetEnvironmentVariable("ARGO_TOKEN"), new Uri(ArgoServer));
              for (int i = 0; i < AttempsNumber; i++)
              {
                  Log.Information($"Attemp #{i + 1}");
-                 var argoApp = argoClient.ApplicationService.GetAsync(ArgoAppName).GetAwaiter().GetResult();
+                 var argoApp = await argoClient.ApplicationService.GetAsync(ArgoAppName);
                  Log.Information($"Actual Health Status is {argoApp.Status.Health.Status} - expected is {HealthStatus ?? "Not expected"}\n Actual Sync Status is {argoApp.Status.Sync.Status} - expected is {SyncStatus ?? "Not expected"}");
                  if (CheckAppServiceStatus(HealthStatus, argoApp.Status.Health.Status) && CheckAppServiceStatus(SyncStatus, argoApp.Status.Sync.Status))
+                 {
                      break;
-                 System.Threading.Thread.Sleep(Delay * 1000);
+                 }
+
+                 await Task.Delay(TimeSpan.FromSeconds(Delay));
              }
          });
 
         private static bool CheckAppServiceStatus(string expected, string actual)
         {
             if (expected == actual || string.IsNullOrEmpty(expected))
+            {
                 return true;
+            }
 
             return false;
         }
