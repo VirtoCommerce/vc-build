@@ -1,10 +1,11 @@
 using System.Collections.Generic;
 
-namespace ArgoCD.Models
+namespace Cloud.Models
 {
     public class ArgoAppCustomAppSection
     {
         private string _app;
+
         public ArgoAppCustomAppSection()
         {
             PlatformPath = new List<string>();
@@ -21,6 +22,7 @@ namespace ArgoCD.Models
         {
             return $"custom.{_app}.";
         }
+
         public string Enabled { get; set; }
         public string Type { get; set; }
         public string AttachedTo { get; set; }
@@ -39,7 +41,6 @@ namespace ArgoCD.Models
         public List<string> PlatformPath { get; set; }
         public List<string> StorefrontPath { get; set; }
         public List<string> ServicePath { get; set; }
-
 
         public List<HelmParameter> GetParameters(string customAppName)
         {

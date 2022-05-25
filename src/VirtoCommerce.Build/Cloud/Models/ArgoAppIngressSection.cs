@@ -1,4 +1,4 @@
-namespace ArgoCD.Models
+namespace Cloud.Models
 {
     public class ArgoAppIngressSection
     {

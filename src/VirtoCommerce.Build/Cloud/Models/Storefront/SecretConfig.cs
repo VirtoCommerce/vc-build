@@ -1,4 +1,4 @@
-namespace ArgoCD.Models.Storefront
+namespace Cloud.Models.Storefront
 {
     public class SecretConfig : HelmParameter
     {
@@ -7,4 +7,3 @@ namespace ArgoCD.Models.Storefront
         }
     }
 }
-

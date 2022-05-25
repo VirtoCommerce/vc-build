@@ -5,7 +5,7 @@ using ArgoCD.Client.Models;
 using Newtonsoft.Json;
 using Nuke.Common.IO;
 
-namespace ArgoCD.Models
+namespace Cloud.Models
 {
     [TypeConverter(typeof(TypeConverter))]
     [JsonConverter(typeof(HelmJsonConverter))]
@@ -27,6 +27,7 @@ namespace ArgoCD.Models
             {
                 return true;
             }
+
             public override bool CanRead
             {
                 get { return false; }

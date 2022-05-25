@@ -1,4 +1,4 @@
-namespace ArgoCD.Models.Platform
+namespace Cloud.Models.Platform
 {
     public class Secret : HelmParameter
     {
