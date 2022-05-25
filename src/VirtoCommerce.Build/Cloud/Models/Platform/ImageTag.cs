@@ -1,4 +1,4 @@
-namespace ArgoCD.Models.Platform
+namespace Cloud.Models.Platform
 {
     public class ImageTag : HelmParameter
     {
@@ -7,4 +7,3 @@ namespace ArgoCD.Models.Platform
         }
     }
 }
-

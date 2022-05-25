@@ -1,4 +1,4 @@
-namespace ArgoCD.Models.Storefront
+namespace Cloud.Models.Storefront
 {
     public class Config : HelmParameter
     {

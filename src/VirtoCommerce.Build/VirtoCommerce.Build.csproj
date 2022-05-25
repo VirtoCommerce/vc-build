@@ -85,7 +85,7 @@
     <None Remove="Microsoft.TeamFoundationServer.Client" />
     
     <None Remove="YamlDotNet" />
-    <None Remove="ArgoCD\Models\" />
+    <None Remove="Cloud\Models\" />
     <None Remove="Utils\" />
   </ItemGroup>
 

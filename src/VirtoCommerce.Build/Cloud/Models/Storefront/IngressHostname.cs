@@ -1,10 +1,9 @@
-namespace ArgoCD.Models.Storefront
+namespace Cloud.Models.Storefront
 {
     public class IngressHostname : HelmParameter
     {
         public IngressHostname(string value) : base(false, $"ingress.storefront_hostname", value)
         {
-
         }
     }
 }
