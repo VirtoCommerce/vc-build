@@ -218,3 +218,11 @@ Gets parameters: Sql, Redis, AzureBlob, AppsettingsPath (./appsettings.json by d
 vc-build Configure -Sql "MsSql connection string"  -Redis "Redis connection string" -AzureBlob "Container connection stirng"
 ```
 :::
+:::
+## UpdateCloudEnvironment
+Updates Applications in Cloud
+Gets parameters: CloudToken, ArgoConfigFile
+```console
+vc-build UpdateCloudEnvironment -CloudToken <your token> -ArgoConfigFile <path to application manifest>
+```
+:::
