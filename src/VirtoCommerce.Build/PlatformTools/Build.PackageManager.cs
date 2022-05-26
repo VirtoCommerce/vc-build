@@ -186,7 +186,7 @@ namespace VirtoCommerce.Build
             var tempFile = string.Empty;
             if (File.Exists(AppsettingsPath))
             {
-                tempFile = Path.GetTempFileName();
+                tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
                 FileSystemTasks.MoveFile(AppsettingsPath, tempFile, FileExistsPolicy.Overwrite);
             }
 
