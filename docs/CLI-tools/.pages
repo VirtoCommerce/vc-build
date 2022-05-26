@@ -3,4 +3,5 @@ arrange:
     - build-automation.md
     - package-management.md
     - cold-start-and-data-migration.md
+    - grab-migrator.md
     - ...
