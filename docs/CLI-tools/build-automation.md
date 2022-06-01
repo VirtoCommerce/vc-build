@@ -93,7 +93,7 @@ vc-build publishPackages -source C:\local-nuget
 ## Compress 
 
 ```console
-vc-build compress (with no args)
+vc-build compress -configuration <Debug|Release>
 ```
 Pack the build artifacts into a distribution bundle zip that is ready to be transferred to a developer platform instance or published. Executing this command in a module root folder will put the resulting zip into the `artifact` folder. 
 
@@ -105,7 +105,7 @@ This target normally checks and excludes from the resulting zip all files which 
 ### Example:
 
 ```console
-vc-build compress
+vc-build compress -configuration Release
 ```
 
 Console output:
