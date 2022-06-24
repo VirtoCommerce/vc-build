@@ -11,8 +11,29 @@ vc-build install -module <module>:<version>
 
 This command downloads and installs the platform or modules into the relevant folder with the versions transferred as command parameters or defined in `vc-package.json`.
 
-The `vc-package.json` file is used to maintain the list of installed modules with their versions. This allows `vc-build` to easily restore the platform with modules on a different machine, such as a build server, without all those packages.
+### Example of the vc-package.json file:
+```console
+{
+  "Sources": [
+    {
+      "Name": "GithubReleases",
+      "ModuleSources": [
+        "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/modules_v3.json"
+      ],
+      "Modules": [
+        {
+          "Id": "VirtoCommerce.Assets",
+          "Version": "3.200.0"
+        }
+      ]
+    }
+  ],
+  "ManifestVersion": "2.0",
+  "PlatformVersion": "3.216.0"
+} 
+```
 
+The `vc-package.json` file is used to maintain the list of installed modules with their versions. This allows `vc-build` to easily restore the platform with modules on a different machine, such as a build server, without all those packages.
 
 - `vc-build install (with no args)`
 
