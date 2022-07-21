@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [3.5.0] - 2022-07-21
+### Added
+- HttpTimeout parameter for overriding default http timeout
+### Changed
+- Default timeout of HttpTasks from 5 to 15 sec.
+
 ## [3.4.0] - 2022-05-26
 ### Added
 - UpdateCloudEnvironment target
