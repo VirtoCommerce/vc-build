@@ -263,7 +263,7 @@ internal partial class Build : NukeBuild
 
     [Parameter("Main branch")] public static string MainBranch { get; set; } = "master";
 
-    [Parameter("Network tasks timeout in seconds")] public static int HttpTimeout = 15;
+    [Parameter("Http tasks timeout in seconds")] public static int HttpTimeout { get; set; } = 15;
 
     // TODO: Convert to a method because GitRepository.FromLocalDirectory() is a heavy method and it should not be used as a property
     protected GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
