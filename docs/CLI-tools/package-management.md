@@ -26,25 +26,70 @@ This command downloads and installs the platform or modules into the relevant fo
           "Version": "3.200.0"
         }
       ]
+    },
+    {
+      "Name": "GithubPrivateRepos",
+      "Owner": "VirtoCommerce",
+      "Modules":[
+        {
+          "Id": "vc-module-custom",
+          "Version": "3.16.0"
+        }
+      ]
+    },
+    {
+      "Name": "AzurePipelineArtifacts",
+      "Organization": "<The name of the Azure DevOps organization.>",
+      "Project": "<Project ID or project name>",
+      "Modules": [
+        {
+          "Id": "vc-module-custom",
+          "Version": "3.14.0",
+          "Branch": "<Branch name>",
+          "Definition": "<definition name with optional leading folder path, or the definition id>"
+        }
+      ]
+    },
+    {
+      "Name": "AzureUniversalPackages",
+      "Organization": "https://dev.azure.com/<YOUR_ORGANIZATION>",
+      "Feed": "<FEED_NAME>",
+      "Project": "<YOUR_PROJECT_NAME>",
+      "Modules": [
+        {
+          "Id": "<PACKAGE_NAME>",
+          "Version": "<PACKAGE_VERSION>"
+        }
+      ]
+    },
+    {
+      "Name": "AzureBlob",
+      "Modules": [
+        {
+          "BlobName": "CustomCompany.CustomModule1_3.200.0.zip"
+        }
+      ],
+      "Container": "modules",
+      "ServiceUri": "https://vcpsblob.blob.core.windows.net"
     }
   ],
   "ManifestVersion": "2.0",
   "PlatformVersion": "3.216.0"
-} 
+}
 ```
 
 The `vc-package.json` file is used to maintain the list of installed modules with their versions. This allows `vc-build` to easily restore the platform with modules on a different machine, such as a build server, without all those packages.
 
 - `vc-build install (with no args)`
 
-This target downloads and installs the platform and modules into the relevant folder with versions described in `vc-package.json`. 
+This target downloads and installs the platform and modules into the relevant folder with versions described in `vc-package.json`.
 If `vc-package.json` is not found in the local folder, the command will by default download and install the latest platform and module versions marked as `commerce`.
 
 By default, the `install` target will install all modules listed as dependencies in `vc-package.json`.
 
 ### Examples:
 ```console
-vc-build install 
+vc-build install
 ```
 
 - `vc-build install -platform -version <version>`
@@ -97,7 +142,7 @@ This command will update the platform and all modules linked to the version spec
 If `<version>` is not specified, the component will be updated to the latest version.
 If no args are specified, the platform and all modules in the specified location will be updated.
 
-This command also updates the installed dependency versions in the `vc-package.json` file. 
+This command also updates the installed dependency versions in the `vc-package.json` file.
 
 ### Examples:
 ```console
