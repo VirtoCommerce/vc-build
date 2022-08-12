@@ -320,10 +320,11 @@ namespace VirtoCommerce.Build
                  foreach (var moduleSource in moduleSources)
                  {
                      var installer = GetModuleInstaller(moduleSource);
+
                      await installer.Install(moduleSource);
                  }
                  AbsolutePath absoluteDiscoveryPath = (AbsolutePath)Path.GetFullPath(discoveryPath);
-                 var zipFiles = absoluteDiscoveryPath.GlobFiles("**/*.zip");
+                 var zipFiles = absoluteDiscoveryPath.GlobFiles("*/*.zip");
                  zipFiles.ForEach(f => FileSystemTasks.DeleteFile(f));
                  localModuleCatalog.Reload();
              });
