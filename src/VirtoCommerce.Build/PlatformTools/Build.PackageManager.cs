@@ -338,7 +338,7 @@ namespace VirtoCommerce.Build
         };
 
         public Target Uninstall => _ => _
-             .Executes(() =>
+             .Executes(async () =>
              {
                  var discoveryPath = GetDiscoveryPath();
                  var packageManifest = PackageManager.FromFile(PackageManifestPath);
@@ -348,6 +348,11 @@ namespace VirtoCommerce.Build
                  Module.ForEach(m => FileSystemTasks.DeleteDirectory(Path.Combine(discoveryPath, m)));
                  githubModules.RemoveAll(m => Module.Contains(m.Id));
                  PackageManager.ToFile(packageManifest);
+                 if (PlatformVersion.CurrentVersion == null)
+                 {
+                     var platformRelease = await GithubManager.GetPlatformRelease(null);
+                     PlatformVersion.CurrentVersion = new SemanticVersion(Version.Parse(platformRelease.TagName));
+                 }
                  localModulesCatalog.Reload();
              });
 
