@@ -338,7 +338,7 @@ namespace VirtoCommerce.Build
         };
 
         public Target Uninstall => _ => _
-             .Executes(() =>
+             .Executes(async () =>
              {
                  var discoveryPath = GetDiscoveryPath();
                  var packageManifest = PackageManager.FromFile(PackageManifestPath);
@@ -350,7 +350,7 @@ namespace VirtoCommerce.Build
                  PackageManager.ToFile(packageManifest);
                  if (PlatformVersion.CurrentVersion == null)
                  {
-                     var platformRelease = GithubManager.GetPlatformRelease(null).GetAwaiter().GetResult();
+                     var platformRelease = await GithubManager.GetPlatformRelease(null);
                      PlatformVersion.CurrentVersion = new SemanticVersion(Version.Parse(platformRelease.TagName));
                  }
                  localModulesCatalog.Reload();
