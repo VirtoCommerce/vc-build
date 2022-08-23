@@ -202,8 +202,6 @@ namespace VirtoCommerce.Build
                 var destinationSettingsPath = !Force ? AppsettingsPath : Path.Join(Path.GetDirectoryName(AppsettingsPath), bakFileName.ToString());
                 FileSystemTasks.MoveFile(tempFile, destinationSettingsPath, FileExistsPolicy.Overwrite);
 
-                // there is a way to merge two appsettings.json (old version and new one) leaving the old settings,
-                // but there will no comments in the final file
                 AppsettingsMessage(bakFileName.ToString());
             }
         }
