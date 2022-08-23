@@ -199,7 +199,7 @@ namespace VirtoCommerce.Build
                 var bakFileName = new StringBuilder("appsettings.")
                     .Append(DateTime.Now.ToString("MMddyyHHmmss"))
                     .Append(".bak");
-                var destinationSettingsPath = Path.Join(Path.GetDirectoryName(AppsettingsPath), bakFileName.ToString());
+                var destinationSettingsPath = !Force ? AppsettingsPath : Path.Join(Path.GetDirectoryName(AppsettingsPath), bakFileName.ToString());
                 FileSystemTasks.MoveFile(tempFile, destinationSettingsPath, FileExistsPolicy.Overwrite);
 
                 // there is a way to merge two appsettings.json (old version and new one) leaving the old settings,
@@ -464,15 +464,11 @@ namespace VirtoCommerce.Build
 
         private static void AppsettingsMessage(string bakFileName)
         {
-            var colorBackup = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine();
-            Console.WriteLine("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-            Console.WriteLine("+ appsettings.json has been updated. Maybe there are new settings there.  +");
-            Console.WriteLine($"+ The old version of the file with the name {bakFileName}  +");
-            Console.WriteLine("+ has been restored to the same directory.                                +");
-            Console.WriteLine("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-            Console.ForegroundColor = colorBackup;
+            Log.Information("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+            Log.Information("+ appsettings.json has been updated. Maybe there are new settings there.  +");
+            Log.Information($"+ The old version of the file with the name {bakFileName}  +");
+            Log.Information("+ has been restored to the same directory.                                +");
+            Log.Information("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
         }
     }
 }
