@@ -201,6 +201,15 @@ namespace VirtoCommerce.Build
                     .Append(".bak");
                 var destinationSettingsPath = !Force ? AppsettingsPath : Path.Join(Path.GetDirectoryName(AppsettingsPath), bakFileName.ToString());
                 FileSystemTasks.MoveFile(tempFile, destinationSettingsPath, FileExistsPolicy.Overwrite);
+
+                if (Force)
+                {
+                    Log.Information($"The old appsettings.json was saved as {bakFileName}");
+                }
+                else
+                {
+                    Log.Information($"appsettings.json was restored");
+                }
             }
         }
 
