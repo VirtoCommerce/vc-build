@@ -202,7 +202,14 @@ namespace VirtoCommerce.Build
                 var destinationSettingsPath = !Force ? AppsettingsPath : Path.Join(Path.GetDirectoryName(AppsettingsPath), bakFileName.ToString());
                 FileSystemTasks.MoveFile(tempFile, destinationSettingsPath, FileExistsPolicy.Overwrite);
 
-                AppsettingsMessage(bakFileName.ToString());
+                if (Force)
+                {
+                    Log.Information($"The old appsettings.json was saved as {bakFileName}");
+                }
+                else
+                {
+                    Log.Information($"appsettings.json was restored");
+                }
             }
         }
 
@@ -458,15 +465,6 @@ namespace VirtoCommerce.Build
                 githubModules.Add(new ModuleItem(manifest.Id, manifest.Version));
             });
             return packageManifest;
-        }
-
-        private static void AppsettingsMessage(string bakFileName)
-        {
-            Log.Information("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-            Log.Information("+ appsettings.json has been updated. Maybe there are new settings there.  +");
-            Log.Information($"+ The old version of the file with the name {bakFileName}  +");
-            Log.Information("+ has been restored to the same directory.                                +");
-            Log.Information("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
         }
     }
 }
