@@ -1141,8 +1141,6 @@ internal partial class Build : NukeBuild
     private void CompareWithManifest(Project project, ModuleManifest moduleManifest)
     {
         var projectPackageReferences = project.GetItems("PackageReference");
-        var packageIds = projectPackageReferences.Where(
-            r => moduleManifest.Dependencies.Any(d => r.StartsWith($"{d.Id}Module")));
         projectPackageReferences.ForEach(p =>
         {
             var manifestDependency = FindManifestDependency(p, moduleManifest.Dependencies);
@@ -1157,12 +1155,12 @@ internal partial class Build : NukeBuild
         });
     }
 
-    private ManifestDependency FindManifestDependency(string packageId, IEnumerable<ManifestDependency> manifestDependencies)
+    private static ManifestDependency FindManifestDependency(string packageId, IEnumerable<ManifestDependency> manifestDependencies)
     {
         return manifestDependencies.FirstOrDefault(d => packageId.StartsWith($"{d.Id}Module"));
     }
 
-    private void CheckDependencyVersion(Project project, ManifestDependency dependency, string packageId)
+    private static void CheckDependencyVersion(Project project, ManifestDependency dependency, string packageId)
     {
         var packageVersion = project.GetPackageReferenceVersion(packageId);
         if (new Version(dependency.Version) != new Version(packageVersion))
