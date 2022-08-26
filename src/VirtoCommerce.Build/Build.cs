@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing.Printing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -28,6 +29,7 @@ using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
 using Octokit;
 using Serilog;
+using Serilog.Events;
 using VirtoCommerce.Build.Utils;
 using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.Platform.Core.Modularity;
@@ -1122,4 +1124,55 @@ internal partial class Build : NukeBuild
          {
              ClearTempBeforeExit = true;
          });
+
+    public Target ValidateManifest => _ => _
+        .Executes(ValidateManifestsDependencies);
+
+    private void ValidateManifestsDependencies()
+    {
+        Log.Information("Dependencies of module.manifest:");
+        ModuleManifest.Dependencies.ForEach(d => Log.Information($"{d.Id} - {d.Version}"));
+        foreach (var project in Solution.AllProjects)
+        {
+            CompareWithManifest(project, ModuleManifest);
+        }
+    }
+
+    private void CompareWithManifest(Project project, ModuleManifest moduleManifest)
+    {
+        var projectPackageReferences = project.GetItems("PackageReference");
+        var packageIds = projectPackageReferences.Where(
+            r => moduleManifest.Dependencies.Any(d => r.StartsWith($"{d.Id}Module")));
+        projectPackageReferences.ForEach(p =>
+        {
+            var manifestDependency = FindManifestDependency(p, moduleManifest.Dependencies);
+            if(manifestDependency != null)
+            {
+                CheckDependencyVersion(project, manifestDependency, p);
+            }
+            else
+            {
+                Log.Information($"No similar dependencies found for: {p}");
+            }
+        });
+    }
+
+    private ManifestDependency FindManifestDependency(string packageId, IEnumerable<ManifestDependency> manifestDependencies)
+    {
+        return manifestDependencies.FirstOrDefault(d => packageId.StartsWith($"{d.Id}Module"));
+    }
+
+    private void CheckDependencyVersion(Project project, ManifestDependency dependency, string packageId)
+    {
+        var packageVersion = project.GetPackageReferenceVersion(packageId);
+        if (new Version(dependency.Version) != new Version(packageVersion))
+        {
+            Log.Error($"Versions in module.manifest and {project.Name} of {dependency.Id} and {packageId} are mismatch!");
+            Log.Error($"{dependency.Version} - {packageVersion}");
+        }
+        else
+        {
+            Log.Information($"{dependency.Id}:{dependency.Version} - {packageId}:{packageVersion}");
+        }
+    }
 }
