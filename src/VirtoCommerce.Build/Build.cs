@@ -1138,7 +1138,7 @@ internal partial class Build : NukeBuild
         }
     }
 
-    private void CompareWithManifest(Project project, ModuleManifest moduleManifest)
+    private static void CompareWithManifest(Project project, ModuleManifest moduleManifest)
     {
         var projectPackageReferences = project.GetItems("PackageReference");
         projectPackageReferences.ForEach(p =>
