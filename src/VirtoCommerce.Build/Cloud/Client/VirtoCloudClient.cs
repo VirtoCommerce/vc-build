@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Nuke.Common;
 
 namespace Cloud.Client
 {
@@ -36,7 +37,12 @@ namespace Cloud.Client
                 RequestUri = new Uri("api/saas/environments/update", UriKind.Relative),
                 Content = new FormUrlEncodedContent(content)
             });
-            response.EnsureSuccessStatusCode();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                Assert.Fail($"{response.ReasonPhrase}: {await response.Content.ReadAsStringAsync()}");
+            }
+
             return await response.Content.ReadAsStringAsync();
         }
     }
