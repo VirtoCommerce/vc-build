@@ -268,43 +268,15 @@ namespace VirtoCommerce.Build
                          continue;
                      }
 
-                     var currentModule = new ModuleManifest
+                     try
                      {
-                         Id = module.Id,
-                         Version = module.Version,
-                         Dependencies = SkipDependencySolving
-                             ? null
-                             : externalModule.Dependencies.Select(d => new ManifestDependency
-                             {
-                                 Id = d.Id,
-                                 Version = d.Version.ToString(),
-                             }).ToArray(),
-                         PackageUrl = externalModule.Ref.Replace(externalModule.Version.ToString(), module.Version),
-                         Authors = externalModule.Authors.ToArray(),
-                         PlatformVersion = externalModule.PlatformVersion.ToString(),
-                         Incompatibilities = externalModule.Incompatibilities.Select(d => new ManifestDependency
-                         {
-                             Id = d.Id,
-                             Version = d.Version.ToString(),
-                         }).ToArray(),
-                         Groups = externalModule.Groups.Select(g => g).ToArray(),
-                         Copyright = externalModule.Copyright,
-                         Description = externalModule.Description,
-                         IconUrl = externalModule.IconUrl,
-                         Owners = externalModule.Owners.ToArray(),
-                         ProjectUrl = externalModule.ProjectUrl,
-                         ReleaseNotes = externalModule.ReleaseNotes,
-                         Tags = externalModule.Tags,
-                         Title = externalModule.Title,
-                         VersionTag = externalModule.VersionTag,
-                         LicenseUrl = externalModule.LicenseUrl,
-                         ModuleType = externalModule.ModuleType,
-                         RequireLicenseAcceptance = externalModule.RequireLicenseAcceptance,
-                         UseFullTypeNameInSwagger = externalModule.UseFullTypeNameInSwagger,
-                     };
-
-                     var moduleInfo = new ManifestModuleInfo().LoadFromManifest(currentModule);
-                     modulesToInstall.Add(moduleInfo);
+                         var moduleInfo = LoadModuleInfo(module, externalModule);
+                         modulesToInstall.Add(moduleInfo);
+                     }
+                     catch (Exception ex)
+                     {
+                         Assert.Fail($"Could not load module '{module.Id}'", ex);
+                     }
                  }
 
                  var progress = new Progress<ProgressMessage>(m => Log.Information(m.Message));
@@ -337,6 +309,47 @@ namespace VirtoCommerce.Build
                  zipFiles.ForEach(f => FileSystemTasks.DeleteFile(f));
                  localModuleCatalog.Reload();
              });
+
+        private static ManifestModuleInfo LoadModuleInfo(ModuleItem module, ManifestModuleInfo externalModule)
+        {
+            var currentModule = new ModuleManifest
+            {
+                Id = module.Id,
+                Version = module.Version,
+                Dependencies = SkipDependencySolving
+                    ? null
+                    : externalModule.Dependencies.Select(d => new ManifestDependency
+                    {
+                        Id = d.Id,
+                        Version = d.Version.ToString(),
+                    }).ToArray(),
+                PackageUrl = externalModule.Ref.Replace(externalModule.Version.ToString(), module.Version),
+                Authors = externalModule.Authors.ToArray(),
+                PlatformVersion = externalModule.PlatformVersion.ToString(),
+                Incompatibilities = externalModule.Incompatibilities.Select(d => new ManifestDependency
+                {
+                    Id = d.Id,
+                    Version = d.Version.ToString(),
+                }).ToArray(),
+                Groups = externalModule.Groups.Select(g => g).ToArray(),
+                Copyright = externalModule.Copyright,
+                Description = externalModule.Description,
+                IconUrl = externalModule.IconUrl,
+                Owners = externalModule.Owners.ToArray(),
+                ProjectUrl = externalModule.ProjectUrl,
+                ReleaseNotes = externalModule.ReleaseNotes,
+                Tags = externalModule.Tags,
+                Title = externalModule.Title,
+                VersionTag = externalModule.VersionTag,
+                LicenseUrl = externalModule.LicenseUrl,
+                ModuleType = externalModule.ModuleType,
+                RequireLicenseAcceptance = externalModule.RequireLicenseAcceptance,
+                UseFullTypeNameInSwagger = externalModule.UseFullTypeNameInSwagger,
+            };
+
+            var moduleInfo = new ManifestModuleInfo().LoadFromManifest(currentModule);
+            return moduleInfo;
+        }
 
         private IModulesInstaller GetModuleInstaller(ModuleSource moduleSource) => moduleSource switch
         {

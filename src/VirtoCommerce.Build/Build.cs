@@ -1096,26 +1096,37 @@ internal partial class Build : NukeBuild
              }
              catch (AggregateException ex)
              {
-                 var responseString = ((ApiValidationException)ex.InnerException)?.HttpResponse?.Body.ToString() ?? "";
-                 var responseDocument = JsonDocument.Parse(responseString);
-                 var alreadyExistsError = false;
-
-                 if (responseDocument.RootElement.TryGetProperty("errors", out var errors))
+                 foreach (var innerException in ex.Flatten().InnerExceptions)
                  {
-                     var errorCount = errors.GetArrayLength();
-
-                     if (errorCount > 0)
+                     if(innerException is ApiValidationException exception)
                      {
-                         alreadyExistsError = errors.EnumerateArray().Any(e => e.GetProperty("code").GetString() == "already_exists");
+                         var responseString = exception?.HttpResponse?.Body.ToString() ?? string.Empty;
+                         var responseDocument = JsonDocument.Parse(responseString);
+                         var alreadyExistsError = false;
+
+                         if (responseDocument.RootElement.TryGetProperty("errors", out var errors))
+                         {
+                             var errorCount = errors.GetArrayLength();
+
+                             if (errorCount > 0)
+                             {
+                                 alreadyExistsError = errors.EnumerateArray().Any(e => e.GetProperty("code").GetString() == "already_exists");
+                             }
+                         }
+
+                         if (alreadyExistsError)
+                         {
+                             _exitCode = 422;
+                         }
+                         Log.Error($"Api Validation Error: {responseString}");
+                     }
+                     else
+                     {
+                         Log.Error(innerException, "Error");
                      }
                  }
 
-                 if (alreadyExistsError)
-                 {
-                     _exitCode = 422;
-                 }
-
-                 Assert.Fail(ex.Message);
+                 Assert.Fail("Publish Release Failed");
              }
          });
 
