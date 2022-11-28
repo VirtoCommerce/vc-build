@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO.Abstractions;
+using System.Threading.Tasks;
 using VirtoCommerce.Platform.Data.TransactionFileManager;
 using VirtoCommerce.Platform.Data.ZipFile;
 using VirtoCommerce.Platform.Modules;
@@ -11,7 +12,7 @@ namespace PlatformTools
     {
         private static ModuleInstaller _moduleInstaller;
 
-        public static ModuleInstaller GetModuleInstaller(string discoveryPath, string probingPath, string authToken, IList<string> manifestUrls)
+        public static async Task<ModuleInstaller> GetModuleInstaller(string discoveryPath, string probingPath, string authToken, IList<string> manifestUrls)
         {
             if (_moduleInstaller == null)
             {
@@ -21,7 +22,7 @@ namespace PlatformTools
                 var localCatalogOptions = LocalModuleCatalog.GetOptions(discoveryPath, probingPath);
                 var extCatalogOptions = ExtModuleCatalog.GetOptions(authToken, manifestUrls);
                 var localModuleCatalog = LocalModuleCatalog.GetCatalog(localCatalogOptions);
-                var externalModuleCatalog = ExtModuleCatalog.GetCatalog(extCatalogOptions, localModuleCatalog);
+                var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(extCatalogOptions, localModuleCatalog);
                 var modulesClient = new ExternalModulesClient(extCatalogOptions);
                 _moduleInstaller = new ModuleInstaller(externalModuleCatalog, modulesClient, fileManager, localCatalogOptions, fileSystem, zipFileWrapper);
             }
