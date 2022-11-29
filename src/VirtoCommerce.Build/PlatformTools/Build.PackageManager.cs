@@ -64,7 +64,7 @@ namespace VirtoCommerce.Build
                  List<ModuleItem> modules = PackageManager.GetGithubModules(packageManifest);
 
                  var localModuleCatalog = LocalModuleCatalog.GetCatalog(GetDiscoveryPath(), ProbingPath);
-                 var externalModuleCatalog = ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubModuleSources);
+                 var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubModuleSources);
 
                  if (Module?.Length > 0 && !PlatformParameter)
                  {
@@ -248,8 +248,8 @@ namespace VirtoCommerce.Build
                  var githubReleases = PackageManager.GetGithubModulesSource(packageManifest);
                  var discoveryPath = GetDiscoveryPath();
                  var localModuleCatalog = LocalModuleCatalog.GetCatalog(discoveryPath, ProbingPath);
-                 var externalModuleCatalog = ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubReleases.ModuleSources);
-                 var moduleInstaller = ModuleInstallerFacade.GetModuleInstaller(discoveryPath, ProbingPath, GitHubToken, githubReleases.ModuleSources);
+                 var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubReleases.ModuleSources);
+                 var moduleInstaller = await ModuleInstallerFacade.GetModuleInstaller(discoveryPath, ProbingPath, GitHubToken, githubReleases.ModuleSources);
                  var modulesToInstall = new List<ManifestModuleInfo>();
                  var alreadyInstalledModules = localModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.IsInstalled);
 
@@ -392,7 +392,7 @@ namespace VirtoCommerce.Build
                  if (!PlatformParameter)
                  {
                      var localModuleCatalog = LocalModuleCatalog.GetCatalog(GetDiscoveryPath(), ProbingPath);
-                     var externalModuleCatalog = ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubModuleManifests);
+                     var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubModuleManifests);
 
                      foreach (var module in githubModules)
                      {
