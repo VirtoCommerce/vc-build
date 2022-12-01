@@ -22,7 +22,7 @@ namespace VirtoCommerce.Build
         {
             if (!connectionString?.IsEmpty() ?? false)
             {
-                var validationResult = AzureBlob.Validate();
+                var validationResult = connectionString.Validate();
                 if (validationResult != string.Empty)
                 {
                     Assert.Fail(validationResult);
