@@ -59,9 +59,9 @@ namespace VirtoCommerce.Build
              .Triggers(InstallPlatform, InstallModules)
              .Executes(async () =>
              {
-                 ManifestBase packageManifest = await OpenOrCreateManifets(PackageManifestPath);
-                 List<string> githubModuleSources = PackageManager.GetGithubModuleManifests(packageManifest);
-                 List<ModuleItem> modules = PackageManager.GetGithubModules(packageManifest);
+                 var packageManifest = await OpenOrCreateManifest(PackageManifestPath);
+                 var githubModuleSources = PackageManager.GetGithubModuleManifests(packageManifest);
+                 var modules = PackageManager.GetGithubModules(packageManifest);
 
                  var localModuleCatalog = LocalModuleCatalog.GetCatalog(GetDiscoveryPath(), ProbingPath);
                  var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubModuleSources);
@@ -383,7 +383,7 @@ namespace VirtoCommerce.Build
              .Triggers(InstallPlatform, InstallModules)
              .Executes(async () =>
              {
-                 var packageManifest = await OpenOrCreateManifets(PackageManifestPath);
+                 var packageManifest = await OpenOrCreateManifest(PackageManifestPath);
                  var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
                  var githubModules = PackageManager.GetGithubModules(packageManifest);
                  var githubModuleManifests = PackageManager.GetGithubModuleManifests(packageManifest);
@@ -403,7 +403,7 @@ namespace VirtoCommerce.Build
                              var errorMessage = $"No module {module.Id} found";
                              Assert.Fail(errorMessage);
                              throw new ArgumentNullException(errorMessage); // for sonarQube
-                        }
+                         }
 
                          module.Version = externalModule.Version.ToString();
                      }
@@ -412,7 +412,7 @@ namespace VirtoCommerce.Build
                  PackageManager.ToFile(packageManifest);
              });
 
-        private async Task<ManifestBase> OpenOrCreateManifets(string packageManifestPath)
+        private async Task<ManifestBase> OpenOrCreateManifest(string packageManifestPath)
         {
             ManifestBase packageManifest;
             var platformWebDllPath = Path.Combine(Directory.GetParent(packageManifestPath).FullName, "VirtoCommerce.Platform.Web.dll");
