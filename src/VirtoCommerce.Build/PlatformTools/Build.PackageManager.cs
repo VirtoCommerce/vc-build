@@ -177,19 +177,11 @@ namespace VirtoCommerce.Build
             .After(Install, Update, InstallPlatform, InstallModules)
             .OnlyWhenDynamic(() => FailedTargets.Count > 0 && FinishedTargets.Contains(Backup))
             .AssuredAfterFailure()
-            .Triggers(RemoveBackup)
             .Executes(() =>
             {
                 FileSystemTasks.EnsureCleanDirectory(RootDirectory);
                 CompressionTasks.UncompressTarGZip(BackupFile, RootDirectory);
-            });
 
-        public Target RemoveBackup => _ => _
-            .After(Rollback)
-            .AssuredAfterFailure()
-            .OnlyWhenDynamic(() => FinishedTargets.Contains(Backup))
-            .Executes(() =>
-            {
                 if (File.Exists(BackupFile))
                 {
                     FileSystemTasks.DeleteFile(BackupFile);
