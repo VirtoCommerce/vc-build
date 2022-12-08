@@ -412,10 +412,10 @@ namespace VirtoCommerce.Build
 
         private IModulesInstaller GetModuleInstaller(ModuleSource moduleSource) => moduleSource switch
         {
-            AzurePipelineArtifacts s => new AzurePipelineArtifactsModuleInstaller(AzureToken, GetDiscoveryPath()),
-            AzureUniversalPackages s => new AzureUniversalPackagesModuleInstaller(AzureToken, GetDiscoveryPath()),
-            GithubPrivateRepos s => new GithubPrivateModulesInstaller(GitHubToken, GetDiscoveryPath()),
-            AzureBlob s => new AzureBlobModuleInstaller(AzureToken, GetDiscoveryPath()),
+            AzurePipelineArtifacts => new AzurePipelineArtifactsModuleInstaller(AzureToken, GetDiscoveryPath()),
+            AzureUniversalPackages => new AzureUniversalPackagesModuleInstaller(AzureToken, GetDiscoveryPath()),
+            GithubPrivateRepos => new GithubPrivateModulesInstaller(GitHubToken, GetDiscoveryPath()),
+            AzureBlob _ => new AzureBlobModuleInstaller(AzureToken, GetDiscoveryPath()),
             _ => throw new NotImplementedException("Unknown module source"),
         };
 
