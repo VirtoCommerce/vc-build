@@ -47,6 +47,13 @@ namespace VirtoCommerce.Build
         [Parameter("Url to Bundles file")]
         public static string BundlesUrl { get; set; } = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/bundles/stable.json";
 
+        [Parameter("Backup file path")] public static string BackupFile { get; set; } = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+
+        [Parameter("Probing directory backup file path")]
+        public static string ModulesProbingBackup { get; set; } = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        [Parameter("Discovery directory backup file path")]
+        public static string ModulesDiscoveryBackup { get; set; } = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+
         public Target Init => _ => _
              .Executes(async () =>
              {
@@ -57,6 +64,7 @@ namespace VirtoCommerce.Build
 
         public Target Install => _ => _
              .Triggers(InstallPlatform, InstallModules)
+             .DependsOn(Backup)
              .Executes(async () =>
              {
                  var packageManifest = await OpenOrCreateManifest(PackageManifestPath);
@@ -160,6 +168,57 @@ namespace VirtoCommerce.Build
             return NeedToInstallPlatform(manifest.PlatformVersion);
         }
 
+        public Target Backup => _ => _
+            .Triggers(Rollback)
+            .Before(Install, Update, InstallPlatform, InstallModules)
+            .Executes(() =>
+            {
+                CompressionTasks.Compress(RootDirectory, BackupFile);
+                if (!DiscoveryPath.StartsWith(RootDirectory))
+                {
+                    CompressionTasks.Compress(GetDiscoveryPath(), ModulesDiscoveryBackup);
+                }
+
+                if (!ProbingPath.StartsWith(RootDirectory))
+                {
+                    CompressionTasks.Compress(ProbingPath, ModulesProbingBackup);
+                }
+
+            });
+
+        public Target Rollback => _ => _
+            .After(Install, Update, InstallPlatform, InstallModules)
+            .OnlyWhenDynamic(() => FailedTargets.Count > 0)
+            .AssuredAfterFailure()
+            .Triggers(RemoveBackup)
+            .Executes(() =>
+            {
+                FileSystemTasks.EnsureCleanDirectory(RootDirectory);
+                CompressionTasks.Uncompress(BackupFile, RootDirectory);
+                if (File.Exists(ModulesProbingBackup))
+                {
+                    FileSystemTasks.EnsureCleanDirectory(ProbingPath);
+                    CompressionTasks.Uncompress(ModulesProbingBackup, ProbingPath);
+                }
+
+                if (File.Exists(ModulesDiscoveryBackup))
+                {
+                    FileSystemTasks.EnsureCleanDirectory(GetDiscoveryPath());
+                    CompressionTasks.Uncompress(ModulesDiscoveryBackup, GetDiscoveryPath());
+                }
+            });
+
+        public Target RemoveBackup => _ => _
+            .After(Rollback)
+            .AssuredAfterFailure()
+            .Executes(() =>
+            {
+                if (File.Exists(BackupFile))
+                {
+                    FileSystemTasks.DeleteFile(BackupFile);
+                }
+            });
+
         public Target InstallPlatform => _ => _
              .OnlyWhenDynamic(() => PlatformVersionChanged() && !IsModulesInstallation())
              .Executes(async () =>
@@ -244,14 +303,14 @@ namespace VirtoCommerce.Build
              .Executes(async () =>
              {
                  var packageManifest = PackageManager.FromFile(PackageManifestPath);
-                 List<ModuleSource> moduleSources = PackageManager.GetModuleSources(packageManifest).Where(s => s is not GithubReleases).ToList();
+                 var moduleSources = PackageManager.GetModuleSources(packageManifest).Where(s => s is not GithubReleases).ToList();
                  var githubReleases = PackageManager.GetGithubModulesSource(packageManifest);
                  var discoveryPath = GetDiscoveryPath();
                  var localModuleCatalog = LocalModuleCatalog.GetCatalog(discoveryPath, ProbingPath);
                  var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubReleases.ModuleSources);
                  var moduleInstaller = await ModuleInstallerFacade.GetModuleInstaller(discoveryPath, ProbingPath, GitHubToken, githubReleases.ModuleSources);
                  var modulesToInstall = new List<ManifestModuleInfo>();
-                 var alreadyInstalledModules = localModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.IsInstalled);
+                 var alreadyInstalledModules = localModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.IsInstalled).ToList();
 
                  foreach (var module in githubReleases.Modules)
                  {
@@ -304,7 +363,7 @@ namespace VirtoCommerce.Build
 
                      await installer.Install(moduleSource);
                  }
-                 AbsolutePath absoluteDiscoveryPath = (AbsolutePath)Path.GetFullPath(discoveryPath);
+                 var absoluteDiscoveryPath = (AbsolutePath)Path.GetFullPath(discoveryPath);
                  var zipFiles = absoluteDiscoveryPath.GlobFiles("*/*.zip");
                  zipFiles.ForEach(f => FileSystemTasks.DeleteFile(f));
                  localModuleCatalog.Reload();
@@ -381,6 +440,7 @@ namespace VirtoCommerce.Build
 
         public Target Update => _ => _
              .Triggers(InstallPlatform, InstallModules)
+             .DependsOn(Backup)
              .Executes(async () =>
              {
                  var packageManifest = await OpenOrCreateManifest(PackageManifestPath);
