@@ -217,6 +217,16 @@ namespace VirtoCommerce.Build
                 {
                     FileSystemTasks.DeleteFile(BackupFile);
                 }
+
+                if (File.Exists(ModulesDiscoveryBackup))
+                {
+                    FileSystemTasks.DeleteFile(ModulesDiscoveryBackup);
+                }
+
+                if (File.Exists(ModulesProbingBackup))
+                {
+                    FileSystemTasks.DeleteFile(ModulesProbingBackup);
+                }
             });
 
         public Target InstallPlatform => _ => _
