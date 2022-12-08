@@ -49,11 +49,6 @@ namespace VirtoCommerce.Build
 
         [Parameter("Backup file path")] public static string BackupFile { get; set; } = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
-        [Parameter("Probing directory backup file path")]
-        public static string ModulesProbingBackup { get; set; } = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        [Parameter("Discovery directory backup file path")]
-        public static string ModulesDiscoveryBackup { get; set; } = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-
         public Target Init => _ => _
              .Executes(async () =>
              {
@@ -171,61 +166,33 @@ namespace VirtoCommerce.Build
         public Target Backup => _ => _
             .Triggers(Rollback)
             .Before(Install, Update, InstallPlatform, InstallModules)
+            .OnlyWhenDynamic(() => !IsServerBuild)
             .Executes(() =>
             {
-                CompressionTasks.Compress(RootDirectory, BackupFile);
-                if (!DiscoveryPath.StartsWith(RootDirectory))
-                {
-                    CompressionTasks.Compress(GetDiscoveryPath(), ModulesDiscoveryBackup);
-                }
-
-                if (!ProbingPath.StartsWith(RootDirectory))
-                {
-                    CompressionTasks.Compress(ProbingPath, ModulesProbingBackup);
-                }
+                CompressionTasks.CompressTarGZip(RootDirectory, BackupFile);
 
             });
 
         public Target Rollback => _ => _
             .After(Install, Update, InstallPlatform, InstallModules)
-            .OnlyWhenDynamic(() => FailedTargets.Count > 0)
+            .OnlyWhenDynamic(() => FailedTargets.Count > 0 && FinishedTargets.Contains(Backup))
             .AssuredAfterFailure()
             .Triggers(RemoveBackup)
             .Executes(() =>
             {
                 FileSystemTasks.EnsureCleanDirectory(RootDirectory);
-                CompressionTasks.Uncompress(BackupFile, RootDirectory);
-                if (File.Exists(ModulesProbingBackup))
-                {
-                    FileSystemTasks.EnsureCleanDirectory(ProbingPath);
-                    CompressionTasks.Uncompress(ModulesProbingBackup, ProbingPath);
-                }
-
-                if (File.Exists(ModulesDiscoveryBackup))
-                {
-                    FileSystemTasks.EnsureCleanDirectory(GetDiscoveryPath());
-                    CompressionTasks.Uncompress(ModulesDiscoveryBackup, GetDiscoveryPath());
-                }
+                CompressionTasks.UncompressTarGZip(BackupFile, RootDirectory);
             });
 
         public Target RemoveBackup => _ => _
             .After(Rollback)
             .AssuredAfterFailure()
+            .OnlyWhenDynamic(() => FinishedTargets.Contains(Backup))
             .Executes(() =>
             {
                 if (File.Exists(BackupFile))
                 {
                     FileSystemTasks.DeleteFile(BackupFile);
-                }
-
-                if (File.Exists(ModulesDiscoveryBackup))
-                {
-                    FileSystemTasks.DeleteFile(ModulesDiscoveryBackup);
-                }
-
-                if (File.Exists(ModulesProbingBackup))
-                {
-                    FileSystemTasks.DeleteFile(ModulesProbingBackup);
                 }
             });
 
