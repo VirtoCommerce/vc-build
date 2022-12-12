@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
+using Serilog;
 using VirtoCommerce.Build.PlatformTools;
 
 namespace PlatformTools.Azure
@@ -24,6 +25,7 @@ namespace PlatformTools.Azure
         {
             foreach (var module in artifacts.Modules)
             {
+                Log.Information($"Installing {module.Id}");
                 var moduleDestination = Path.Join(discoveryPath, module.Id);
                 Directory.CreateDirectory(moduleDestination);
                 FileSystemTasks.EnsureCleanDirectory(moduleDestination);
@@ -47,7 +49,9 @@ namespace PlatformTools.Azure
                 if (zipPath == null)
                     Assert.Fail($"Can't download {module.Id} - {module.Version}");
 
+                Log.Information($"Extracting {zipPath}");
                 ZipFile.ExtractToDirectory(zipPath, moduleDestination);
+                Log.Information($"Successfully installed {module.Id}");
             }
 
             return Task.CompletedTask;

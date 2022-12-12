@@ -57,8 +57,9 @@ namespace PlatformTools.Github
                     c.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/octet-stream"));
                     return c;
                 });
-                Log.Information($"Extractiong {module.Id}");
+                Log.Information($"Extracting {module.Id}");
                 ZipFile.ExtractToDirectory(zipDestination, moduleDestination);
+                Log.Information($"Successfully installed {module.Id}");
             }
         }
     }
