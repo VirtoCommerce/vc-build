@@ -10,17 +10,13 @@ namespace Cloud.Client;
 
 public class VirtoCloudClient
 {
-    private readonly string _baseUrl;
     private readonly HttpClient _client;
-    private readonly string _token;
 
     public VirtoCloudClient(string baseUrl, string token)
     {
-        _baseUrl = baseUrl;
-        _token = token;
         _client = new HttpClient();
-        _client.BaseAddress = new Uri(_baseUrl);
-        _client.DefaultRequestHeaders.Add("api_key", _token);
+        _client.BaseAddress = new Uri(baseUrl);
+        _client.DefaultRequestHeaders.Add("api_key", token);
     }
 
     public async Task<string> UpdateEnvironmentAsync(string manifest, string appProject)

@@ -25,23 +25,4 @@ public class CloudEnvironment
     public string[] Urls { get; set; }
     public Helm Helm { get; set; }
 
-    public CloudEnvironment()
-    {
-
-    }
-    public CloudEnvironment(string appProjectId, string metadataName, string tenantId, string id, string name, string status, string syncStatus, DateTime created, DateTime updated, string[] urls, Helm helm, IDictionary<string, string> labels)
-    {
-        MetadataName = metadataName;
-        TenantId = tenantId;
-        Id = id;
-        Name = name;
-        Status = status;
-        SyncStatus = syncStatus;
-        Created = created;
-        Updated = updated;
-        Urls = urls;
-        Labels = labels;
-        AppProjectId = appProjectId;
-        Helm = helm;
-    }
 }
