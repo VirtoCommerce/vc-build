@@ -3,6 +3,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [3.10.0] - 2022-12-20
+### Added
+- SetEnvParameter and WaitForStatus targets
+- Log output for module sources
+- Rollback if modules installation failed
+### Fixed
+- CSC warning CS8785: Generator 'RazorSourceGenerator' failed to generate source.
+
 ## [3.5.0] - 2022-07-21
 ### Added
 - HttpTimeout parameter for overriding default http timeout
@@ -53,7 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability to install modules from Azure Pipeline Artifacts
 - Ability to install modules from Azure Universal Packages
 - Targets for build and publish Docker Images
-- Target for update specs of Argo Applications 
+- Target for update specs of Argo Applications
 ### Changed
 - Target Framework updated to .net6
 ### Fixed
@@ -77,7 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - vc-build was updated to .Net 5
 - Documentation was moved from vc-platform repo
 - Updated dependencies
-### Added 
+### Added
 - Force parameter
 - Case insensitivity for module installation
 - ClearTemp Target

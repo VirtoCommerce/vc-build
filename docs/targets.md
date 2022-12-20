@@ -141,7 +141,7 @@ vc-build PublishModuleManifest
 :::
 :::
 ## SonarQubeStart
-Starts sonar scanner by executing "dotnet sonarscanner begin". 
+Starts sonar scanner by executing "dotnet sonarscanner begin".
 Gets parameters: SonarBranchName, SonarPRBase, SonarPRBranch, SonarPRNumber, SonarGithubRepo, SonarPRProvider, SonarAuthToken
 ```console
 vc-build SonarQubeStart -SonarBranchName dev -SonarAuthToken *** -RepoName vc-module-marketing
@@ -160,14 +160,14 @@ vc-build SonarQubeEnd -SonarAuthToken %SonarToken%
 Creates the github release
 Gets parameters: GitHubUser, GitHubToken, ReleaseBranch
 ```console
-vc-build release -GitHubUser VirtoCommerce -GitHubToken %token% 
+vc-build release -GitHubUser VirtoCommerce -GitHubToken %token%
 ```
 :::
 :::
 ## ClearTemp
 Removes .tmp directory
 ```console
-vc-build ClearTemp 
+vc-build ClearTemp
 ```
 :::
 :::
@@ -224,5 +224,13 @@ Updates Applications in Cloud
 Gets parameters: CloudToken, ArgoConfigFile
 ```console
 vc-build UpdateCloudEnvironment -CloudToken <your token> -ArgoConfigFile <path to application manifest>
+```
+:::
+:::
+## SetEnvParameter
+Updates parameters of cloud environment
+Gets parameters: CloudToken, EnvironmentName, HelmParameters (Array)
+```console
+vc-build SetEnvParameter --CloudToken <your token> -EnvironmentName <environment name> -HelmParameters platform.config.paramname=somevalue123
 ```
 :::
