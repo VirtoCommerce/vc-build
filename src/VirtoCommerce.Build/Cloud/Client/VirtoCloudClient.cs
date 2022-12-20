@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using Cloud.Models;
 using Nuke.Common;
@@ -41,13 +42,9 @@ public class VirtoCloudClient
 
     public async Task UpdateEnvironmentAsync(CloudEnvironment environment)
     {
-        var rawContent = SerializationTasks.JsonSerialize(environment);
-        var response = await _client.SendAsync(new HttpRequestMessage
-        {
-            Method = HttpMethod.Put,
-            RequestUri = new Uri("api/saas/environments", UriKind.Relative),
-            Content = new FormUrlEncodedContent(new Dictionary<string, string> { { "model", rawContent } })
-        });
+        var jsonString = SerializationTasks.JsonSerialize(environment);
+        var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+        var response = await _client.PutAsync(new Uri("api/saas/environments", UriKind.Relative), content);
         if (!response.IsSuccessStatusCode)
         {
             Assert.Fail($"{response.ReasonPhrase}: {response.RequestMessage}");
