@@ -10,7 +10,6 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
-using System.Xml.Serialization;
 using Microsoft.Build.Locator;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -983,25 +982,36 @@ internal partial class Build : NukeBuild
             //module.manifest
             if (IsModule)
             {
-                var manifest = ModuleManifest.Clone();
+                var xmlModuleManifestDoc = new XmlDocument();
+                xmlModuleManifestDoc.Load(ModuleManifestFile);
 
+                var moduleRootNode = xmlModuleManifestDoc.SelectSingleNode("module");
+
+                // Update version
                 if (!string.IsNullOrEmpty(versionPrefix))
                 {
-                    manifest.Version = versionPrefix;
+                    moduleRootNode.SelectSingleNode("version").InnerText = versionPrefix;
                 }
 
+                // Update versionSuffix
                 if (!string.IsNullOrEmpty(versionSuffix))
                 {
-                    manifest.VersionTag = versionSuffix;
+                    var versionTagNode = moduleRootNode.SelectSingleNode("version-tag");
+                    if (versionTagNode == null)
+                    {
+                        var versionNode = moduleRootNode.SelectSingleNode("version");
+                        versionTagNode = xmlModuleManifestDoc.CreateElement("version-tag");
+                        moduleRootNode.InsertAfter(versionTagNode, versionNode);
+                    }
+
+                    versionTagNode.InnerText = versionSuffix;
                 }
 
-                using (var writer = new Utf8StringWriter())
+                using (var writer = XmlWriter.Create(ModuleManifestFile, new XmlWriterSettings {
+                    Indent = true,
+                    Encoding = Encoding.UTF8 }))
                 {
-                    var xmlSerializer = new XmlSerializer(typeof(ModuleManifest));
-                    var xmlWriterSettings = new XmlWriterSettings { Indent = true, Encoding = Encoding.UTF8 };
-                    var xmlWriter = XmlWriter.Create(writer, xmlWriterSettings);
-                    xmlSerializer.Serialize(xmlWriter, manifest);
-                    File.WriteAllText(ModuleManifestFile, writer.ToString(), Encoding.UTF8);
+                    xmlModuleManifestDoc.Save(writer);
                 }
             }
 
