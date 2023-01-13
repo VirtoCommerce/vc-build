@@ -1,6 +1,7 @@
 using Nuke.Common;
 using Nuke.Common.Tools.Docker;
 using Nuke.Common.Utilities;
+using Serilog;
 
 namespace VirtoCommerce.Build
 {
@@ -20,6 +21,8 @@ namespace VirtoCommerce.Build
         .Before(BuildImage, PushImage)
         .Executes(() =>
         {
+            DockerTasks.DockerLogger = (t, m) => Log.Debug(m);
+
             var settings = new DockerLoginSettings()
                 .SetServer(DockerRegistryUrl)
                 .SetUsername(DockerUsername)
