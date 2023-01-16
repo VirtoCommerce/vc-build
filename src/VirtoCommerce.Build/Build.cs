@@ -977,76 +977,83 @@ internal partial class Build : NukeBuild
             var jObject = SerializationTasks.JsonDeserializeFromFile<JObject>(PackageJsonPath);
             jObject["version"] = versionPrefix;
             SerializationTasks.JsonSerializeToFile(jObject, Path.GetFullPath(PackageJsonPath));
+            return;
         }
-        else
+
+        //module.manifest
+        if (IsModule)
         {
-            //module.manifest
-            if (IsModule)
+            UpdateModuleManifest(versionPrefix, versionSuffix);
+        }
+
+        //Directory.Build.props
+        UpdateDirectoryBuildProps(versionPrefix, versionSuffix);
+    }
+
+    private void UpdateDirectoryBuildProps(string versionPrefix, string versionSuffix)
+    {
+        var xmlDocument = new XmlDocument { PreserveWhitespace = true };
+
+        xmlDocument.LoadXml(File.ReadAllText(DirectoryBuildPropsPath));
+
+        if (!string.IsNullOrEmpty(versionPrefix))
+        {
+            var prefixNode = xmlDocument.GetElementsByTagName("VersionPrefix")[0];
+
+            if (prefixNode != null)
             {
-                var xmlModuleManifestDoc = new XmlDocument();
-                xmlModuleManifestDoc.Load(ModuleManifestFile);
-
-                var moduleRootNode = xmlModuleManifestDoc.SelectSingleNode("module");
-
-                // Update version
-                if (!string.IsNullOrEmpty(versionPrefix))
-                {
-                    moduleRootNode.SelectSingleNode("version").InnerText = versionPrefix;
-                }
-
-                // Update versionSuffix
-                if (!string.IsNullOrEmpty(versionSuffix))
-                {
-                    var versionTagNode = moduleRootNode.SelectSingleNode("version-tag");
-                    if (versionTagNode == null)
-                    {
-                        var versionNode = moduleRootNode.SelectSingleNode("version");
-                        versionTagNode = xmlModuleManifestDoc.CreateElement("version-tag");
-                        moduleRootNode.InsertAfter(versionTagNode, versionNode);
-                    }
-
-                    versionTagNode.InnerText = versionSuffix;
-                }
-
-                using (var writer = XmlWriter.Create(ModuleManifestFile, new XmlWriterSettings {
-                    Indent = true,
-                    Encoding = Encoding.UTF8 }))
-                {
-                    xmlModuleManifestDoc.Save(writer);
-                }
-            }
-
-            //Directory.Build.props
-            var xmlDocument = new XmlDocument { PreserveWhitespace = true };
-
-            xmlDocument.LoadXml(File.ReadAllText(DirectoryBuildPropsPath));
-
-            if (!string.IsNullOrEmpty(versionPrefix))
-            {
-                var prefixNode = xmlDocument.GetElementsByTagName("VersionPrefix")[0];
-
-                if (prefixNode != null)
-                {
-                    prefixNode.InnerText = versionPrefix;
-                }
-            }
-
-            if (string.IsNullOrEmpty(VersionSuffix) && !string.IsNullOrEmpty(versionSuffix))
-            {
-                var suffixNode = xmlDocument.GetElementsByTagName("VersionSuffix")[0];
-
-                if (suffixNode != null)
-                {
-                    suffixNode.InnerText = versionSuffix;
-                }
-            }
-
-            using (var writer = new Utf8StringWriter())
-            {
-                xmlDocument.Save(writer);
-                File.WriteAllText(DirectoryBuildPropsPath, writer.ToString());
+                prefixNode.InnerText = versionPrefix;
             }
         }
+
+        if (string.IsNullOrEmpty(VersionSuffix) && !string.IsNullOrEmpty(versionSuffix))
+        {
+            var suffixNode = xmlDocument.GetElementsByTagName("VersionSuffix")[0];
+
+            if (suffixNode != null)
+            {
+                suffixNode.InnerText = versionSuffix;
+            }
+        }
+
+        using var writer = new Utf8StringWriter();
+        xmlDocument.Save(writer);
+        File.WriteAllText(DirectoryBuildPropsPath, writer.ToString());
+    }
+
+    private static void UpdateModuleManifest(string versionPrefix, string versionSuffix)
+    {
+        var xmlModuleManifestDoc = new XmlDocument();
+        xmlModuleManifestDoc.Load(ModuleManifestFile);
+
+        var moduleRootNode = xmlModuleManifestDoc.SelectSingleNode("module");
+
+        // Update version
+        if (!string.IsNullOrEmpty(versionPrefix))
+        {
+            moduleRootNode.SelectSingleNode("version").InnerText = versionPrefix;
+        }
+
+        // Update versionSuffix
+        if (!string.IsNullOrEmpty(versionSuffix))
+        {
+            var versionTagNode = moduleRootNode.SelectSingleNode("version-tag");
+            if (versionTagNode == null)
+            {
+                var versionNode = moduleRootNode.SelectSingleNode("version");
+                versionTagNode = xmlModuleManifestDoc.CreateElement("version-tag");
+                moduleRootNode.InsertAfter(versionTagNode, versionNode);
+            }
+
+            versionTagNode.InnerText = versionSuffix;
+        }
+
+        using var writer = XmlWriter.Create(ModuleManifestFile, new XmlWriterSettings
+        {
+            Indent = true,
+            Encoding = Encoding.UTF8
+        });
+        xmlModuleManifestDoc.Save(writer);
     }
 
     private string GetThemeVersion(string packageJsonPath)
