@@ -35,6 +35,9 @@ namespace VirtoCommerce.Build
         [Parameter("Install the platform", Name = "Platform")]
         public static bool PlatformParameter { get; set; }
 
+        [Parameter("Custom platform asset url")]
+        public static string PlatformAssetUrl { get; set;}
+
         [Parameter("Azure PAT")]
         public static string AzureToken { get; set; }
 
@@ -214,8 +217,16 @@ namespace VirtoCommerce.Build
         private static async Task InstallPlatformAsync(string platformVersion)
         {
             Log.Information($"Installing platform {platformVersion}");
-            var platformRelease = await GithubManager.GetPlatformRelease(platformVersion);
-            var platformAssetUrl = platformRelease.Assets.FirstOrDefault()?.BrowserDownloadUrl;
+            string platformAssetUrl;
+            if (!string.IsNullOrEmpty(PlatformAssetUrl))
+            {
+                platformAssetUrl = PlatformAssetUrl;
+            }
+            else
+            {
+                var platformRelease = await GithubManager.GetPlatformRelease(platformVersion);
+                platformAssetUrl = platformRelease.Assets.FirstOrDefault()?.BrowserDownloadUrl;
+            }
             var platformZip = TemporaryDirectory / "platform.zip";
 
             if (string.IsNullOrEmpty(platformAssetUrl))
