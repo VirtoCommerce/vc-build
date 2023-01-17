@@ -225,7 +225,7 @@ namespace VirtoCommerce.Build
             else
             {
                 var platformRelease = await GithubManager.GetPlatformRelease(platformVersion);
-                platformAssetUrl = platformRelease.Assets.FirstOrDefault()?.BrowserDownloadUrl;
+                platformAssetUrl = platformRelease.Assets[0].BrowserDownloadUrl;
             }
             var platformZip = TemporaryDirectory / "platform.zip";
 
