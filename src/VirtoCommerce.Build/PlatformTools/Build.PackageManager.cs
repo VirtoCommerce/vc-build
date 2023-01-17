@@ -71,50 +71,11 @@ namespace VirtoCommerce.Build
 
                  if (Module?.Length > 0 && !PlatformParameter)
                  {
-                     foreach (var module in ParseModuleParameter(Module))
-                     {
-                         var externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().FirstOrDefault(m => m.Id.EqualsInvariant(module.Id));
-
-                         if (externalModule == null)
-                         {
-                             Log.Error($"Cannot find a module with ID '{module.Id}'");
-                             continue;
-                         }
-
-                         if (!string.IsNullOrEmpty(module.Version) && externalModule.Version < new SemanticVersion(new Version(module.Version)))
-                         {
-                             Log.Error($"The latest available version of module {module.Id} is {externalModule.Version}, but entered: {module.Version}");
-                             continue;
-                         }
-
-                         module.Id = externalModule.Id;
-                         module.Version = module.Version.EmptyToNull() ?? externalModule.Version.ToString();
-
-                         var existingModule = modules.FirstOrDefault(m => m.Id == module.Id);
-
-                         if (existingModule == null)
-                         {
-                             Log.Information($"Add {module.Id}:{module.Version}");
-                             modules.Add(module);
-                         }
-                         else
-                         {
-                             if (new Version(existingModule.Version) > new Version(module.Version))
-                             {
-                                 Log.Error($"{module.Id}: Module downgrading isn't supported");
-                                 continue;
-                             }
-
-                             Log.Information($"Change version: {existingModule.Version} -> {module.Version}");
-                             existingModule.Version = module.Version;
-                         }
-                     }
+                     UpdateModules(Module, externalModuleCatalog, modules);
                  }
                  else if (!PlatformParameter && !modules.Any() && !FileSystemTasks.FileExists((AbsolutePath)Path.GetFullPath(PackageManifestPath)))
                  {
-                     Log.Information("Add group: commerce");
-                     var commerceModules = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.Groups.Contains("commerce")).Select(m => new ModuleItem(m.Id, m.Version.ToString()));
-                     modules.AddRange(commerceModules);
+                     AddCommerceModules(externalModuleCatalog, modules);
                  }
                  else if (PlatformParameter)
                  {
@@ -124,6 +85,60 @@ namespace VirtoCommerce.Build
 
                  PackageManager.ToFile(packageManifest);
              });
+
+        private void UpdateModules(string[] modulesArg, IModuleCatalog externalModuleCatalog, List<ModuleItem> modules)
+        {
+            foreach (var module in ParseModuleParameter(modulesArg))
+            {
+                var externalModule = externalModuleCatalog.Modules
+                    .OfType<ManifestModuleInfo>()
+                    .FirstOrDefault(m => m.Id.EqualsInvariant(module.Id));
+
+                if (externalModule == null)
+                {
+                    Log.Error($"Cannot find a module with ID '{module.Id}'");
+                    continue;
+                }
+
+                if (!string.IsNullOrEmpty(module.Version) && externalModule.Version < new SemanticVersion(new Version(module.Version)))
+                {
+                    Log.Error($"The latest available version of module {module.Id} is {externalModule.Version}, but entered: {module.Version}");
+                    continue;
+                }
+
+                module.Id = externalModule.Id;
+                module.Version = module.Version.EmptyToNull() ?? externalModule.Version.ToString();
+
+                var existingModule = modules.FirstOrDefault(m => m.Id == module.Id);
+
+                if (existingModule == null)
+                {
+                    Log.Information($"Add {module.Id}:{module.Version}");
+                    modules.Add(module);
+                }
+                else
+                {
+                    if (new Version(existingModule.Version) > new Version(module.Version))
+                    {
+                        Log.Error($"{module.Id}: Module downgrading isn't supported");
+                        continue;
+                    }
+
+                    Log.Information($"Change version: {existingModule.Version} -> {module.Version}");
+                    existingModule.Version = module.Version;
+                }
+            }
+        }
+
+        private static void AddCommerceModules(IModuleCatalog externalModuleCatalog, List<ModuleItem> modules)
+        {
+            Log.Information("Add group: commerce");
+            var commerceModules = externalModuleCatalog.Modules
+                .OfType<ManifestModuleInfo>()
+                .Where(m => m.Groups.Contains("commerce"))
+                .Select(m => new ModuleItem(m.Id, m.Version.ToString()));
+            modules.AddRange(commerceModules);
+        }
 
         private IEnumerable<ModuleItem> ParseModuleParameter(string[] moduleStrings)
         {
