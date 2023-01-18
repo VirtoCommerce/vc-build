@@ -166,7 +166,7 @@ internal partial class Build : NukeBuild
     [Parameter("Directory containing modules.json")]
     public static string ModulesJsonDirectoryName { get; set; } = "vc-modules";
 
-    [Parameter("Defauld (start) project name")]
+    [Parameter("Default (start) project name")]
     public static string DefaultProject { get; set; } = ".Web";
 
     [Parameter("Main branch")] public static string MainBranch { get; set; } = "master";
@@ -475,6 +475,7 @@ internal partial class Build : NukeBuild
         .After(WebPackBuild, Test)
         .Executes(() =>
         {
+            Assert.NotNull(WebProject, "Web Project is not found!");
             DotNetPublish(settings => settings
                 .SetProcessWorkingDirectory(WebProject.Directory)
                 .EnableNoRestore()
@@ -483,11 +484,9 @@ internal partial class Build : NukeBuild
         });
 
     public Target WebPackBuild => _ => _
-        .OnlyWhenDynamic(() => WebProject != null)
         .Executes(() =>
         {
-            var packageJsonPath = WebProject?.Directory / "package.json";
-            if (packageJsonPath.FileExists())
+            if (WebProject != null && (WebProject.Directory).FileExists())
             {
                 NpmTasks.Npm("ci", WebProject.Directory);
                 NpmTasks.NpmRun(settings =>
