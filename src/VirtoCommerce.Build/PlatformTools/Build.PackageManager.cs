@@ -184,7 +184,7 @@ namespace VirtoCommerce.Build
         public Target Backup => _ => _
             .Triggers(Rollback)
             .Before(Install, Update, InstallPlatform, InstallModules)
-            .OnlyWhenDynamic(() => !IsServerBuild)
+            .OnlyWhenDynamic(() => !IsServerBuild && Directory.EnumerateFileSystemEntries(RootDirectory).Any())
             .Executes(() =>
             {
                 CompressionTasks.CompressTarGZip(RootDirectory, BackupFile);
