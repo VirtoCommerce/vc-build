@@ -483,6 +483,7 @@ internal partial class Build : NukeBuild
         });
 
     public Target WebPackBuild => _ => _
+        .OnlyWhenDynamic(() => WebProject != null)
         .Executes(() =>
         {
             var packageJsonPath = WebProject?.Directory / "package.json";
