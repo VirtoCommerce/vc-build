@@ -24,6 +24,7 @@ Examples:
 ```console
 vc-build install (with no args)
 vc-build install -platform -version <version>
+vc-build install -platform -PlatformAssetUrl https://github.com/VirtoCommerce/vc-platform/releases/download/3.216.13/VirtoCommerce.Platform.3.216.13.zip
 vc-build install -module <module> -version <version>
 vc-build install -module <module>:<version>
 vc-build install -PackageManifestPath some_directory/vc-package.json -DiscoveryPath ../modules -ProbingPath platform_dir/app_data/modules -SkipDependencySolving
@@ -231,6 +232,14 @@ vc-build UpdateCloudEnvironment -CloudToken <your token> -ArgoConfigFile <path t
 Updates parameters of cloud environment
 Gets parameters: CloudToken, EnvironmentName, HelmParameters (Array)
 ```console
-vc-build SetEnvParameter --CloudToken <your token> -EnvironmentName <environment name> -HelmParameters platform.config.paramname=somevalue123
+vc-build SetEnvParameter -CloudToken <your token> -EnvironmentName <environment name> -HelmParameters platform.config.paramname=somevalue123
+```
+:::
+:::
+## SetForStatus
+Waits for health and/or sync statuses of the Environment
+Gets parameters: CloudToken, EnvironmentName, HelmParameters (Array)
+```console
+vc-build WaitForStatus -CloudToken <your token> -EnvironmentName <environment name> -HealthStatus Healthy
 ```
 :::

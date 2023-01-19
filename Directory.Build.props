@@ -6,7 +6,7 @@
     <Copyright>Copyright © VirtoCommerce 2011-2022</Copyright>
   </PropertyGroup>
   <PropertyGroup>
-    <VersionPrefix>3.10.0</VersionPrefix>
+    <VersionPrefix>3.11.0</VersionPrefix>
     <VersionSuffix></VersionSuffix>
     <VersionSuffix Condition=" '$(VersionSuffix)' != '' AND '$(BuildNumber)' != '' ">$(VersionSuffix)-$(BuildNumber)</VersionSuffix>
   </PropertyGroup>

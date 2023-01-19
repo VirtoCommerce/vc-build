@@ -35,6 +35,9 @@ namespace VirtoCommerce.Build
         [Parameter("Install the platform", Name = "Platform")]
         public static bool PlatformParameter { get; set; }
 
+        [Parameter("Custom platform asset url")]
+        public static string PlatformAssetUrl { get; set;}
+
         [Parameter("Azure PAT")]
         public static string AzureToken { get; set; }
 
@@ -71,50 +74,11 @@ namespace VirtoCommerce.Build
 
                  if (Module?.Length > 0 && !PlatformParameter)
                  {
-                     foreach (var module in ParseModuleParameter(Module))
-                     {
-                         var externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().FirstOrDefault(m => m.Id.EqualsInvariant(module.Id));
-
-                         if (externalModule == null)
-                         {
-                             Log.Error($"Cannot find a module with ID '{module.Id}'");
-                             continue;
-                         }
-
-                         if (!string.IsNullOrEmpty(module.Version) && externalModule.Version < new SemanticVersion(new Version(module.Version)))
-                         {
-                             Log.Error($"The latest available version of module {module.Id} is {externalModule.Version}, but entered: {module.Version}");
-                             continue;
-                         }
-
-                         module.Id = externalModule.Id;
-                         module.Version = module.Version.EmptyToNull() ?? externalModule.Version.ToString();
-
-                         var existingModule = modules.FirstOrDefault(m => m.Id == module.Id);
-
-                         if (existingModule == null)
-                         {
-                             Log.Information($"Add {module.Id}:{module.Version}");
-                             modules.Add(module);
-                         }
-                         else
-                         {
-                             if (new Version(existingModule.Version) > new Version(module.Version))
-                             {
-                                 Log.Error($"{module.Id}: Module downgrading isn't supported");
-                                 continue;
-                             }
-
-                             Log.Information($"Change version: {existingModule.Version} -> {module.Version}");
-                             existingModule.Version = module.Version;
-                         }
-                     }
+                     UpdateModules(Module, externalModuleCatalog, modules);
                  }
                  else if (!PlatformParameter && !modules.Any() && !FileSystemTasks.FileExists((AbsolutePath)Path.GetFullPath(PackageManifestPath)))
                  {
-                     Log.Information("Add group: commerce");
-                     var commerceModules = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.Groups.Contains("commerce")).Select(m => new ModuleItem(m.Id, m.Version.ToString()));
-                     modules.AddRange(commerceModules);
+                     AddCommerceModules(externalModuleCatalog, modules);
                  }
                  else if (PlatformParameter)
                  {
@@ -124,6 +88,60 @@ namespace VirtoCommerce.Build
 
                  PackageManager.ToFile(packageManifest);
              });
+
+        private void UpdateModules(string[] modulesArg, IModuleCatalog externalModuleCatalog, List<ModuleItem> modules)
+        {
+            foreach (var module in ParseModuleParameter(modulesArg))
+            {
+                var externalModule = externalModuleCatalog.Modules
+                    .OfType<ManifestModuleInfo>()
+                    .FirstOrDefault(m => m.Id.EqualsInvariant(module.Id));
+
+                if (externalModule == null)
+                {
+                    Log.Error($"Cannot find a module with ID '{module.Id}'");
+                    continue;
+                }
+
+                if (!string.IsNullOrEmpty(module.Version) && externalModule.Version < new SemanticVersion(new Version(module.Version)))
+                {
+                    Log.Error($"The latest available version of module {module.Id} is {externalModule.Version}, but entered: {module.Version}");
+                    continue;
+                }
+
+                module.Id = externalModule.Id;
+                module.Version = module.Version.EmptyToNull() ?? externalModule.Version.ToString();
+
+                var existingModule = modules.FirstOrDefault(m => m.Id == module.Id);
+
+                if (existingModule == null)
+                {
+                    Log.Information($"Add {module.Id}:{module.Version}");
+                    modules.Add(module);
+                }
+                else
+                {
+                    if (new Version(existingModule.Version) > new Version(module.Version))
+                    {
+                        Log.Error($"{module.Id}: Module downgrading isn't supported");
+                        continue;
+                    }
+
+                    Log.Information($"Change version: {existingModule.Version} -> {module.Version}");
+                    existingModule.Version = module.Version;
+                }
+            }
+        }
+
+        private static void AddCommerceModules(IModuleCatalog externalModuleCatalog, List<ModuleItem> modules)
+        {
+            Log.Information("Add group: commerce");
+            var commerceModules = externalModuleCatalog.Modules
+                .OfType<ManifestModuleInfo>()
+                .Where(m => m.Groups.Contains("commerce"))
+                .Select(m => new ModuleItem(m.Id, m.Version.ToString()));
+            modules.AddRange(commerceModules);
+        }
 
         private IEnumerable<ModuleItem> ParseModuleParameter(string[] moduleStrings)
         {
@@ -164,28 +182,33 @@ namespace VirtoCommerce.Build
         }
 
         public Target Backup => _ => _
-            .Triggers(Rollback)
+            .Triggers(Rollback, RemoveBackup)
             .Before(Install, Update, InstallPlatform, InstallModules)
-            .OnlyWhenDynamic(() => !IsServerBuild)
+            .OnlyWhenDynamic(() => !IsServerBuild && Directory.EnumerateFileSystemEntries(RootDirectory).Any())
             .Executes(() =>
             {
-                CompressionTasks.CompressTarGZip(RootDirectory, BackupFile);
+                CompressionTasks.CompressTarGZip(RootDirectory, BackupFile, filter: f => !f.FullName.StartsWith(RootDirectory / ".nuke"));
 
             });
 
         public Target Rollback => _ => _
             .After(Install, Update, InstallPlatform, InstallModules)
-            .OnlyWhenDynamic(() => FailedTargets.Count > 0 && FinishedTargets.Contains(Backup))
+            .OnlyWhenDynamic(() => FailedTargets.Any() && SucceededTargets.Contains(Backup))
             .AssuredAfterFailure()
             .Executes(() =>
             {
-                FileSystemTasks.EnsureCleanDirectory(RootDirectory);
                 CompressionTasks.UncompressTarGZip(BackupFile, RootDirectory);
+            });
 
-                if (File.Exists(BackupFile))
-                {
-                    FileSystemTasks.DeleteFile(BackupFile);
-                }
+        public Target RemoveBackup => _ => _
+            .After(Backup, Rollback)
+            .OnlyWhenDynamic(() => FinishedTargets.Contains(Backup) && File.Exists(BackupFile))
+            .AssuredAfterFailure()
+            .Unlisted()
+            .DependsOn(Backup)
+            .Executes(() =>
+            {
+                FileSystemTasks.DeleteFile(BackupFile);
             });
 
         public Target InstallPlatform => _ => _
@@ -199,8 +222,16 @@ namespace VirtoCommerce.Build
         private static async Task InstallPlatformAsync(string platformVersion)
         {
             Log.Information($"Installing platform {platformVersion}");
-            var platformRelease = await GithubManager.GetPlatformRelease(platformVersion);
-            var platformAssetUrl = platformRelease.Assets.FirstOrDefault()?.BrowserDownloadUrl;
+            string platformAssetUrl;
+            if (!string.IsNullOrEmpty(PlatformAssetUrl))
+            {
+                platformAssetUrl = PlatformAssetUrl;
+            }
+            else
+            {
+                var platformRelease = await GithubManager.GetPlatformRelease(platformVersion);
+                platformAssetUrl = platformRelease.Assets[0].BrowserDownloadUrl;
+            }
             var platformZip = TemporaryDirectory / "platform.zip";
 
             if (string.IsNullOrEmpty(platformAssetUrl))

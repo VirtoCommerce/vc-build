@@ -42,10 +42,10 @@ internal partial class Build
     public string SyncStatus { get; set; }
 
     [Parameter("Delay between requests in seconds")]
-    public int Delay { get; set; } = 1;
+    public int Delay { get; set; } = 10;
 
     [Parameter("Number of attempts before fail")]
-    public int AttempsNumber { get; set; } = 100;
+    public int AttemptsNumber { get; set; } = 100;
 
     [Parameter("SaaS Portal")] public string CloudUrl { get; set; } = "https://cloud.govirto.com";
     [Parameter("SaaS Token")] public string CloudToken { get; set; }
@@ -57,7 +57,7 @@ internal partial class Build
         {
             var argoClient = CreateArgoCDClient(ArgoToken ?? Environment.GetEnvironmentVariable("ARGO_TOKEN"),
                 new Uri(ArgoServer));
-            for (var i = 0; i < AttempsNumber; i++)
+            for (var i = 0; i < AttemptsNumber; i++)
             {
                 Log.Information($"Attemp #{i + 1}");
                 var argoApp = await argoClient.ApplicationService.GetAsync(ArgoAppName);
@@ -77,7 +77,7 @@ internal partial class Build
         .Executes(async () =>
         {
             var cloudClient = new VirtoCloudClient(CloudUrl, CloudToken);
-            for (var i = 0; i < AttempsNumber; i++)
+            for (var i = 0; i < AttemptsNumber; i++)
             {
                 Log.Information($"Attemp #{i + 1}");
                 var env = await cloudClient.GetEnvironment(EnvironmentName);
@@ -88,6 +88,8 @@ internal partial class Build
                 {
                     break;
                 }
+
+                await Task.Delay(TimeSpan.FromSeconds(Delay));
             }
         });
 
