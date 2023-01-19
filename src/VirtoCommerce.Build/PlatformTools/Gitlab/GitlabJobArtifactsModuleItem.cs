@@ -1,0 +1,10 @@
+namespace PlatformTools.Gitlab;
+
+internal class GitlabJobArtifactsModuleItem: ModuleItem
+{
+    public GitlabJobArtifactsModuleItem(string id, string version) : base(id, version)
+    {
+    }
+
+    public string JobId { get; set; }
+}
