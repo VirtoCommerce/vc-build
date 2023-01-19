@@ -1,0 +1,27 @@
+name: Release workflow
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-20.04
+    env:
+      VCBUILD_DISABLE_RELEASE_APPROVAL: "true"
+    steps:
+
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.REPO_TOKEN }}
+
+      - name: Install VirtoCommerce.GlobalTool
+        uses: VirtoCommerce/vc-github-actions/setup-vcbuild@master
+
+      - name: Setup Git Credentials
+        uses: VirtoCommerce/vc-github-actions/setup-git-credentials-github@master
+        with:
+          githubToken: ${{ secrets.REPO_TOKEN }}
+
+      - name: Run vc-build QuickRelease
+        run: vc-build QuickRelease -MainBranch main
