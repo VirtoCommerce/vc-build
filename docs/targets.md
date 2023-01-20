@@ -24,6 +24,7 @@ Examples:
 ```console
 vc-build install (with no args)
 vc-build install -platform -version <version>
+vc-build install -platform -PlatformAssetUrl https://github.com/VirtoCommerce/vc-platform/releases/download/3.216.13/VirtoCommerce.Platform.3.216.13.zip
 vc-build install -module <module> -version <version>
 vc-build install -module <module>:<version>
 vc-build install -PackageManifestPath some_directory/vc-package.json -DiscoveryPath ../modules -ProbingPath platform_dir/app_data/modules -SkipDependencySolving

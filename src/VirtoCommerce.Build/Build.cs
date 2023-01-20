@@ -486,7 +486,7 @@ internal partial class Build : NukeBuild
     public Target WebPackBuild => _ => _
         .Executes(() =>
         {
-            if (WebProject != null && (WebProject.Directory).FileExists())
+            if (WebProject != null && (WebProject.Directory / "package.json").FileExists())
             {
                 NpmTasks.Npm("ci", WebProject.Directory);
                 NpmTasks.NpmRun(settings =>

@@ -182,28 +182,33 @@ namespace VirtoCommerce.Build
         }
 
         public Target Backup => _ => _
-            .Triggers(Rollback)
+            .Triggers(Rollback, RemoveBackup)
             .Before(Install, Update, InstallPlatform, InstallModules)
             .OnlyWhenDynamic(() => !IsServerBuild && Directory.EnumerateFileSystemEntries(RootDirectory).Any())
             .Executes(() =>
             {
-                CompressionTasks.CompressTarGZip(RootDirectory, BackupFile);
+                CompressionTasks.CompressTarGZip(RootDirectory, BackupFile, filter: f => !f.FullName.StartsWith(RootDirectory / ".nuke"));
 
             });
 
         public Target Rollback => _ => _
             .After(Install, Update, InstallPlatform, InstallModules)
-            .OnlyWhenDynamic(() => FailedTargets.Count > 0 && FinishedTargets.Contains(Backup))
+            .OnlyWhenDynamic(() => FailedTargets.Any() && SucceededTargets.Contains(Backup))
             .AssuredAfterFailure()
             .Executes(() =>
             {
-                FileSystemTasks.EnsureCleanDirectory(RootDirectory);
                 CompressionTasks.UncompressTarGZip(BackupFile, RootDirectory);
+            });
 
-                if (File.Exists(BackupFile))
-                {
-                    FileSystemTasks.DeleteFile(BackupFile);
-                }
+        public Target RemoveBackup => _ => _
+            .After(Backup, Rollback)
+            .OnlyWhenDynamic(() => FinishedTargets.Contains(Backup) && File.Exists(BackupFile))
+            .AssuredAfterFailure()
+            .Unlisted()
+            .DependsOn(Backup)
+            .Executes(() =>
+            {
+                FileSystemTasks.DeleteFile(BackupFile);
             });
 
         public Target InstallPlatform => _ => _
