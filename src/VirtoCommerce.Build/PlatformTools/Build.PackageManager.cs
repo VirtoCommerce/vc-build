@@ -6,11 +6,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nuke.Common;
+using Nuke.Common.CI.GitLab;
 using Nuke.Common.IO;
 using Nuke.Common.Utilities.Collections;
 using PlatformTools;
 using PlatformTools.Azure;
 using PlatformTools.Github;
+using PlatformTools.Gitlab;
 using Serilog;
 using VirtoCommerce.Build.PlatformTools;
 using VirtoCommerce.Platform.Core.Common;
@@ -40,6 +42,11 @@ namespace VirtoCommerce.Build
 
         [Parameter("Azure PAT")]
         public static string AzureToken { get; set; }
+        [Parameter("GitLab Token")]
+        public static string GitLabToken { get; set; }
+
+        [Parameter("Gitlab Server (default: https://gitlab.com/api/v4)")]
+        public static string GitLabServer { get; set; } = "https://gitlab.com/api/v4";
 
         [Parameter("Get bundle")]
         public static bool Stable { get; set; }
@@ -416,6 +423,7 @@ namespace VirtoCommerce.Build
             AzureUniversalPackages => new AzureUniversalPackagesModuleInstaller(AzureToken, GetDiscoveryPath()),
             GithubPrivateRepos => new GithubPrivateModulesInstaller(GitHubToken, GetDiscoveryPath()),
             AzureBlob _ => new AzureBlobModuleInstaller(AzureToken, GetDiscoveryPath()),
+            GitlabJobArtifacts _ => new GitlabJobArtifactsModuleInstaller(GitLabServer, GitLabToken, GetDiscoveryPath()),
             _ => throw new NotImplementedException("Unknown module source"),
         };
 
