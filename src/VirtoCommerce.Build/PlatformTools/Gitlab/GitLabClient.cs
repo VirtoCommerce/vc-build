@@ -13,14 +13,12 @@ public class GitLabClient
 {
     private readonly HttpClient _client;
     private readonly string _apiUrl;
-    private readonly string _accessToken;
 
     public GitLabClient(string accessToken, string apiUrl)
     {
         _apiUrl = apiUrl;
-        _accessToken = accessToken;
         _client = new HttpClient();
-        _client.DefaultRequestHeaders.Add("PRIVATE-TOKEN", _accessToken);
+        _client.DefaultRequestHeaders.Add("PRIVATE-TOKEN", accessToken);
     }
 
     public async Task<string> DownloadArtifact(string projectId, string jobId, string artifactName, string downloadPath)
