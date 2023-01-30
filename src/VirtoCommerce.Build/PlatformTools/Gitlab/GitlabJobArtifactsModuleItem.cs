@@ -7,4 +7,5 @@ internal class GitlabJobArtifactsModuleItem: ModuleItem
     }
 
     public string JobId { get; set; }
+    public string ArtifactName { get; set; }
 }

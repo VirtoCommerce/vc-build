@@ -11,15 +11,11 @@ internal class GitlabJobArtifactsModuleInstaller : IModulesInstaller
 {
     private readonly GitLabClient _client;
     private readonly string _discoveryPath;
-    private readonly string _server;
-    private readonly string _token;
 
     public GitlabJobArtifactsModuleInstaller(string server, string token, string discoveryPath)
     {
-        _server = server;
-        _token = token;
         _discoveryPath = discoveryPath;
-        _client = new GitLabClient(_token, server);
+        _client = new GitLabClient(token, server);
     }
 
     public Task Install(ModuleSource source)
@@ -35,7 +31,7 @@ internal class GitlabJobArtifactsModuleInstaller : IModulesInstaller
             Directory.CreateDirectory(moduleDestination);
             FileSystemTasks.EnsureCleanDirectory(moduleDestination);
             Log.Information($"Downloading {module.Id}");
-            var artifactZipPath = await _client.DownloadArtifact(module.Id, module.JobId, moduleDestination);
+            var artifactZipPath = await _client.DownloadArtifact(module.Id, module.JobId, module.ArtifactName, moduleDestination);
             Log.Information($"Extracting {module.Id}");
             ZipFile.ExtractToDirectory(artifactZipPath, moduleDestination);
             Log.Information($"Successfully installed {module.Id}");
