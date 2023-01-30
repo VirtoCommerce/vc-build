@@ -11,6 +11,7 @@ using Cloud.Models;
 using Cloud.Models.Platform;
 using Cloud.Models.Storefront;
 using Nuke.Common;
+using Nuke.Common.Tools.Npm;
 using Serilog;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
