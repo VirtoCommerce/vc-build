@@ -231,26 +231,7 @@ internal partial class Build : NukeBuild
         .Executes(() =>
         {
             var searchPattern = new[] { "**/bin", "**/obj" };
-            if (SourceDirectory.DirectoryExists())
-            {
-                SourceDirectory.GlobDirectories(searchPattern).ForEach(FileSystemTasks.DeleteDirectory);
-
-                if (TestsDirectory.DirectoryExists())
-                {
-                    TestsDirectory.GlobDirectories(searchPattern).ForEach(FileSystemTasks.DeleteDirectory);
-                }
-
-                if (SamplesDirectory.DirectoryExists())
-                {
-                    SamplesDirectory.GlobDirectories(searchPattern).ForEach(FileSystemTasks.DeleteDirectory);
-                }
-            }
-            else
-            {
-                RootDirectory.GlobDirectories(searchPattern).ForEach(FileSystemTasks.DeleteDirectory);
-            }
-
-            FileSystemTasks.EnsureCleanDirectory(ArtifactsDirectory);
+            CleanSolution(searchPattern);
         });
 
     public Target Restore => _ => _
@@ -510,58 +491,7 @@ internal partial class Build : NukeBuild
 
     public Target Compress => _ => _
         .DependsOn(Clean, WebPackBuild, Test, Publish)
-        .Executes(() =>
-        {
-            if (IsModule)
-            {
-                //Copy module.manifest and all content directories into a module output folder
-                FileSystemTasks.CopyFileToDirectory(ModuleManifestFile, ModuleOutputDirectory,
-                    FileExistsPolicy.Overwrite);
-
-                foreach (var folderName in _moduleContentFolders)
-                {
-                    var sourcePath = WebProject.Directory / folderName;
-
-                    if (sourcePath.DirectoryExists())
-                    {
-                        FileSystemTasks.CopyDirectoryRecursively(sourcePath, ModuleOutputDirectory / folderName,
-                            DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-                    }
-                }
-
-                var ignoredFiles = HttpTasks.HttpDownloadString(GlobalModuleIgnoreFileUrl).SplitLineBreaks();
-
-                if (ModuleIgnoreFile.FileExists())
-                {
-                    ignoredFiles = ignoredFiles.Concat(TextTasks.ReadAllLines(ModuleIgnoreFile)).ToArray();
-                }
-
-                ignoredFiles = ignoredFiles.Select(x => x.Trim()).Distinct().ToArray();
-
-                var keepFiles = Array.Empty<string>();
-                if (ModuleKeepFile.FileExists())
-                {
-                    keepFiles = TextTasks.ReadAllLines(ModuleKeepFile).ToArray();
-                }
-
-                FileSystemTasks.DeleteFile(ZipFilePath);
-                //TODO: Exclude all ignored files and *module files not related to compressed module
-                var ignoreModuleFilesRegex = new Regex(@".+Module\..*", RegexOptions.IgnoreCase);
-                var includeModuleFilesRegex =
-                    new Regex(@$".*{ModuleManifest.Id}(Module)?\..*", RegexOptions.IgnoreCase);
-
-                CompressionTasks.CompressZip(ModuleOutputDirectory, ZipFilePath, x =>
-                    (!ignoredFiles.Contains(x.Name, StringComparer.OrdinalIgnoreCase) &&
-                     !ignoreModuleFilesRegex.IsMatch(x.Name))
-                    || includeModuleFilesRegex.IsMatch(x.Name) ||
-                    keepFiles.Contains(x.Name, StringComparer.OrdinalIgnoreCase));
-            }
-            else
-            {
-                FileSystemTasks.DeleteFile(ZipFilePath);
-                CompressionTasks.CompressZip(ArtifactsDirectory / "publish", ZipFilePath);
-            }
-        });
+        .Executes(CompressExecuteMethod);
 
     public Target GetManifestGit => _ => _
         .Before(UpdateManifest)
@@ -870,120 +800,6 @@ internal partial class Build : NukeBuild
 
                 Assert.Fail("Publish Release Failed");
             }
-        });
-
-    public Target CompressWithCustomApp => _ => _
-        .DependsOn(CleanWithCustomApp, BuildCustomApp, Test, Publish)
-        .Executes(() =>
-        {
-            if (IsModule)
-            {
-                //Copy module.manifest and all content directories into a module output folder
-                FileSystemTasks.CopyFileToDirectory(ModuleManifestFile, ModuleOutputDirectory,
-                    FileExistsPolicy.Overwrite);
-
-                foreach (var folderName in _moduleContentFolders)
-                {
-                    var sourcePath = WebProject.Directory / folderName;
-
-                    if (sourcePath.DirectoryExists())
-                    {
-                        FileSystemTasks.CopyDirectoryRecursively(sourcePath, ModuleOutputDirectory / folderName,
-                            DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-                    }
-                }
-
-                var ignoredFiles = HttpTasks.HttpDownloadString(GlobalModuleIgnoreFileUrl).SplitLineBreaks();
-
-                if (ModuleIgnoreFile.FileExists())
-                {
-                    ignoredFiles = ignoredFiles.Concat(TextTasks.ReadAllLines(ModuleIgnoreFile)).ToArray();
-                }
-
-                ignoredFiles = ignoredFiles.Select(x => x.Trim()).Distinct().ToArray();
-
-                var keepFiles = Array.Empty<string>();
-                if (ModuleKeepFile.FileExists())
-                {
-                    keepFiles = TextTasks.ReadAllLines(ModuleKeepFile).ToArray();
-                }
-
-                FileSystemTasks.DeleteFile(ZipFilePath);
-                //TODO: Exclude all ignored files and *module files not related to compressed module
-                var ignoreModuleFilesRegex = new Regex(@".+Module\..*", RegexOptions.IgnoreCase);
-                var includeModuleFilesRegex =
-                    new Regex(@$".*{ModuleManifest.Id}(Module)?\..*", RegexOptions.IgnoreCase);
-
-                CompressionTasks.CompressZip(ModuleOutputDirectory, ZipFilePath, x =>
-                    (!ignoredFiles.Contains(x.Name, StringComparer.OrdinalIgnoreCase) &&
-                     !ignoreModuleFilesRegex.IsMatch(x.Name))
-                    || includeModuleFilesRegex.IsMatch(x.Name) ||
-                    keepFiles.Contains(x.Name, StringComparer.OrdinalIgnoreCase));
-            }
-            else
-            {
-                FileSystemTasks.DeleteFile(ZipFilePath);
-                CompressionTasks.CompressZip(ArtifactsDirectory / "publish", ZipFilePath);
-            }
-        });
-
-    public Target BuildCustomApp => _ => _
-        .Executes(() =>
-        {
-            if (WebProject != null && ModuleManifest.Apps.Any())
-            {
-                foreach (var app in ModuleManifest.Apps)
-                {
-                    if ((WebProject.Directory / "App" / "package.json").FileExists())
-                    {
-                        var chmod = ToolResolver.GetPathTool("yarn");
-                        chmod.Invoke("install", WebProject.Directory / "App");
-                        chmod.Invoke("build", WebProject.Directory / "App");
-                        FileSystemTasks.CopyDirectoryRecursively(WebProject.Directory / "App" / "dist",
-                            WebProject.Directory / "Content" / app.Id,
-                            DirectoryExistsPolicy.Merge,
-                            FileExistsPolicy.Overwrite);
-                    }
-                }
-            }
-            else
-            {
-                Log.Information("Nothing to build.");
-            }
-        });
-
-    public Target CleanWithCustomApp => _ => _
-        .Before(Restore)
-        .Executes(() =>
-        {
-            var searchPattern = new[] { "**/bin", "**/obj" };
-            if (SourceDirectory.DirectoryExists())
-            {
-                var directories = SourceDirectory.GlobDirectories(searchPattern);
-                foreach (var directory in directories)
-                {
-                    if (!(WebProject.Directory / "App").Contains(directory))
-                    {
-                        FileSystemTasks.DeleteDirectory(directory);
-                    }
-                }
-
-                if (TestsDirectory.DirectoryExists())
-                {
-                    TestsDirectory.GlobDirectories(searchPattern).ForEach(FileSystemTasks.DeleteDirectory);
-                }
-
-                if (SamplesDirectory.DirectoryExists())
-                {
-                    SamplesDirectory.GlobDirectories(searchPattern).ForEach(FileSystemTasks.DeleteDirectory);
-                }
-            }
-            else
-            {
-                RootDirectory.GlobDirectories(searchPattern).ForEach(FileSystemTasks.DeleteDirectory);
-            }
-
-            FileSystemTasks.EnsureCleanDirectory(ArtifactsDirectory);
         });
 
     public Target ClearTemp => _ => _
@@ -1322,6 +1138,96 @@ internal partial class Build : NukeBuild
         {
             Log.Information($"{dependency.Id}:{dependency.Version} - {packageId}:{packageVersion}");
         }
+    }
+
+    private void CompressExecuteMethod()
+    {
+        if (IsModule)
+        {
+            //Copy module.manifest and all content directories into a module output folder
+            FileSystemTasks.CopyFileToDirectory(ModuleManifestFile, ModuleOutputDirectory,
+                FileExistsPolicy.Overwrite);
+
+            foreach (var folderName in _moduleContentFolders)
+            {
+                var sourcePath = WebProject.Directory / folderName;
+
+                if (sourcePath.DirectoryExists())
+                {
+                    FileSystemTasks.CopyDirectoryRecursively(sourcePath, ModuleOutputDirectory / folderName,
+                        DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                }
+            }
+
+            var ignoredFiles = HttpTasks.HttpDownloadString(GlobalModuleIgnoreFileUrl).SplitLineBreaks();
+
+            if (ModuleIgnoreFile.FileExists())
+            {
+                ignoredFiles = ignoredFiles.Concat(TextTasks.ReadAllLines(ModuleIgnoreFile)).ToArray();
+            }
+
+            ignoredFiles = ignoredFiles.Select(x => x.Trim()).Distinct().ToArray();
+
+            var keepFiles = Array.Empty<string>();
+            if (ModuleKeepFile.FileExists())
+            {
+                keepFiles = TextTasks.ReadAllLines(ModuleKeepFile).ToArray();
+            }
+
+            FileSystemTasks.DeleteFile(ZipFilePath);
+            //TODO: Exclude all ignored files and *module files not related to compressed module
+            var ignoreModuleFilesRegex = new Regex(@".+Module\..*", RegexOptions.IgnoreCase);
+            var includeModuleFilesRegex =
+                new Regex(@$".*{ModuleManifest.Id}(Module)?\..*", RegexOptions.IgnoreCase);
+
+            CompressionTasks.CompressZip(ModuleOutputDirectory, ZipFilePath, x =>
+                (!ignoredFiles.Contains(x.Name, StringComparer.OrdinalIgnoreCase) &&
+                 !ignoreModuleFilesRegex.IsMatch(x.Name))
+                || includeModuleFilesRegex.IsMatch(x.Name) ||
+                keepFiles.Contains(x.Name, StringComparer.OrdinalIgnoreCase));
+        }
+        else
+        {
+            FileSystemTasks.DeleteFile(ZipFilePath);
+            CompressionTasks.CompressZip(ArtifactsDirectory / "publish", ZipFilePath);
+        }
+    }
+
+    private static void CleanSolution(string[] searchPattern, AbsolutePath[] ignorePaths = null)
+    {
+        if (SourceDirectory.DirectoryExists())
+        {
+            if (ignorePaths != null && ignorePaths.Any())
+            {
+                foreach (var directory in SourceDirectory.GlobDirectories(searchPattern))
+                {
+                    if (!ignorePaths.Any(p => p.Contains(directory)))
+                    {
+                        FileSystemTasks.DeleteDirectory(directory);
+                    }
+                }
+            }
+            else
+            {
+                SourceDirectory.GlobDirectories(searchPattern).ForEach(FileSystemTasks.DeleteDirectory);
+            }
+
+            if (TestsDirectory.DirectoryExists())
+            {
+                TestsDirectory.GlobDirectories(searchPattern).ForEach(FileSystemTasks.DeleteDirectory);
+            }
+
+            if (SamplesDirectory.DirectoryExists())
+            {
+                SamplesDirectory.GlobDirectories(searchPattern).ForEach(FileSystemTasks.DeleteDirectory);
+            }
+        }
+        else
+        {
+            RootDirectory.GlobDirectories(searchPattern).ForEach(FileSystemTasks.DeleteDirectory);
+        }
+
+        FileSystemTasks.EnsureCleanDirectory(ArtifactsDirectory);
     }
 
     public class Utf8StringWriter : StringWriter
