@@ -19,16 +19,18 @@ namespace VirtoCommerce.Build
                 {
                     foreach (var app in ModuleManifest.Apps)
                     {
-                        if ((WebProject.Directory / "App" / "package.json").FileExists())
+                        if (!(WebProject.Directory / "App" / "package.json").FileExists())
                         {
-                            var chmod = ToolResolver.GetPathTool("yarn");
-                            chmod.Invoke("install", WebProject.Directory / "App");
-                            chmod.Invoke("build", WebProject.Directory / "App");
-                            FileSystemTasks.CopyDirectoryRecursively(WebProject.Directory / "App" / "dist",
-                                WebProject.Directory / "Content" / app.Id,
-                                DirectoryExistsPolicy.Merge,
-                                FileExistsPolicy.Overwrite);
+                            continue;
                         }
+
+                        var chmod = ToolResolver.GetPathTool("yarn");
+                        chmod.Invoke("install", WebProject.Directory / "App");
+                        chmod.Invoke("build", WebProject.Directory / "App");
+                        FileSystemTasks.CopyDirectoryRecursively(WebProject.Directory / "App" / "dist",
+                            WebProject.Directory / "Content" / app.Id,
+                            DirectoryExistsPolicy.Merge,
+                            FileExistsPolicy.Overwrite);
                     }
                 }
                 else

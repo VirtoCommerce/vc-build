@@ -1199,13 +1199,10 @@ internal partial class Build : NukeBuild
         {
             if (ignorePaths != null && ignorePaths.Any())
             {
-                foreach (var directory in SourceDirectory.GlobDirectories(searchPattern))
-                {
-                    if (!ignorePaths.Any(p => p.Contains(directory)))
-                    {
-                        FileSystemTasks.DeleteDirectory(directory);
-                    }
-                }
+                SourceDirectory
+                    .GlobDirectories(searchPattern)
+                    .Where(directory => !ignorePaths.Any(p => p.Contains(directory)))
+                    .ForEach(FileSystemTasks.DeleteDirectory);
             }
             else
             {
