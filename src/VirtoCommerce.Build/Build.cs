@@ -269,7 +269,7 @@ internal partial class Build : NukeBuild
 
             foreach (var testProject in testProjects)
             {
-                DotNet($"add {testProject.Path} package coverlet.collector");
+                DotNet($"add \"{testProject.Path}\" package coverlet.collector");
 
                 var testSetting = new DotNetTestSettings()
                     .SetProjectFile(testProject.Path)
