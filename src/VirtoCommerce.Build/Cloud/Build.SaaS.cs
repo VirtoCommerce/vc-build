@@ -11,6 +11,7 @@ using Cloud.Models;
 using Cloud.Models.Platform;
 using Cloud.Models.Storefront;
 using Nuke.Common;
+using Nuke.Common.Tools.Npm;
 using Serilog;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -167,7 +168,7 @@ internal partial class Build
                 var secretConfigs = app.Platform.SecretConfig.Select(c => new SecretConfig(c.Key, c.Value))
                     .ToList<HelmParameter>();
                 var storefrontSecretConfigs =
-                    app.Storefront.SecretConfig.Select(c => new Cloud.Models.Storefront.SecretConfig(c.Key, c.Value));
+                    app.Storefront.SecretConfig.Select(c => new Cloud.Models.Storefront.SecretConfig(c.Key, c.Value)).ToList();
                 var storefrontConfigs =
                     app.Storefront.Config.Select(c => new Cloud.Models.Storefront.Config(c.Key, c.Value));
                 var secrets = secretConfigs.Concat(storefrontSecretConfigs).Select(s => s.Value).Distinct()

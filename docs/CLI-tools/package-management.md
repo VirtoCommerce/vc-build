@@ -71,6 +71,16 @@ This command downloads and installs the platform or modules into the relevant fo
       ],
       "Container": "modules",
       "ServiceUri": "https://vcpsblob.blob.core.windows.net"
+    },
+    {
+      "Name": "GitlabJobArtifacts",
+      "Modules": [
+        {
+          "JobId": "3679907995",
+          "ArtifactName": "artifacts/VirtoCommerce.Catalog_3.255.0.zip",
+          "Id": "42920184"
+        }
+      ]
     }
   ],
   "ManifestVersion": "2.0",

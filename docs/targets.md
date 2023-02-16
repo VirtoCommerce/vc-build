@@ -236,7 +236,7 @@ vc-build SetEnvParameter -CloudToken <your token> -EnvironmentName <environment 
 ```
 :::
 :::
-## SetForStatus
+## WaitForStatus
 Waits for health and/or sync statuses of the Environment
 Gets parameters: CloudToken, EnvironmentName, HelmParameters (Array)
 ```console
