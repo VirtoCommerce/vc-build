@@ -255,7 +255,7 @@ internal partial class Build : NukeBuild
                 .SetConfiguration(Configuration)
                 .EnableIncludeSymbols()
                 .SetSymbolPackageFormat(DotNetSymbolPackageFormat.snupkg)
-                .SetOutputDirectory(ArtifactsDirectory)
+                .SetProperty("PackageOutputPath", ArtifactsDirectory)
                 .SetVersion(ReleaseVersion);
             DotNetPack(settings);
         });
