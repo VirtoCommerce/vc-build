@@ -9,10 +9,11 @@ namespace VirtoCommerce.Build
     internal partial class Build
     {
         public Target CompressWithCustomApp => _ => _
-            .DependsOn(CleanWithCustomApp, BuildCustomApp, Test, Publish)
+            .DependsOn(CleanWithCustomApp, WebPackBuild, BuildCustomApp, Test, Publish)
             .Executes(CompressExecuteMethod);
 
         public Target BuildCustomApp => _ => _
+            .After(WebPackBuild)
             .Executes(() =>
             {
                 if (WebProject != null && ModuleManifest.Apps.Any())
