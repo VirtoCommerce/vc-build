@@ -52,6 +52,15 @@ internal partial class Build : NukeBuild
     private static readonly HttpClient _httpClient = new();
     private static int? _exitCode;
 
+    private enum ExitCodes
+    {
+        GithubReleaseAlreadyExists = 422,
+        HttpRequestConflict = 409,
+        GitNothingToCommit = 423,
+        GithubNoModuleFound = 404,
+        ModuleCouldNotBeLoaded = 126
+    }
+
     private static bool ClearTempBeforeExit { get; set; }
 
     public static Solution Solution
@@ -787,7 +796,7 @@ internal partial class Build : NukeBuild
 
                         if (alreadyExistsError)
                         {
-                            _exitCode = 422;
+                            ExitCode = (int)ExitCodes.GithubReleaseAlreadyExists;
                         }
 
                         Log.Error($"Api Validation Error: {responseString}");
@@ -895,7 +904,7 @@ internal partial class Build : NukeBuild
 
         if (text.Contains("error: Response status code does not indicate success: 409"))
         {
-            _exitCode = 409;
+            _exitCode = (int)ExitCodes.HttpRequestConflict;
         }
     }
 
@@ -1035,12 +1044,12 @@ internal partial class Build : NukeBuild
     {
         if (text.Contains("github returned 422 Unprocessable Entity") && text.Contains("already_exists"))
         {
-            _exitCode = 422;
+            _exitCode = (int)ExitCodes.GithubReleaseAlreadyExists;
         }
 
         if (text.Contains("nothing to commit, working tree clean"))
         {
-            _exitCode = 423;
+            _exitCode = (int)ExitCodes.GitNothingToCommit;
         }
 
         switch (type)

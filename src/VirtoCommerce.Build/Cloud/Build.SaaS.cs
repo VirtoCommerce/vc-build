@@ -95,7 +95,6 @@ internal partial class Build
 
                 await Task.Delay(TimeSpan.FromSeconds(Delay));
             }
-            
             Assert.True(isSuccess, $"Statuses {HealthStatus} {SyncStatus} were not obtained for the number of attempts: {AttemptsNumber}");
         });
 
