@@ -330,6 +330,7 @@ namespace VirtoCommerce.Build
 
                      if (externalModule == null)
                      {
+                         ExitCode = (int)ExitCodes.GithubNoModuleFound;
                          Assert.Fail($"No module {module.Id} found");
                          return;
                      }
@@ -346,6 +347,7 @@ namespace VirtoCommerce.Build
                      }
                      catch (Exception ex)
                      {
+                         ExitCode = (int)ExitCodes.ModuleCouldNotLoad;
                          Assert.Fail($"Could not load module '{module.Id}'", ex);
                      }
                  }
