@@ -347,7 +347,7 @@ namespace VirtoCommerce.Build
                      }
                      catch (Exception ex)
                      {
-                         ExitCode = (int)ExitCodes.ModuleCouldNotLoad;
+                         ExitCode = (int)ExitCodes.ModuleCouldNotBeLoaded;
                          Assert.Fail($"Could not load module '{module.Id}'", ex);
                      }
                  }

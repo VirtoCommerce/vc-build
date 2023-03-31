@@ -58,7 +58,7 @@ internal partial class Build : NukeBuild
         HttpRequestConflict = 409,
         GitNothingToCommit = 423,
         GithubNoModuleFound = 404,
-        ModuleCouldNotLoad = 126
+        ModuleCouldNotBeLoaded = 126
     }
 
     private static bool ClearTempBeforeExit { get; set; }
