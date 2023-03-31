@@ -52,7 +52,7 @@ internal partial class Build : NukeBuild
     private static readonly HttpClient _httpClient = new();
     private static int? _exitCode;
 
-    private enum ExitCodes: int
+    private enum ExitCodes
     {
         GithubReleaseAlreadyExists = 422,
         HttpRequestConflict = 409,
