@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
 using ArgoCD.Client;
 using Cloud.Client;
@@ -77,21 +78,24 @@ internal partial class Build
     public Target WaitForStatus => _ => _
         .Executes(async () =>
         {
+            var isSuccess = false;
             var cloudClient = new VirtoCloudClient(CloudUrl, CloudToken);
             for (var i = 0; i < AttemptsNumber; i++)
             {
-                Log.Information($"Attemp #{i + 1}");
+                Log.Information($"Attempt #{i + 1}");
                 var env = await cloudClient.GetEnvironment(EnvironmentName);
                 Log.Information(
                     $"Actual Health Status is {env.Status} - expected is {HealthStatus ?? "Not expected"}\n Actual Sync Status is {env.SyncStatus} - expected is {SyncStatus ?? "Not expected"}");
                 if (CheckAppServiceStatus(HealthStatus, env.Status) &&
                     CheckAppServiceStatus(SyncStatus, env.SyncStatus))
                 {
+                    isSuccess = true;
                     break;
                 }
 
                 await Task.Delay(TimeSpan.FromSeconds(Delay));
             }
+            Assert.True(isSuccess, $"Statuses {HealthStatus} {SyncStatus} were not obtained for the number of attempts: {AttemptsNumber}");
         });
 
     public Target SetHelmParameter => _ => _

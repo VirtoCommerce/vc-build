@@ -58,9 +58,14 @@ namespace PlatformTools
             var baseManifest = SerializationTasks.JsonDeserializeFromFile<ManifestBase>(path);
             ManifestBase result;
             if (string.IsNullOrEmpty(baseManifest.ManifestVersion) || new Version(baseManifest.ManifestVersion) < new Version("2.0"))
+            {
                 result = SerializationTasks.JsonDeserializeFromFile<PackageManifest>(path);
+            }
             else
+            {
                 result = SerializationTasks.JsonDeserializeFromFile<MixedPackageManifest>(path);
+            }
+
             return result;
         }
 

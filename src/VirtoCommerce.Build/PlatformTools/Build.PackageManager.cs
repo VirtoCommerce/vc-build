@@ -223,22 +223,27 @@ namespace VirtoCommerce.Build
              .Executes(async () =>
              {
                  var packageManifest = PackageManager.FromFile(PackageManifestPath);
-                 await InstallPlatformAsync(packageManifest.PlatformVersion);
+                 var mixedManifest = SerializationTasks.JsonDeserializeFromFile<MixedPackageManifest>(PackageManifestPath);
+                 var platformAssetUrlFromManifest = mixedManifest.PlatformAssetUrl;
+                 var platformAssetUrl = string.IsNullOrWhiteSpace(PlatformAssetUrl)
+                     ? platformAssetUrlFromManifest
+                     : PlatformAssetUrl;
+                 await InstallPlatformAsync(packageManifest?.PlatformVersion, platformAssetUrl);
              });
 
-        private static async Task InstallPlatformAsync(string platformVersion)
+        private static async Task InstallPlatformAsync(string platformVersion, string platformAssetUrl)
         {
-            Log.Information($"Installing platform {platformVersion}");
-            string platformAssetUrl;
-            if (!string.IsNullOrEmpty(PlatformAssetUrl))
+            if (string.IsNullOrWhiteSpace(platformAssetUrl))
             {
-                platformAssetUrl = PlatformAssetUrl;
-            }
-            else
-            {
+                Log.Information($"Installing platform {platformVersion}");
                 var platformRelease = await GithubManager.GetPlatformRelease(platformVersion);
                 platformAssetUrl = platformRelease.Assets[0].BrowserDownloadUrl;
             }
+            else
+            {
+                Log.Information($"Installing platform {platformAssetUrl}");
+            }
+
             var platformZip = TemporaryDirectory / "platform.zip";
 
             if (string.IsNullOrEmpty(platformAssetUrl))
@@ -325,6 +330,7 @@ namespace VirtoCommerce.Build
 
                      if (externalModule == null)
                      {
+                         ExitCode = (int)ExitCodes.GithubNoModuleFound;
                          Assert.Fail($"No module {module.Id} found");
                          return;
                      }
@@ -341,6 +347,7 @@ namespace VirtoCommerce.Build
                      }
                      catch (Exception ex)
                      {
+                         ExitCode = (int)ExitCodes.ModuleCouldNotBeLoaded;
                          Assert.Fail($"Could not load module '{module.Id}'", ex);
                      }
                  }

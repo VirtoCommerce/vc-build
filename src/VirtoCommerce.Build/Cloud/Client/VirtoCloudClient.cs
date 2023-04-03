@@ -47,7 +47,7 @@ public class VirtoCloudClient
         var response = await _client.PutAsync(new Uri("api/saas/environments", UriKind.Relative), content);
         if (!response.IsSuccessStatusCode)
         {
-            Assert.Fail($"{response.ReasonPhrase}: {response.RequestMessage}");
+            Assert.Fail($"{response.ReasonPhrase}: {await response.Content.ReadAsStringAsync()}");
         }
     }
 
@@ -60,7 +60,7 @@ public class VirtoCloudClient
         });
         if (!response.IsSuccessStatusCode)
         {
-            Assert.Fail($"{response.ReasonPhrase}: {response.RequestMessage}");
+            Assert.Fail($"{response.ReasonPhrase}: {await response.Content.ReadAsStringAsync()}");
         }
 
         var responseContent = await response.Content.ReadAsStringAsync();
