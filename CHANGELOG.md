@@ -3,6 +3,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [3.13.0] - 2023-04-03
+### Added
+- PlatformAssetUrl to the package manifest
+- non-zero exit code if WaitForStatus didn't obtain the expected status
+### Fixed
+- Use PackageOutputPath instead of SetOutputDirectory to fix error NETSDK1194: The "--output" option isn't supported when building a solution.
+- Minor fixes
+
 ## [3.12.0] - 2023-02-16
 ### Added
 - Support for modules installation from GitLab Job Artifacts
