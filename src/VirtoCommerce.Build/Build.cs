@@ -37,7 +37,6 @@ using Project = Nuke.Common.ProjectModel.Project;
 
 namespace VirtoCommerce.Build;
 
-[CheckBuildProjectConfigurations]
 [UnsetVisualStudioEnvironmentVariables]
 internal partial class Build : NukeBuild
 {
