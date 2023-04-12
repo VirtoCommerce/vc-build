@@ -182,7 +182,7 @@ namespace VirtoCommerce.Build
             return !PlatformParameter && (!Module?.IsEmpty() ?? false);
         }
 
-        private bool PlatformVersionChanged()
+        private static bool PlatformVersionChanged()
         {
             var manifest = PackageManager.FromFile(PackageManifestPath);
             return IsPlatformInstallationNeeded(manifest.PlatformVersion);
