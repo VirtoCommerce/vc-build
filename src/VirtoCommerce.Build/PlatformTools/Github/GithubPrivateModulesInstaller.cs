@@ -10,7 +10,7 @@ using VirtoCommerce.Build.PlatformTools;
 
 namespace PlatformTools.Github
 {
-    internal class GithubPrivateModulesInstaller : IModulesInstaller
+    internal class GithubPrivateModulesInstaller : ModulesInstallerBase
     {
 
         private readonly string _token;
@@ -23,21 +23,18 @@ namespace PlatformTools.Github
             _client = new GitHubClient(new Octokit.ProductHeaderValue("vc-build"));
             _client.Credentials = new Credentials(token);
         }
-        public Task Install(ModuleSource source)
-        {
-            return InnerInstall((GithubPrivateRepos)source);
-        }
 
-        protected async Task InnerInstall(GithubPrivateRepos source)
+        protected override async Task InnerInstall(ModuleSource source)
         {
-            foreach (var module in source.Modules)
+            var githubPrivateRepos = (GithubPrivateRepos) source;
+            foreach (var module in githubPrivateRepos.Modules)
             {
                 var moduleDestination = Path.Join(_discoveryPath, module.Id);
                 Directory.CreateDirectory(moduleDestination);
                 FileSystemTasks.EnsureCleanDirectory(moduleDestination);
                 var zipName = $"{module.Id}.zip";
                 var zipDestination = Path.Join(moduleDestination, zipName);
-                var release = await _client.Repository.Release.Get(source.Owner, module.Id, module.Version);
+                var release = await _client.Repository.Release.Get(githubPrivateRepos.Owner, module.Id, module.Version);
                 if (release == null)
                 {
                     Log.Error($"{module.Id}:{module.Version} is not found");

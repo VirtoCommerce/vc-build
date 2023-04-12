@@ -2,11 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Nuke.Common.IO;
+using Nuke.Common.Tools.VSWhere;
 using VirtoCommerce.Build.PlatformTools;
 
 namespace PlatformTools
 {
-    internal static class PackageManager
+    public static class PackageManager
     {
         private static readonly string _defaultModuleManifest = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/modules_v3.json";
 
@@ -16,6 +17,7 @@ namespace PlatformTools
             {
                 ManifestVersion = "2.0",
                 PlatformVersion = platformVersion,
+                PlatformAssetUrl = string.IsNullOrWhiteSpace(platformAssetUrl) ? null : platformAssetUrl,
                 Sources = new List<ModuleSource>
                 {
                     new GithubReleases
@@ -36,15 +38,9 @@ namespace PlatformTools
             return CreatePackageManifest(platformVersion, "");
         }
 
-        public static PackageManifest UpdatePlatform(PackageManifest manifest, string newVersion)
+        public static MixedPackageManifest UpdatePlatform(MixedPackageManifest manifest, string newVersion)
         {
             manifest.PlatformVersion = newVersion;
-            return manifest;
-        }
-
-        public static PackageManifest AddModule(PackageManifest manifest, ModuleItem module)
-        {
-            manifest.Modules.Add(module);
             return manifest;
         }
 

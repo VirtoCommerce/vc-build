@@ -8,7 +8,7 @@ using VirtoCommerce.Build.PlatformTools;
 
 namespace PlatformTools.Azure
 {
-    internal class AzurePipelineArtifactsModuleInstaller : IModulesInstaller
+    internal class AzurePipelineArtifactsModuleInstaller : ModulesInstallerBase
     {
         private readonly string _token;
         private readonly string _discoveryPath;
@@ -18,13 +18,10 @@ namespace PlatformTools.Azure
             this._token = token;
             this._discoveryPath = discoveryPath;
         }
-        public Task Install(ModuleSource source)
-        {
-            return InnerInstall((AzurePipelineArtifacts)source);
-        }
 
-        protected async Task InnerInstall(AzurePipelineArtifacts artifacts)
+        protected override async Task InnerInstall(ModuleSource source)
         {
+            var artifacts = (AzurePipelineArtifacts)source;
             var azureClient = new AzureDevClient(artifacts.Organization, _token);
             var clientOptions = ExtModuleCatalog.GetOptions(_token, new List<string>() { "https://virtocommerce.com" });
             var downloadClient = new AzurePipelineArtifactsClient(clientOptions);

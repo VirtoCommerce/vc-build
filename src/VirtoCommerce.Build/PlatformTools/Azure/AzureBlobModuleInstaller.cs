@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Threading.Tasks;
 using Serilog;
 using VirtoCommerce.Build.PlatformTools;
@@ -8,38 +9,35 @@ using AzureBlobs = Azure.Storage.Blobs;
 
 namespace PlatformTools.Azure
 {
-    internal class AzureBlobModuleInstaller : IModulesInstaller
+    internal class AzureBlobModuleInstaller : ModulesInstallerBase
     {
         private readonly string _token;
-        private readonly string _discoveryPath;
+        private readonly string _destination;
 
-        public AzureBlobModuleInstaller(string token, string discoveryPath)
+        public AzureBlobModuleInstaller(string token, string destination)
         {
             _token = token;
-            _discoveryPath = discoveryPath;
-        }
-        public Task Install(ModuleSource source)
-        {
-            return InnerInstall((AzureBlob)source, _discoveryPath);
+            _destination = destination;
         }
 
-        protected Task InnerInstall(AzureBlob source, string destination)
+        protected override Task InnerInstall(ModuleSource source)
         {
+            var azureBlobSource = (AzureBlob)source;
             var blobClientOptions = new AzureBlobs.BlobClientOptions();
-            var blobServiceClient = new AzureBlobs.BlobServiceClient(new Uri($"{source.ServiceUri}?{_token}"), blobClientOptions);
-            var containerClient = blobServiceClient.GetBlobContainerClient(source.Container);
-            foreach (var module in source.Modules)
+            var blobServiceClient = new AzureBlobs.BlobServiceClient(new Uri($"{azureBlobSource.ServiceUri}?{_token}"), blobClientOptions);
+            var containerClient = blobServiceClient.GetBlobContainerClient(azureBlobSource.Container);
+            foreach (var moduleBlobName in azureBlobSource.Modules.Select(m => m.BlobName))
             {
-                Log.Information($"Installing {module.BlobName}");
-                var zipName = $"{module.BlobName}.zip";
-                var zipPath = Path.Join(destination, zipName);
-                var moduleDestination = Path.Join(destination, module.BlobName);
-                Log.Information($"Downloading Blob {module.BlobName}");
-                var blobClient = containerClient.GetBlobClient(module.BlobName);
+                Log.Information($"Installing {moduleBlobName}");
+                var zipName = $"{moduleBlobName}.zip";
+                var zipPath = Path.Join(_destination, zipName);
+                var moduleDestination = Path.Join(_destination, moduleBlobName);
+                Log.Information($"Downloading Blob {moduleBlobName}");
+                var blobClient = containerClient.GetBlobClient(moduleBlobName);
                 blobClient.DownloadTo(zipPath);
-                Log.Information($"Extracting Blob {module.BlobName}");
+                Log.Information($"Extracting Blob {moduleBlobName}");
                 ZipFile.ExtractToDirectory(zipPath, moduleDestination);
-                Log.Information($"Successfully installed {module.BlobName}");
+                Log.Information($"Successfully installed {moduleBlobName}");
             }
             return Task.CompletedTask;
         }

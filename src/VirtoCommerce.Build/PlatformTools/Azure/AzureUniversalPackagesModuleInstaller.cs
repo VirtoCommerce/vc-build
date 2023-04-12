@@ -10,7 +10,7 @@ using VirtoCommerce.Build.PlatformTools;
 
 namespace PlatformTools.Azure
 {
-    internal class AzureUniversalPackagesModuleInstaller : IModulesInstaller
+    internal class AzureUniversalPackagesModuleInstaller : ModulesInstallerBase
     {
         readonly string token;
         readonly string discoveryPath;
@@ -21,8 +21,9 @@ namespace PlatformTools.Azure
             this.discoveryPath = discoveryPath;
         }
 
-        public Task InnerInstall(AzureUniversalPackages artifacts)
+        protected override Task InnerInstall(ModuleSource source)
         {
+            var artifacts = (AzureUniversalPackages)source;
             foreach (var module in artifacts.Modules)
             {
                 Log.Information($"Installing {module.Id}");
@@ -57,7 +58,7 @@ namespace PlatformTools.Azure
             return Task.CompletedTask;
         }
 
-        public Task Install(ModuleSource source)
+        public override Task Install(ModuleSource source)
         {
             return InnerInstall((AzureUniversalPackages)source);
         }
