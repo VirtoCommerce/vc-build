@@ -12,7 +12,7 @@ using VirtoCommerce.Platform.Core.Modularity;
 
 namespace Utils
 {
-    public class ArtifactPacker
+    public static class ArtifactPacker
     {
         public static void CompressPlatform(string sourceDirectory, string outputZipPath)
         {
@@ -25,7 +25,7 @@ namespace Utils
             FileSystemTasks.CopyFileToDirectory(moduleManifestPath, sourceDirectory,
                 FileExistsPolicy.Overwrite);
             
-            //TODO: Exclude all ignored files and *module files not related to compressed module
+            //Exclude all ignored files and *module files not related to compressed module
             var ignoreModuleFilesRegex = new Regex(@".+Module\..*", RegexOptions.IgnoreCase);
             var includeModuleFilesRegex =
                 new Regex(@$".*{moduleId}(Module)?\..*", RegexOptions.IgnoreCase);

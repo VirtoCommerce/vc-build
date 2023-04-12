@@ -24,9 +24,9 @@ namespace PlatformTools.Github
             _client.Credentials = new Credentials(token);
         }
 
-        protected override async Task InnerInstall(ModuleSource moduleSource)
+        protected override async Task InnerInstall(ModuleSource source)
         {
-            var githubPrivateRepos = (GithubPrivateRepos) moduleSource;
+            var githubPrivateRepos = (GithubPrivateRepos) source;
             foreach (var module in githubPrivateRepos.Modules)
             {
                 var moduleDestination = Path.Join(_discoveryPath, module.Id);

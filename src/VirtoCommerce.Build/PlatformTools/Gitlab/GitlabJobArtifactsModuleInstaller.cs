@@ -18,9 +18,9 @@ internal class GitlabJobArtifactsModuleInstaller : ModulesInstallerBase
         _client = new GitLabClient(token, server);
     }
 
-    protected override async Task InnerInstall(ModuleSource moduleSource)
+    protected override async Task InnerInstall(ModuleSource source)
     {
-        var gitlabJobArtifacts = (GitlabJobArtifacts) moduleSource;
+        var gitlabJobArtifacts = (GitlabJobArtifacts) source;
         foreach (var module in gitlabJobArtifacts.Modules)
         {
             var moduleDestination = Path.Join(_discoveryPath, module.Id);

@@ -4,10 +4,8 @@ using System.Runtime.Serialization;
 namespace VirtoCommerce.Build.PlatformTools
 {
     [Serializable]
-    internal class ModuleInstallationException : Exception
+    public class ModuleInstallationException : Exception
     {
-        private Exception exception;
-
         public ModuleInstallationException()
         {
         }

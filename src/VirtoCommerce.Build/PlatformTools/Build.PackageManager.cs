@@ -290,7 +290,7 @@ namespace VirtoCommerce.Build
             return DiscoveryPath.EmptyToNull() ?? configuration.GetModulesDiscoveryPath();
         }
 
-        private bool IsPlatformInstallationNeeded(string version)
+        private static bool IsPlatformInstallationNeeded(string version)
         {
             var result = true;
             var platformWebDllPath = RootDirectory / "VirtoCommerce.Platform.Web.dll";
