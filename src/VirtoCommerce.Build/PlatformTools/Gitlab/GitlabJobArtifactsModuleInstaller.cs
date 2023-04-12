@@ -7,7 +7,7 @@ using VirtoCommerce.Build.PlatformTools;
 
 namespace PlatformTools.Gitlab;
 
-internal class GitlabJobArtifactsModuleInstaller : IModulesInstaller
+internal class GitlabJobArtifactsModuleInstaller : ModulesInstallerBase
 {
     private readonly GitLabClient _client;
     private readonly string _discoveryPath;
@@ -18,14 +18,10 @@ internal class GitlabJobArtifactsModuleInstaller : IModulesInstaller
         _client = new GitLabClient(token, server);
     }
 
-    public Task Install(ModuleSource source)
+    protected override async Task InnerInstall(ModuleSource moduleSource)
     {
-        return InnerInstall(source as GitlabJobArtifacts);
-    }
-
-    protected virtual async Task InnerInstall(GitlabJobArtifacts source)
-    {
-        foreach (var module in source.Modules)
+        var gitlabJobArtifacts = (GitlabJobArtifacts) moduleSource;
+        foreach (var module in gitlabJobArtifacts.Modules)
         {
             var moduleDestination = Path.Join(_discoveryPath, module.Id);
             Directory.CreateDirectory(moduleDestination);

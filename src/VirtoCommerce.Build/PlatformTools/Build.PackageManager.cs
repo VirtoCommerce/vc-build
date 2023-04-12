@@ -424,7 +424,7 @@ namespace VirtoCommerce.Build
             return moduleInfo;
         }
 
-        private IModulesInstaller GetModuleInstaller(ModuleSource moduleSource) => moduleSource switch
+        private ModulesInstallerBase GetModuleInstaller(ModuleSource moduleSource) => moduleSource switch
         {
             AzurePipelineArtifacts => new AzurePipelineArtifactsModuleInstaller(AzureToken, GetDiscoveryPath()),
             AzureUniversalPackages => new AzureUniversalPackagesModuleInstaller(AzureToken, GetDiscoveryPath()),

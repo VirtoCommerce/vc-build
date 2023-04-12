@@ -151,7 +151,8 @@ namespace VirtoCommerce.Build.Tests
             var manifest = (MixedPackageManifest)PackageManager.CreatePackageManifest("1.0.0");
             var moduleId = "TestModule";
             var moduleVersion = "7.0.0";
-            var source = (GithubReleases)manifest.Sources.FirstOrDefault(s => s.Name == nameof(GithubReleases));
+            var source = manifest.Sources.Where(s => s.Name == nameof(GithubReleases)).OfType<GithubReleases>().FirstOrDefault();
+            Assert.NotNull(source);
             source.Modules.Add(new ModuleItem(moduleId, moduleVersion));
 
             // Act
