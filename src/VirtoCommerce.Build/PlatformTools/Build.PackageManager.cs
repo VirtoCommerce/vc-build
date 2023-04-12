@@ -72,7 +72,7 @@ namespace VirtoCommerce.Build
              .DependsOn(Backup)
              .Executes(async () =>
              {
-                 var packageManifest = await OpenOrCreateManifest(PackageManifestPath);
+                 var packageManifest = await OpenOrCreateManifest(PackageManifestPath, Stable);
                  var githubModuleSources = PackageManager.GetGithubModuleManifests(packageManifest);
                  var modules = PackageManager.GetGithubModules(packageManifest);
 
@@ -185,7 +185,7 @@ namespace VirtoCommerce.Build
         private bool PlatformVersionChanged()
         {
             var manifest = PackageManager.FromFile(PackageManifestPath);
-            return NeedToInstallPlatform(manifest.PlatformVersion);
+            return IsPlatformInstallationNeeded(manifest.PlatformVersion);
         }
 
         public Target Backup => _ => _
@@ -290,7 +290,7 @@ namespace VirtoCommerce.Build
             return DiscoveryPath.EmptyToNull() ?? configuration.GetModulesDiscoveryPath();
         }
 
-        private bool NeedToInstallPlatform(string version)
+        private bool IsPlatformInstallationNeeded(string version)
         {
             var result = true;
             var platformWebDllPath = RootDirectory / "VirtoCommerce.Platform.Web.dll";
@@ -458,7 +458,7 @@ namespace VirtoCommerce.Build
              .DependsOn(Backup)
              .Executes(async () =>
              {
-                 var packageManifest = await OpenOrCreateManifest(PackageManifestPath);
+                 var packageManifest = await OpenOrCreateManifest(PackageManifestPath, Stable);
                  var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
                  var githubModules = PackageManager.GetGithubModules(packageManifest);
                  var githubModuleManifests = PackageManager.GetGithubModuleManifests(packageManifest);
@@ -487,11 +487,11 @@ namespace VirtoCommerce.Build
                  PackageManager.ToFile(packageManifest);
              });
 
-        private async Task<ManifestBase> OpenOrCreateManifest(string packageManifestPath)
+        private async Task<ManifestBase> OpenOrCreateManifest(string packageManifestPath, bool isStableBundle)
         {
             ManifestBase packageManifest;
             var platformWebDllPath = Path.Combine(Directory.GetParent(packageManifestPath).FullName, "VirtoCommerce.Platform.Web.dll");
-            if (Stable)
+            if (isStableBundle)
             {
                 SkipDependencySolving = true;
                 if (File.Exists(packageManifestPath))
@@ -526,9 +526,13 @@ namespace VirtoCommerce.Build
             var bundlesDictionary = SerializationTasks.JsonDeserialize<Dictionary<string, string>>(rawBundlesFile);
             KeyValuePair<string, string> bundle;
             if (string.IsNullOrEmpty(bundleName))
+            {
                 bundle = bundlesDictionary.LastOrDefault();
+            }
             else
+            {
                 bundle = bundlesDictionary.FirstOrDefault(kv => kv.Key == bundleName);
+            }
 
             var manifestUrl = bundle.Value;
             await HttpTasks.HttpDownloadFileAsync(manifestUrl, outFile);

@@ -96,9 +96,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Utils\" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\ArgoCD.Client\ArgoCD.Client.csproj" />
   </ItemGroup>
 </Project>

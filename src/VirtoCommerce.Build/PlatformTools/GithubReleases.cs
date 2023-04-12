@@ -3,7 +3,7 @@ using PlatformTools;
 
 namespace VirtoCommerce.Build.PlatformTools
 {
-    internal class GithubReleases: ModuleSource
+    public class GithubReleases: ModuleSource
     {
         public override string Name { get; set; } = "GithubReleases";
         public List<string> ModuleSources { get; set; }

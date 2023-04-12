@@ -27,6 +27,7 @@ using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
 using Octokit;
 using Serilog;
+using Utils;
 using VirtoCommerce.Build.Utils;
 using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.Platform.Core.Modularity;
@@ -1152,21 +1153,6 @@ internal partial class Build : NukeBuild
     {
         if (IsModule)
         {
-            //Copy module.manifest and all content directories into a module output folder
-            FileSystemTasks.CopyFileToDirectory(ModuleManifestFile, ModuleOutputDirectory,
-                FileExistsPolicy.Overwrite);
-
-            foreach (var folderName in _moduleContentFolders)
-            {
-                var sourcePath = WebProject.Directory / folderName;
-
-                if (sourcePath.DirectoryExists())
-                {
-                    FileSystemTasks.CopyDirectoryRecursively(sourcePath, ModuleOutputDirectory / folderName,
-                        DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-                }
-            }
-
             var ignoredFiles = HttpTasks.HttpDownloadString(GlobalModuleIgnoreFileUrl).SplitLineBreaks();
 
             if (ModuleIgnoreFile.FileExists())
@@ -1182,22 +1168,11 @@ internal partial class Build : NukeBuild
                 keepFiles = TextTasks.ReadAllLines(ModuleKeepFile).ToArray();
             }
 
-            FileSystemTasks.DeleteFile(ZipFilePath);
-            //TODO: Exclude all ignored files and *module files not related to compressed module
-            var ignoreModuleFilesRegex = new Regex(@".+Module\..*", RegexOptions.IgnoreCase);
-            var includeModuleFilesRegex =
-                new Regex(@$".*{ModuleManifest.Id}(Module)?\..*", RegexOptions.IgnoreCase);
-
-            CompressionTasks.CompressZip(ModuleOutputDirectory, ZipFilePath, x =>
-                (!ignoredFiles.Contains(x.Name, StringComparer.OrdinalIgnoreCase) &&
-                 !ignoreModuleFilesRegex.IsMatch(x.Name))
-                || includeModuleFilesRegex.IsMatch(x.Name) ||
-                keepFiles.Contains(x.Name, StringComparer.OrdinalIgnoreCase));
+            ArtifactPacker.CompressModuleAsync(ModuleOutputDirectory, ZipFilePath, ModuleManifest.Id, ModuleManifestFile, WebProject.Directory, ignoredFiles, keepFiles, _moduleContentFolders);
         }
         else
         {
-            FileSystemTasks.DeleteFile(ZipFilePath);
-            CompressionTasks.CompressZip(ArtifactsDirectory / "publish", ZipFilePath);
+            ArtifactPacker.CompressPlatform(ArtifactsDirectory / "publish", ZipFilePath);
         }
     }
 
