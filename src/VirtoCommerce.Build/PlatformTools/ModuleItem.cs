@@ -1,6 +1,6 @@
 namespace PlatformTools
 {
-    internal class ModuleItem
+    public class ModuleItem
     {
         public ModuleItem(string id, string version)
         {

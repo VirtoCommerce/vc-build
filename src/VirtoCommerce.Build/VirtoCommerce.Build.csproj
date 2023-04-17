@@ -33,10 +33,10 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.14" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="Octokit" Version="0.50.0" />
+    <PackageReference Include="Octokit" Version="4.0.2" />
     <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
     <PackageReference Include="Virtocommerce.Platform.Core" Version="3.262.0" />
-    <PackageReference Include="Nuke.Common" Version="6.0.1" />
+    <PackageReference Include="Nuke.Common" Version="6.3.0" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.170.0" />
     <PackageReference Include="dotnet-sonarscanner" Version="5.8.0">
       <ExcludeAssets>all</ExcludeAssets>
@@ -94,9 +94,6 @@
     <None Include="..\..\docs\targets.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Utils\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ArgoCD.Client\ArgoCD.Client.csproj" />
