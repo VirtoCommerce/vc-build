@@ -26,6 +26,7 @@ namespace PlatformTools.Azure
             var blobClientOptions = new AzureBlobs.BlobClientOptions();
             var blobServiceClient = new AzureBlobs.BlobServiceClient(new Uri($"{azureBlobSource.ServiceUri}?{_token}"), blobClientOptions);
             var containerClient = blobServiceClient.GetBlobContainerClient(azureBlobSource.Container);
+            Directory.CreateDirectory(_destination);
             foreach (var moduleBlobName in azureBlobSource.Modules.Select(m => m.BlobName))
             {
                 Log.Information($"Installing {moduleBlobName}");
