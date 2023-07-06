@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nuke.Common;
-using Nuke.Common.CI.GitLab;
 using Nuke.Common.IO;
 using Nuke.Common.Utilities.Collections;
 using PlatformTools;
@@ -38,7 +37,7 @@ namespace VirtoCommerce.Build
         public static bool PlatformParameter { get; set; }
 
         [Parameter("Custom platform asset url")]
-        public static string PlatformAssetUrl { get; set;}
+        public static string PlatformAssetUrl { get; set; }
 
         [Parameter("Azure PAT")]
         public static string AzureToken { get; set; }
@@ -110,7 +109,7 @@ namespace VirtoCommerce.Build
                     continue;
                 }
 
-                if (!string.IsNullOrEmpty(module.Version) && externalModule.Version < new SemanticVersion(new Version(module.Version)))
+                if (!string.IsNullOrEmpty(module.Version) && externalModule.Version < SemanticVersion.Parse(module.Version))
                 {
                     Log.Error($"The latest available version of module {module.Id} is {externalModule.Version}, but entered: {module.Version}");
                     continue;
@@ -448,7 +447,7 @@ namespace VirtoCommerce.Build
                  if (PlatformVersion.CurrentVersion == null)
                  {
                      var platformRelease = await GithubManager.GetPlatformRelease(null);
-                     PlatformVersion.CurrentVersion = new SemanticVersion(Version.Parse(platformRelease.TagName));
+                     PlatformVersion.CurrentVersion = SemanticVersion.Parse(platformRelease.TagName);
                  }
                  localModulesCatalog.Reload();
              });
