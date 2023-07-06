@@ -1213,10 +1213,4 @@ internal partial class Build : NukeBuild
 
         FileSystemTasks.EnsureCleanDirectory(ArtifactsDirectory);
     }
-
-    public class Utf8StringWriter : StringWriter
-    {
-        // Use UTF8 encoding but write no BOM to the wire
-        public override Encoding Encoding => new UTF8Encoding(false);
-    }
 }
