@@ -7,7 +7,6 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
 using Microsoft.Build.Locator;
@@ -931,9 +930,7 @@ internal partial class Build : NukeBuild
 
     private void UpdateDirectoryBuildProps(string versionPrefix, string versionSuffix)
     {
-        var xmlDocument = new XmlDocument { PreserveWhitespace = true };
-
-        xmlDocument.LoadXml(File.ReadAllText(DirectoryBuildPropsPath));
+        var xmlDocument = LoadXml(DirectoryBuildPropsPath);
 
         if (!string.IsNullOrEmpty(versionPrefix))
         {
@@ -955,15 +952,12 @@ internal partial class Build : NukeBuild
             }
         }
 
-        using var writer = new Utf8StringWriter();
-        xmlDocument.Save(writer);
-        File.WriteAllText(DirectoryBuildPropsPath, writer.ToString());
+        SaveXml(DirectoryBuildPropsPath, xmlDocument);
     }
 
     private static void UpdateModuleManifest(string versionPrefix, string versionSuffix)
     {
-        var xmlModuleManifestDoc = new XmlDocument();
-        xmlModuleManifestDoc.Load(ModuleManifestFile);
+        var xmlModuleManifestDoc = LoadXml(ModuleManifestFile);
 
         var moduleRootNode = xmlModuleManifestDoc.SelectSingleNode("module");
 
@@ -987,12 +981,22 @@ internal partial class Build : NukeBuild
             versionTagNode.InnerText = versionSuffix;
         }
 
-        using var writer = XmlWriter.Create(ModuleManifestFile, new XmlWriterSettings
-        {
-            Indent = true,
-            Encoding = Encoding.UTF8
-        });
-        xmlModuleManifestDoc.Save(writer);
+        SaveXml(ModuleManifestFile, xmlModuleManifestDoc);
+    }
+
+    private static XmlDocument LoadXml(string filePath)
+    {
+        var xmlDocument = new XmlDocument { PreserveWhitespace = true };
+        xmlDocument.Load(filePath);
+
+        return xmlDocument;
+    }
+
+    private static void SaveXml(string filePath, XmlDocument xmlDocument)
+    {
+        var xmlWriterSettings = new XmlWriterSettings { Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false) };
+        using var writer = XmlWriter.Create(filePath, xmlWriterSettings);
+        xmlDocument.Save(writer);
     }
 
     private string GetThemeVersion(string packageJsonPath)
