@@ -53,8 +53,8 @@
       <ExcludeAssets>all</ExcludeAssets>
     </PackageReference>
     <PackageReference Include="VirtoCommerce.Platform.Data" Version="3.262.0" />
-    <PackageReference Include="VirtoCommerce.Platform.Modules" Version="3.202.0" />
-    <PackageReference Include="VirtoCommerce.Platform.DistributedLock" Version="3.202.0" />
+    <PackageReference Include="VirtoCommerce.Platform.Modules" Version="3.262.0" />
+    <PackageReference Include="VirtoCommerce.Platform.DistributedLock" Version="3.262.0" />
   </ItemGroup>
 
   <ItemGroup>
