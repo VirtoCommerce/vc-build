@@ -351,7 +351,18 @@ namespace VirtoCommerce.Build
                      }
                  }
 
-                 var progress = new Progress<ProgressMessage>(m => Log.Information(m.Message));
+                 var progress = new Progress<ProgressMessage>(m =>
+                 {
+                     if (m.Level == ProgressMessageLevel.Error)
+                     {
+                         Log.Error(m.Message);
+                         Assert.Fail(m.Message);
+                     }
+                     else
+                     {
+                         Log.Information(m.Message);
+                     }
+                 });
 
                  if (!SkipDependencySolving)
                  {
