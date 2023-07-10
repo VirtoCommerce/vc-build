@@ -356,6 +356,7 @@ namespace VirtoCommerce.Build
                  {
                      if (m.Level == ProgressMessageLevel.Error)
                      {
+                         Log.Error(m.Message);
                          Assert.Fail(m.Message);
                      }
                      else
