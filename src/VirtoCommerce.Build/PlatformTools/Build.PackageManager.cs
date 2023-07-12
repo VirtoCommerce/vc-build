@@ -518,7 +518,17 @@ namespace VirtoCommerce.Build
         private Task<ManifestBase> UpdateStableModulesAsync(MixedPackageManifest manifest, MixedPackageManifest bundle)
         {
             var githubModules = (GithubReleases)manifest.Sources.FirstOrDefault(s => s.Name == nameof(GithubReleases));
+            if(githubModules == null)
+            {
+                Assert.Fail("There is no GithubReleases source in the manifest");
+            }
+
             var bundleGithubModules = (GithubReleases)bundle.Sources.FirstOrDefault(s => s.Name == nameof(GithubReleases));
+            if(bundleGithubModules == null)
+            {
+                Assert.Fail($"Github releases not found in the bundle {BundleName}");
+            }
+
             foreach (var module in githubModules.Modules)
             {
                 var bundleModule = bundleGithubModules.Modules.FirstOrDefault(m => m.Id == module.Id);
