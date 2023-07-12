@@ -50,8 +50,11 @@ namespace VirtoCommerce.Build
         [Parameter("Get bundle")]
         public static bool Stable { get; set; }
 
-        [Parameter("Bundle name", Name = "v")]
-        public static string BundleName { get; set; }
+        [Parameter("Bundle name (default: latest)", Name = "v")]
+        public static string BundleName { get; set; } = "latest";
+
+        [Parameter("Update to the edge versions")]
+        public static bool Edge { get; set; }
 
         [Parameter("Url to Bundles file")]
         public static string BundlesUrl { get; set; } = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/bundles/stable.json";
@@ -468,34 +471,95 @@ namespace VirtoCommerce.Build
              .DependsOn(Backup)
              .Executes(async () =>
              {
-                 var packageManifest = await OpenOrCreateManifest(PackageManifestPath, Stable);
-                 var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
-                 var githubModules = PackageManager.GetGithubModules(packageManifest);
-                 var githubModuleManifests = PackageManager.GetGithubModuleManifests(packageManifest);
-                 packageManifest.PlatformVersion = platformRelease.TagName;
+                 var manifest = PackageManager.FromFile(PackageManifestPath);
 
-                 if (!PlatformParameter)
+                 if (Edge)
                  {
-                     var localModuleCatalog = LocalModuleCatalog.GetCatalog(GetDiscoveryPath(), ProbingPath);
-                     var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubModuleManifests);
-
-                     foreach (var module in githubModules)
-                     {
-                         var externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.Id == module.Id).FirstOrDefault(m => m.Ref.Contains("github.com"));
-
-                         if (externalModule == null)
-                         {
-                             var errorMessage = $"No module {module.Id} found";
-                             Assert.Fail(errorMessage);
-                             throw new ArgumentNullException(errorMessage); // for sonarQube
-                         }
-
-                         module.Version = externalModule.Version.ToString();
-                     }
+                     manifest = await UpdateEdgeAsync(manifest, PlatformParameter);
+                 }
+                 else
+                 {
+                     manifest =  await UpdateStableAsync(manifest, PlatformParameter, BundleName);
                  }
 
-                 PackageManager.ToFile(packageManifest);
+                 PackageManager.ToFile(manifest);
              });
+
+        private async Task<ManifestBase> UpdateEdgeAsync(ManifestBase manifest, bool platformOnly)
+        {
+            manifest = await UpdateEdgePlatformAsync(manifest);
+            if(!platformOnly)
+            {
+                manifest = await UpdateEdgeModulesAsync(manifest);
+            }
+            return manifest;
+        }
+
+        private async Task<ManifestBase> UpdateStableAsync(ManifestBase manifest, bool platformOnly, string bundleName)
+        {
+            var bundleTmpFilePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            await DownloadBundleManifest(bundleName, bundleTmpFilePath);
+
+            var bundle = PackageManager.FromFile(bundleTmpFilePath);
+            manifest = await UpdateStablePlatformAsync(manifest, bundle);
+            if (!platformOnly)
+            {
+                manifest = await UpdateStableModulesAsync((MixedPackageManifest)manifest, (MixedPackageManifest)bundle);
+            }
+            return manifest;
+        }
+
+        private Task<ManifestBase> UpdateStablePlatformAsync(ManifestBase manifest, ManifestBase bundle)
+        {
+            manifest.PlatformVersion = bundle.PlatformVersion;
+            return Task.FromResult(manifest);
+        }
+
+        private Task<ManifestBase> UpdateStableModulesAsync(MixedPackageManifest manifest, MixedPackageManifest bundle)
+        {
+            var githubModules = (GithubReleases)manifest.Sources.FirstOrDefault(s => s.Name == nameof(GithubReleases));
+            var bundleGithubModules = (GithubReleases)bundle.Sources.FirstOrDefault(s => s.Name == nameof(GithubReleases));
+            foreach (var module in githubModules.Modules)
+            {
+                var bundleModule = bundleGithubModules.Modules.FirstOrDefault(m => m.Id == module.Id);
+                if(bundleModule != null)
+                {
+                    module.Version = bundleModule.Version;
+                }
+            }
+            return Task.FromResult((ManifestBase)manifest);
+        }
+        private async Task<ManifestBase> UpdateEdgePlatformAsync(ManifestBase manifest)
+        {
+            var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
+            manifest.PlatformVersion = platformRelease.TagName;
+            return manifest;
+        }
+
+        private async Task<ManifestBase> UpdateEdgeModulesAsync(ManifestBase manifest)
+        {
+            var githubModules = PackageManager.GetGithubModules(manifest);
+            var githubModuleManifests = PackageManager.GetGithubModuleManifests(manifest);
+
+            var localModuleCatalog = LocalModuleCatalog.GetCatalog(GetDiscoveryPath(), ProbingPath);
+            var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubModuleManifests);
+
+            foreach (var module in githubModules)
+            {
+                var externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.Id == module.Id).FirstOrDefault(m => m.Ref.Contains("github.com"));
+
+                if (externalModule == null)
+                {
+                    var errorMessage = $"No module {module.Id} found";
+                    Assert.Fail(errorMessage);
+                    throw new ArgumentNullException(errorMessage); // for sonarQube
+                }
+
+                module.Version = externalModule.Version.ToString();
+            }
+
+            return manifest;
+        }
 
         private async Task<ManifestBase> OpenOrCreateManifest(string packageManifestPath, bool isStableBundle)
         {
