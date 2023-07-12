@@ -509,7 +509,7 @@ namespace VirtoCommerce.Build
             return manifest;
         }
 
-        private Task<ManifestBase> UpdateStablePlatformAsync(ManifestBase manifest, ManifestBase bundle)
+        private static Task<ManifestBase> UpdateStablePlatformAsync(ManifestBase manifest, ManifestBase bundle)
         {
             manifest.PlatformVersion = bundle.PlatformVersion;
             return Task.FromResult(manifest);
@@ -539,7 +539,7 @@ namespace VirtoCommerce.Build
             }
             return Task.FromResult((ManifestBase)manifest);
         }
-        private async Task<ManifestBase> UpdateEdgePlatformAsync(ManifestBase manifest)
+        private static async Task<ManifestBase> UpdateEdgePlatformAsync(ManifestBase manifest)
         {
             var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
             manifest.PlatformVersion = platformRelease.TagName;
