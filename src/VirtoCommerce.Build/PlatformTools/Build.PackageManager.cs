@@ -521,14 +521,14 @@ namespace VirtoCommerce.Build
             if(githubModules == null)
             {
                 Assert.Fail("There is no GithubReleases source in the manifest");
-                throw new Exception(); // for sonarQube
+                return Task.FromResult((ManifestBase)manifest); // for sonarQube
             }
 
             var bundleGithubModules = (GithubReleases)bundle.Sources.FirstOrDefault(s => s.Name == nameof(GithubReleases));
             if(bundleGithubModules == null)
             {
                 Assert.Fail($"Github releases not found in the bundle {BundleName}");
-                throw new Exception(); // for sonarQube
+                return Task.FromResult((ManifestBase)manifest); // for sonarQube
             }
 
             foreach (var module in githubModules.Modules)
