@@ -32,9 +32,13 @@ vc-build install -PackageManifestPath some_directory/vc-package.json -DiscoveryP
 :::
 :::
 ## Update
-Updates platform and modules to last versions
+Updates platform and modules depending on parameters either to the latest versions or stable bundle.
+By default updates to the latest bundle. With an -v parameter you can specify the bundle version.
+With an -edge parameter updates to the latest available versions.
 ```console
 vc-build Update
+vc-build Update -v 3
+vc-build Update -edge
 ```
 :::
 :::
