@@ -18,9 +18,9 @@ namespace PlatformTools
 
         private readonly LocalStorageModuleCatalogOptions _options;
         private readonly ILogger<LocalStorageModuleCatalog> _logger;
-        private readonly IDistributedLockProvider _distributedLockProvider;
+        private readonly IInternalDistributedLockService _distributedLockProvider;
         private readonly string _discoveryPath;
-        public LocalCatalog(IOptions<LocalStorageModuleCatalogOptions> options, IDistributedLockProvider distributedLockProvider, ILogger<LocalStorageModuleCatalog> logger):
+        public LocalCatalog(IOptions<LocalStorageModuleCatalogOptions> options, IInternalDistributedLockService distributedLockProvider, ILogger<LocalStorageModuleCatalog> logger):
             base(options, distributedLockProvider, logger)
         {
             _options = options.Value;

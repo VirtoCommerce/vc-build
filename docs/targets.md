@@ -20,9 +20,12 @@ This target downloads and install into the current folder the platform and modul
 By default, install target will install all modules listed as dependencies in vc-package.json.
 Path to vc-package.json, discovery and probing paths can be overridden with PackageManifestPath, DiscoveryPath, ProbingPath parameters. Also we can skip dependency solving with SkipDependencySolving parameter.
 Since version 2.0.0-beta0005 the -module parameter is case insensitive
+
+When you are using one of the source which requires the authorization you can pass tokens using these parameters: GithubToken, AzureToken, GitLabToken. 
 Examples:
 ```console
 vc-build install (with no args)
+vc-build install -GitLabToken $GITLAB_TOKEN
 vc-build install -platform -version <version>
 vc-build install -platform -PlatformAssetUrl https://github.com/VirtoCommerce/vc-platform/releases/download/3.216.13/VirtoCommerce.Platform.3.216.13.zip
 vc-build install -module <module> -version <version>
