@@ -30,6 +30,7 @@ namespace PlatformTools.Github
             foreach (var module in githubPrivateRepos.Modules)
             {
                 var moduleDestination = Path.Join(_discoveryPath, module.Id);
+                Log.Information($"Installing {module.Id}");
                 Directory.CreateDirectory(moduleDestination);
                 FileSystemTasks.EnsureCleanDirectory(moduleDestination);
                 var zipName = $"{module.Id}.zip";

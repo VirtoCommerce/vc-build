@@ -9,14 +9,12 @@ namespace VirtoCommerce.Build.PlatformTools
         {
             try
             {
-                InnerInstall(source);
+                return InnerInstall(source);
             }
             catch (Exception exception)
             {
                 throw new ModuleInstallationException("Error while module installation", exception);
             }
-
-            return Task.CompletedTask;
         }
 
         protected abstract Task InnerInstall(ModuleSource source);
