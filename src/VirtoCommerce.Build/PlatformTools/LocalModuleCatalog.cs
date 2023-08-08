@@ -21,7 +21,7 @@ namespace PlatformTools
             if (_catalog == null)
             {
                 var logger = new LoggerFactory().CreateLogger<LocalStorageModuleCatalog>();
-                var distributedLock = new NoLockDistributedLockProvider(new LoggerFactory().CreateLogger<NoLockDistributedLockProvider>());
+                var distributedLock = new InternalNoLockService(new LoggerFactory().CreateLogger<InternalNoLockService>());
                 _catalog = new LocalCatalog(options, distributedLock, logger);
                 _catalog.Load();
             }
