@@ -54,6 +54,8 @@ internal partial class Build
     [Parameter("App Project Name")] public string AppProject { get; set; }
     [Parameter("Cloud Environment Name")] public string EnvironmentName { get; set; }
 
+    [Parameter("Organization name", Name = "Organization")] public string SaaSOrganizationName { get; set; }
+
     public Target WaitFor => _ => _
         .Executes(async () =>
         {
@@ -125,7 +127,8 @@ internal partial class Build
         .Executes(async () =>
         {
             var cloudClient = new VirtoCloudClient(CloudUrl, CloudToken);
-            var env = await cloudClient.GetEnvironment(EnvironmentName);
+            var env = await cloudClient.GetEnvironment(EnvironmentName, SaaSOrganizationName);
+            
             var envHelmParameters = env.Helm.Parameters;
             foreach (var parameter in HelmParameters)
             {

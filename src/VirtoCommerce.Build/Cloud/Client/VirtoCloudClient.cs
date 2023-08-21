@@ -51,12 +51,13 @@ public class VirtoCloudClient
         }
     }
 
-    public async Task<CloudEnvironment> GetEnvironment(string environmentName)
+    public async Task<CloudEnvironment> GetEnvironment(string environmentName, string orgName = null)
     {
+        var relativeUri = string.IsNullOrWhiteSpace(orgName) ? $"api/saas/environments/{environmentName}" : $"api/saas/environments/{orgName}/{environmentName}";
         var response = await _client.SendAsync(new HttpRequestMessage
         {
             Method = HttpMethod.Get,
-            RequestUri = new Uri($"api/saas/environments/{environmentName}", UriKind.Relative)
+            RequestUri = new Uri(relativeUri, UriKind.Relative)
         });
         if (!response.IsSuccessStatusCode)
         {
