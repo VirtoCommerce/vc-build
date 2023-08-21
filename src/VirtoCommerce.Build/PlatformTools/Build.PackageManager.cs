@@ -196,7 +196,12 @@ namespace VirtoCommerce.Build
             .OnlyWhenDynamic(() => !IsServerBuild && Directory.EnumerateFileSystemEntries(RootDirectory).Any())
             .Executes(() =>
             {
-                var modulesDirs = Directory.EnumerateDirectories(Path.GetFullPath(GetDiscoveryPath()));
+                var discoveryPath = Path.GetFullPath(GetDiscoveryPath());
+                var modulesDirs = new List<string>();
+                if(Directory.Exists(discoveryPath))
+                {
+                    modulesDirs = Directory.EnumerateDirectories(discoveryPath).ToList();
+                }
                 var symlinks = modulesDirs.Where(m => new DirectoryInfo(m).LinkTarget != null).ToList();
                 CompressionTasks.CompressTarGZip(RootDirectory, BackupFile, filter: f => !f.FullName.StartsWith(RootDirectory / ".nuke") && !symlinks.Any(s => f.FullName.StartsWith(s)));
 
