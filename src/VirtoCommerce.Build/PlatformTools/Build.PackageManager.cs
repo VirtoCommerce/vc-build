@@ -95,7 +95,7 @@ namespace VirtoCommerce.Build
                      packageManifest.PlatformVersion = platformRelease.TagName;
                  }
 
-                 PackageManager.ToFile(packageManifest);
+                 PackageManager.ToFile(packageManifest, PackageManifestPath);
              });
 
         private void UpdateModules(string[] modulesArg, IModuleCatalog externalModuleCatalog, List<ModuleItem> modules)
@@ -194,6 +194,7 @@ namespace VirtoCommerce.Build
             .Triggers(Rollback, RemoveBackup)
             .Before(Install, Update, InstallPlatform, InstallModules)
             .OnlyWhenDynamic(() => !IsServerBuild && Directory.EnumerateFileSystemEntries(RootDirectory).Any())
+            .ProceedAfterFailure()
             .Executes(() =>
             {
                 var discoveryPath = Path.GetFullPath(GetDiscoveryPath());
@@ -208,7 +209,8 @@ namespace VirtoCommerce.Build
             });
 
         public Target Rollback => _ => _
-            .After(Install, Update, InstallPlatform, InstallModules)
+            .DependsOn(Backup)
+            .After(Backup, Install, Update, InstallPlatform, InstallModules)
             .OnlyWhenDynamic(() => FailedTargets.Any() && SucceededTargets.Contains(Backup))
             .AssuredAfterFailure()
             .Executes(() =>
@@ -321,6 +323,7 @@ namespace VirtoCommerce.Build
         public Target InstallModules => _ => _
              .After(InstallPlatform)
              .OnlyWhenDynamic(() => !PlatformParameter)
+             .ProceedAfterFailure()
              .Executes(async () =>
              {
                  var packageManifest = PackageManager.FromFile(PackageManifestPath);
@@ -366,7 +369,6 @@ namespace VirtoCommerce.Build
                      if (m.Level == ProgressMessageLevel.Error)
                      {
                          Log.Error(m.Message);
-                         Assert.Fail(m.Message);
                      }
                      else
                      {
@@ -389,7 +391,13 @@ namespace VirtoCommerce.Build
                  {
                      module.DependsOn.Clear();
                  });
-                 moduleInstaller.Install(modulesToInstall, progress);
+                 try
+                 {
+                    moduleInstaller.Install(modulesToInstall, progress);
+                 } catch (Exception ex)
+                 {
+                     Assert.Fail(ex.Message);
+                 }
 
                  foreach (var moduleSource in moduleSources)
                  {
@@ -464,7 +472,7 @@ namespace VirtoCommerce.Build
                  FileSystemTasks.DeleteDirectory(ProbingPath);
                  Module.ForEach(m => FileSystemTasks.DeleteDirectory(Path.Combine(discoveryPath, m)));
                  githubModules.RemoveAll(m => Module.Contains(m.Id));
-                 PackageManager.ToFile(packageManifest);
+                 PackageManager.ToFile(packageManifest, PackageManifestPath);
                  if (PlatformVersion.CurrentVersion == null)
                  {
                      var platformRelease = await GithubManager.GetPlatformRelease(null);
@@ -489,7 +497,7 @@ namespace VirtoCommerce.Build
                      manifest =  await UpdateStableAsync(manifest, PlatformParameter, BundleName);
                  }
 
-                 PackageManager.ToFile(manifest);
+                 PackageManager.ToFile(manifest, PackageManifestPath);
              });
 
         private async Task<ManifestBase> UpdateEdgeAsync(ManifestBase manifest, bool platformOnly)

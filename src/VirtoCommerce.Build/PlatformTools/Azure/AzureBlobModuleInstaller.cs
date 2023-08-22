@@ -30,14 +30,23 @@ namespace PlatformTools.Azure
             foreach (var moduleBlobName in azureBlobSource.Modules.Select(m => m.BlobName))
             {
                 Log.Information($"Installing {moduleBlobName}");
-                var zipName = $"{moduleBlobName}.zip";
+                var zipName = moduleBlobName;
+                if(!zipName.EndsWith(".zip"))
+                {
+                    zipName += ".zip";
+                }
+
                 var zipPath = Path.Join(_destination, zipName);
                 var moduleDestination = Path.Join(_destination, moduleBlobName);
+                if (moduleDestination.EndsWith(".zip"))
+                {
+                    moduleDestination = moduleDestination.Replace(".zip", "");
+                }
                 Log.Information($"Downloading Blob {moduleBlobName}");
                 var blobClient = containerClient.GetBlobClient(moduleBlobName);
                 blobClient.DownloadTo(zipPath);
                 Log.Information($"Extracting Blob {moduleBlobName}");
-                ZipFile.ExtractToDirectory(zipPath, moduleDestination);
+                ZipFile.ExtractToDirectory(zipPath, moduleDestination, true);
                 Log.Information($"Successfully installed {moduleBlobName}");
             }
             return Task.CompletedTask;
