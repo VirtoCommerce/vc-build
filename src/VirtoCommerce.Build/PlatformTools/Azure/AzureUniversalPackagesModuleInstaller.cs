@@ -48,7 +48,9 @@ namespace PlatformTools.Azure
 
                 var zipPath = Directory.GetFiles(moduleDestination).FirstOrDefault(p => p.EndsWith(".zip"));
                 if (zipPath == null)
+                {
                     Assert.Fail($"Can't download {module.Id} - {module.Version}");
+                }
 
                 Log.Information($"Extracting {zipPath}");
                 ZipFile.ExtractToDirectory(zipPath, moduleDestination);

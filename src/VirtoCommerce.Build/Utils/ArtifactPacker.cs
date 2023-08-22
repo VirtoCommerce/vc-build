@@ -2,13 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using NuGet.Packaging;
 using Nuke.Common.IO;
-using Octokit;
-using VirtoCommerce.Platform.Core.Modularity;
 
 namespace Utils
 {
@@ -20,7 +15,7 @@ namespace Utils
             CompressionTasks.CompressZip(sourceDirectory, outputZipPath);
         }
 
-        public static void CompressModuleAsync(string sourceDirectory, string outputZipPath, string moduleId, string moduleManifestPath, string webProjectDirectory, IEnumerable<string> ignoreList, IEnumerable<string> keepList, string[] moduleContentFolders)
+        public static void CompressModule(string sourceDirectory, string outputZipPath, string moduleId, string moduleManifestPath, string webProjectDirectory, IEnumerable<string> ignoreList, IEnumerable<string> keepList, string[] moduleContentFolders)
         {
             FileSystemTasks.CopyFileToDirectory(moduleManifestPath, sourceDirectory,
                 FileExistsPolicy.Overwrite);

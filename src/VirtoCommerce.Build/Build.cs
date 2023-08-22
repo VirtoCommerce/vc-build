@@ -1172,7 +1172,7 @@ internal partial class Build : NukeBuild
                 keepFiles = TextTasks.ReadAllLines(ModuleKeepFile).ToArray();
             }
 
-            ArtifactPacker.CompressModuleAsync(ModuleOutputDirectory, ZipFilePath, ModuleManifest.Id, ModuleManifestFile, WebProject.Directory, ignoredFiles, keepFiles, _moduleContentFolders);
+            ArtifactPacker.CompressModule(ModuleOutputDirectory, ZipFilePath, ModuleManifest.Id, ModuleManifestFile, WebProject.Directory, ignoredFiles, keepFiles, _moduleContentFolders);
         }
         else
         {

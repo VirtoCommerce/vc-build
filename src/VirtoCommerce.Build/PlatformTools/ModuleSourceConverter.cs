@@ -61,7 +61,10 @@ namespace VirtoCommerce.Build.PlatformTools
         protected override JsonConverter ResolveContractConverter(Type objectType)
         {
             if (typeof(ModuleSource).IsAssignableFrom(objectType) && !objectType.IsAbstract)
+            {
                 return null; // pretend TableSortRuleConvert is not specified (thus avoiding a stack overflow)
+            }
+
             return base.ResolveContractConverter(objectType);
         }
     }
