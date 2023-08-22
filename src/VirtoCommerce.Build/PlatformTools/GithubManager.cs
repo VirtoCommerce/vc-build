@@ -55,7 +55,9 @@ namespace PlatformTools
             var regex = new Regex(@"http[s]{0,1}:\/\/github.com\/([A-z0-9]*)\/([A-z0-9\-]*)\/", RegexOptions.IgnoreCase);
             var match = regex.Match(url);
             var groups = match.Groups;
-            return new Tuple<string, string>(groups[1].Value, groups[2].Value);
+            const int repoOwnerGroupIndex = 1;
+            const int repoNameGroupIndex = 2;
+            return new Tuple<string, string>(groups[repoOwnerGroupIndex].Value, groups[repoNameGroupIndex].Value);
         }
 
         public static Task<Release> GetModuleRelease(string token, string moduleRepo, string releaseTag)

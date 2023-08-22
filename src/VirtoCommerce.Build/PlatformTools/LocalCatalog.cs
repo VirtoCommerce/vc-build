@@ -1,10 +1,10 @@
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.Platform.Core.Exceptions;
 using VirtoCommerce.Platform.Core.Modularity;
@@ -32,10 +32,14 @@ namespace PlatformTools
         protected override void InnerLoad()
         {
             if (string.IsNullOrEmpty(_options.ProbingPath))
+            {
                 throw new InvalidOperationException("The ProbingPath cannot contain a null value or be empty");
-            if (string.IsNullOrEmpty(_options.DiscoveryPath))
-                throw new InvalidOperationException("The DiscoveryPath cannot contain a null value or be empty");
+            }
 
+            if (string.IsNullOrEmpty(_options.DiscoveryPath))
+            {
+                throw new InvalidOperationException("The DiscoveryPath cannot contain a null value or be empty");
+            }
 
             var manifests = GetModuleManifests();
 
@@ -156,24 +160,26 @@ namespace PlatformTools
         }
         private void CopyAssemblies(string sourceParentPath, string targetDirectoryPath)
         {
-            if (sourceParentPath != null)
+            if (sourceParentPath == null)
             {
-                var sourceDirectoryPath = Path.Combine(sourceParentPath, "bin");
+                return;
+            }
 
-                if (Directory.Exists(sourceDirectoryPath))
+            var sourceDirectoryPath = Path.Combine(sourceParentPath, "bin");
+
+            if (Directory.Exists(sourceDirectoryPath))
+            {
+                foreach (var sourceFilePath in Directory.EnumerateFiles(sourceDirectoryPath, "*.*", SearchOption.AllDirectories))
                 {
-                    foreach (var sourceFilePath in Directory.EnumerateFiles(sourceDirectoryPath, "*.*", SearchOption.AllDirectories))
+                    // Copy all assembly related files except assemblies that are inlcuded in TPA list
+                    if (IsAssemblyRelatedFile(sourceFilePath))
                     {
-                        // Copy all assembly related files except assemblies that are inlcuded in TPA list
-                        if (IsAssemblyRelatedFile(sourceFilePath))
-                        {
-                            // Copy localization resource files to related subfolders
-                            var targetFilePath = Path.Combine(
-                                IsLocalizationFile(sourceFilePath) ? Path.Combine(targetDirectoryPath, Path.GetFileName(Path.GetDirectoryName(sourceFilePath)))
-                                : targetDirectoryPath,
-                                Path.GetFileName(sourceFilePath));
-                            CopyFile(sourceFilePath, targetFilePath);
-                        }
+                        // Copy localization resource files to related subfolders
+                        var targetFilePath = Path.Combine(
+                            IsLocalizationFile(sourceFilePath) ? Path.Combine(targetDirectoryPath, Path.GetFileName(Path.GetDirectoryName(sourceFilePath)))
+                            : targetDirectoryPath,
+                            Path.GetFileName(sourceFilePath));
+                        CopyFile(sourceFilePath, targetFilePath);
                     }
                 }
             }
