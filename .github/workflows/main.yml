@@ -18,7 +18,7 @@ on:
       - 'docs/**'
       - 'README.md'
       - 'LICENSE'
-    
+
 jobs:
   ci:
     runs-on: ubuntu-latest
@@ -46,7 +46,7 @@ jobs:
       - name: Get Image Version
         uses: VirtoCommerce/vc-github-actions/get-image-version@master
         id: image
-        with: 
+        with:
           projectType: "platform"
           releaseBranch: "main"
 
@@ -65,6 +65,13 @@ jobs:
       - name: Unit Tests
         run: vc-build Test -skip
 
+      - name: Shelltest
+        shell: bash
+        working-directory: shelltests
+        run: |
+            apt install shelltestrunner
+            shelltest .
+
       - name: SonarCloud End
         uses: VirtoCommerce/vc-github-actions/sonar-scanner-end@master
 
@@ -72,7 +79,7 @@ jobs:
         uses: VirtoCommerce/vc-github-actions/sonar-quality-gate@master
         with:
           login: ${{secrets.SONAR_TOKEN}}
-      
+
       - name: Publish Nuget
         if: ${{ (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') && github.event_name != 'workflow_dispatch' }}
         uses: VirtoCommerce/vc-github-actions/publish-nuget@master
@@ -92,12 +99,12 @@ jobs:
 
       - name: Upload Release Asset
         if: ${{ (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') && github.event_name != 'workflow_dispatch' }}
-        id: upload-release-asset 
+        id: upload-release-asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
           asset_path: artifacts/VirtoCommerce.GlobalTool.${{ steps.image.outputs.shortVersion }}.nupkg
           asset_name: VirtoCommerce.GlobalTool.${{ steps.image.outputs.shortVersion }}.nupkg
           asset_content_type: application/zip
