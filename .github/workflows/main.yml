@@ -69,7 +69,7 @@ jobs:
         shell: bash
         working-directory: shelltests
         run: |
-            apt install shelltestrunner
+            sudo apt install shelltestrunner
             shelltest .
 
       - name: SonarCloud End
