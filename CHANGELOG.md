@@ -3,6 +3,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [3.16.0] - 2023-08-24
+### Added
+- Organization parameter for SetEnvParameter target
+### Fixed
+- Ignoring of PackageManifestPath
+- Trigger of Rollback target
+- Directory names for modules downloaded from Azure blobs
+- failure of backup target when directory is empty
+
+## [3.15.0] - 2023-08-08
+### Added
+- Support of bundles in the Update target
+- Log message for modules from github private repos
+### Fixed
+- Ignoring of failures in modules installation
+- Failure if modules directory doesn't exists for AzureBlob source
+### Changed
+- Update targe updates to the latest stable bundle by default
+
+## [3.14.0] - 2023-04-17
+### Changed
+- Updated dependecies
+
 ## [3.13.0] - 2023-04-03
 ### Added
 - PlatformAssetUrl to the package manifest

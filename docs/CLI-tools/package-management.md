@@ -145,6 +145,8 @@ vc-build install -stable -bundlesUrl https://somedomain.com/bundles.json # will 
 
 ```console
 vc-build update (with no args)
+vc-build update -edge
+vc-build update -v 5
 vc-build update -platform -version <version>
 vc-build update -module <module> -version <version>
 ```
@@ -153,6 +155,8 @@ If `<version>` is not specified, the component will be updated to the latest ver
 If no args are specified, the platform and all modules in the specified location will be updated.
 
 This command also updates the installed dependency versions in the `vc-package.json` file.
+Since the version 3.15.0 this target updates to stable bundles by default. If you want to update to the latest available versions you can add -Edge parameter.
+You can specify the bundle to update your environment to specific versions using -v <bundle name> parameter.
 
 ### Examples:
 ```console
