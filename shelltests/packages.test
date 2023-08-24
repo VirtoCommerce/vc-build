@@ -1,0 +1,19 @@
+# Install Bundle #4
+vc-build install -stable -v 4
+>>>2
+>>>= 0
+
+# Update to Bundle #5
+vc-build update -v 4
+>>>2
+>>>= 0
+
+# Update to the latest Bundle
+vc-build update
+>>>2
+>>>= 0
+
+# Update to the edge
+vc-build update -edge
+>>>2
+>>>= 0
