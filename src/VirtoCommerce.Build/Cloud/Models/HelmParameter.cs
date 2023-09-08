@@ -1,7 +1,6 @@
 using System;
 using System.ComponentModel;
 using System.Globalization;
-using ArgoCD.Client.Models;
 using Newtonsoft.Json;
 using Nuke.Common.IO;
 
