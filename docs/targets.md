@@ -237,7 +237,7 @@ vc-build UpdateCloudEnvironment -CloudToken <your token> -ArgoConfigFile <path t
 :::
 ## SetEnvParameter
 Updates parameters of cloud environment
-Gets parameters: CloudToken, EnvironmentName, HelmParameters (Array)
+Gets parameters: CloudToken, EnvironmentName, HelmParameters (Array), Organization (optional)
 ```console
 vc-build SetEnvParameter -CloudToken <your token> -EnvironmentName <environment name> -HelmParameters platform.config.paramname=somevalue123
 ```
