@@ -95,7 +95,4 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\ArgoCD.Client\ArgoCD.Client.csproj" />
-  </ItemGroup>
 </Project>

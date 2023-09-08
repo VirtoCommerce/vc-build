@@ -5,9 +5,7 @@ VisualStudioVersion = 17.0.32112.339
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VirtoCommerce.Build", "src\VirtoCommerce.Build\VirtoCommerce.Build.csproj", "{826FB1DE-BF4F-4314-AA00-FC5BC7627D7F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ArgoCD.Client", "src\ArgoCD.Client\ArgoCD.Client.csproj", "{1895FCF7-C5E2-42BD-8559-9526B43B919D}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VirtoCommerce.Build.Tests", "src\VirtoCommerce.Build.Tests\VirtoCommerce.Build.Tests.csproj", "{9E6E4723-DBA4-4A4B-807D-F9184D792DCF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VirtoCommerce.Build.Tests", "src\VirtoCommerce.Build.Tests\VirtoCommerce.Build.Tests.csproj", "{9E6E4723-DBA4-4A4B-807D-F9184D792DCF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,10 +17,6 @@ Global
 		{826FB1DE-BF4F-4314-AA00-FC5BC7627D7F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{826FB1DE-BF4F-4314-AA00-FC5BC7627D7F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{826FB1DE-BF4F-4314-AA00-FC5BC7627D7F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1895FCF7-C5E2-42BD-8559-9526B43B919D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1895FCF7-C5E2-42BD-8559-9526B43B919D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1895FCF7-C5E2-42BD-8559-9526B43B919D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1895FCF7-C5E2-42BD-8559-9526B43B919D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9E6E4723-DBA4-4A4B-807D-F9184D792DCF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9E6E4723-DBA4-4A4B-807D-F9184D792DCF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9E6E4723-DBA4-4A4B-807D-F9184D792DCF}.Release|Any CPU.ActiveCfg = Release|Any CPU
