@@ -39,6 +39,9 @@ jobs:
           dotnet pack
           dotnet tool install -g VirtoCommerce.GlobalTool --add-source ./src/VirtoCommerce.Build/artifacts
 
+      - name: Switch java version to 17
+        run: export JAVA_HOME=$JAVA_HOME_17_X64
+
       - name: Get changelog
         id: changelog
         uses: VirtoCommerce/vc-github-actions/changelog-generator@master
