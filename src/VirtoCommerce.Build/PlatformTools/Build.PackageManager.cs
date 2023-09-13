@@ -326,6 +326,10 @@ namespace VirtoCommerce.Build
              .ProceedAfterFailure()
              .Executes(async () =>
              {
+                 if (!RunningTargets.Contains(Install))
+                 {
+                     SkipDependencySolving = true;
+                 }
                  var packageManifest = PackageManager.FromFile(PackageManifestPath);
                  var moduleSources = PackageManager.GetModuleSources(packageManifest).Where(s => s is not GithubReleases).ToList();
                  var githubReleases = PackageManager.GetGithubModulesSource(packageManifest);
@@ -486,6 +490,7 @@ namespace VirtoCommerce.Build
              .DependsOn(Backup)
              .Executes(async () =>
              {
+                 SkipDependencySolving = true;
                  var manifest = PackageManager.FromFile(PackageManifestPath);
 
                  if (Edge)
@@ -609,13 +614,14 @@ namespace VirtoCommerce.Build
             }
             else if (!File.Exists(packageManifestPath))
             {
-                Log.Information("vc-package.json is not exists.");
+                Log.Information("vc-package.json does not exist.");
                 Log.Information("Looking for the platform release");
                 var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
                 packageManifest = PackageManager.CreatePackageManifest(platformRelease.TagName);
             }
             else
             {
+                SkipDependencySolving = true;
                 packageManifest = PackageManager.FromFile(PackageManifestPath);
             }
             return packageManifest;
