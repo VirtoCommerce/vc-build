@@ -275,12 +275,12 @@ internal partial class Build : NukeBuild
             var testProjects = Solution.GetProjects("*.Test|*.Tests|*.Testing");
             var outPath = RootDirectory / ".tmp";
 
-            foreach (var testProject in testProjects)
+            foreach (var testProjectPath in testProjects.Select(p=> p.Path).ToArray())
             {
-                DotNet($"add \"{testProject.Path}\" package coverlet.collector");
+                DotNet($"add \"{testProjectPath}\" package coverlet.collector");
 
                 var testSetting = new DotNetTestSettings()
-                    .SetProjectFile(testProject.Path)
+                    .SetProjectFile(testProjectPath)
                     .SetConfiguration(Configuration)
                     .SetFilter(TestsFilter)
                     .SetNoBuild(true)
@@ -1172,7 +1172,14 @@ internal partial class Build : NukeBuild
                 keepFiles = TextTasks.ReadAllLines(ModuleKeepFile).ToArray();
             }
 
-            ArtifactPacker.CompressModule(ModuleOutputDirectory, ZipFilePath, ModuleManifest.Id, ModuleManifestFile, WebProject.Directory, ignoredFiles, keepFiles, _moduleContentFolders);
+            ArtifactPacker.CompressModule(options => options.WithSourceDirectory(ModuleOutputDirectory)
+                                                            .WithOutputZipPath(ZipFilePath)
+                                                            .WithModuleId(ModuleManifest.Id)
+                                                            .WithModuleManifestPath(ModuleManifestFile)
+                                                            .WithWebProjectDirectory(WebProject.Directory)
+                                                            .WithIgnoreList(ignoredFiles)
+                                                            .WithKeepList(keepFiles)
+                                                            .WithModuleContentFolders(_moduleContentFolders));
         }
         else
         {

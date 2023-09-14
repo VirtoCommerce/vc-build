@@ -34,7 +34,7 @@ namespace PlatformTools.Azure
             }
             finally
             {
-                ((IDisposable)client)?.Dispose();
+                client?.Dispose();
             }
         }
     }
