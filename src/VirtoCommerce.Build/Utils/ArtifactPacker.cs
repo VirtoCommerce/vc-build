@@ -15,34 +15,38 @@ namespace Utils
             CompressionTasks.CompressZip(sourceDirectory, outputZipPath);
         }
 
-        public static void CompressModule(string sourceDirectory, string outputZipPath, string moduleId, string moduleManifestPath, string webProjectDirectory, IEnumerable<string> ignoreList, IEnumerable<string> keepList, string[] moduleContentFolders)
+        public static void CompressModule(Action<ModuleCompressionOptionsBuilder> optionsBuilderAction)
         {
-            FileSystemTasks.CopyFileToDirectory(moduleManifestPath, sourceDirectory,
+            var optionsBuilder = new ModuleCompressionOptionsBuilder();
+            optionsBuilderAction(optionsBuilder);
+            var options = optionsBuilder.Build();
+
+            FileSystemTasks.CopyFileToDirectory(options.ModuleManifestPath, options.SourceDirectory,
                 FileExistsPolicy.Overwrite);
             
             //Exclude all ignored files and *module files not related to compressed module
             var ignoreModuleFilesRegex = new Regex(@".+Module\..*", RegexOptions.IgnoreCase);
             var includeModuleFilesRegex =
-                new Regex(@$".*{moduleId}(Module)?\..*", RegexOptions.IgnoreCase);
+                new Regex(@$".*{options.ModuleId}(Module)?\..*", RegexOptions.IgnoreCase);
 
-            foreach (var folderName in moduleContentFolders)
+            foreach (var folderName in options.ModuleContentFolders)
             {
-                var sourcePath = Path.Combine(webProjectDirectory, folderName);
+                var sourcePath = Path.Combine(options.WebProjectDirectory, folderName);
 
                 if (Directory.Exists(sourcePath))
                 {
-                    FileSystemTasks.CopyDirectoryRecursively(sourcePath, Path.Combine(sourceDirectory, folderName),
+                    FileSystemTasks.CopyDirectoryRecursively(sourcePath, Path.Combine(options.SourceDirectory, folderName),
                         DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
                 }
             }
 
             bool FilesFilter(FileInfo x) =>
-                (!SkipFileByList(x.Name, ignoreList) &&
-                 !SkipFileByRegex(x.Name, ignoreModuleFilesRegex)) || KeepFileByList(x.Name, keepList) ||
+                (!SkipFileByList(x.Name, options.IgnoreList) &&
+                 !SkipFileByRegex(x.Name, ignoreModuleFilesRegex)) || KeepFileByList(x.Name, options.KeepList) ||
                 KeepFileByRegex(x.Name, includeModuleFilesRegex);
 
-            FileSystemTasks.DeleteFile(outputZipPath);
-            CompressionTasks.CompressZip(sourceDirectory, outputZipPath, FilesFilter);
+            FileSystemTasks.DeleteFile(options.OutputZipPath);
+            CompressionTasks.CompressZip(options.SourceDirectory, options.OutputZipPath, FilesFilter);
         }
 
 
