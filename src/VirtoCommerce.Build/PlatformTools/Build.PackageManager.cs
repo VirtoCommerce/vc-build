@@ -47,9 +47,6 @@ namespace VirtoCommerce.Build
         [Parameter("Gitlab Server (default: https://gitlab.com/api/v4)")]
         public static string GitLabServer { get; set; } = "https://gitlab.com/api/v4";
 
-        [Parameter("Get bundle")]
-        public static bool Stable { get; set; }
-
         [Parameter("Bundle name (default: latest)", Name = "v")]
         public static string BundleName { get; set; } = "latest";
 
@@ -74,7 +71,7 @@ namespace VirtoCommerce.Build
              .DependsOn(Backup)
              .Executes(async () =>
              {
-                 var packageManifest = await OpenOrCreateManifest(PackageManifestPath, Stable);
+                 var packageManifest = await OpenOrCreateManifest(PackageManifestPath, Edge);
                  var githubModuleSources = PackageManager.GetGithubModuleManifests(packageManifest);
                  var modules = PackageManager.GetGithubModules(packageManifest);
 
@@ -593,11 +590,11 @@ namespace VirtoCommerce.Build
             return manifest;
         }
 
-        private async Task<ManifestBase> OpenOrCreateManifest(string packageManifestPath, bool isStableBundle)
+        private async Task<ManifestBase> OpenOrCreateManifest(string packageManifestPath, bool isEdge)
         {
             ManifestBase packageManifest;
             var platformWebDllPath = Path.Combine(Directory.GetParent(packageManifestPath).FullName, "VirtoCommerce.Platform.Web.dll");
-            if (isStableBundle)
+            if (!isEdge)
             {
                 SkipDependencySolving = true;
                 if (File.Exists(packageManifestPath))
