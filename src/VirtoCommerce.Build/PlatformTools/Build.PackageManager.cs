@@ -597,11 +597,10 @@ namespace VirtoCommerce.Build
             if (!isEdge)
             {
                 SkipDependencySolving = true;
-                if (File.Exists(packageManifestPath))
+                if(!File.Exists(packageManifestPath))
                 {
-                    Assert.Fail($"Manifest already exists at {packageManifestPath}");
-                }
-                await DownloadBundleManifest(BundleName, packageManifestPath);
+                    await DownloadBundleManifest(BundleName, packageManifestPath);
+                } 
                 packageManifest = PackageManager.FromFile(packageManifestPath);
             }
             else if (!File.Exists(packageManifestPath) && File.Exists(platformWebDllPath))
