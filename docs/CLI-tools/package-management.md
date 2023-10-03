@@ -93,7 +93,7 @@ The `vc-package.json` file is used to maintain the list of installed modules wit
 - `vc-build install (with no args)`
 
 This target downloads and installs the platform and modules into the relevant folder with versions described in `vc-package.json`.
-If `vc-package.json` is not found in the local folder, the command will by default download and install the latest platform and module versions marked as `commerce`.
+If `vc-package.json` is not found in the local folder, the command will by default download and install the latest stable bundle. If -Edge parameter has been used then this target will download the latest available platform and modules marked as `commerce`.
 
 By default, the `install` target will install all modules listed as dependencies in `vc-package.json`.
 
