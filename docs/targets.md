@@ -21,7 +21,9 @@ By default, install target will install all modules listed as dependencies in vc
 Path to vc-package.json, discovery and probing paths can be overridden with PackageManifestPath, DiscoveryPath, ProbingPath parameters. Also we can skip dependency solving with SkipDependencySolving parameter.
 Since version 2.0.0-beta0005 the -module parameter is case insensitive
 
-When you are using one of the source which requires the authorization you can pass tokens using these parameters: GithubToken, AzureToken, GitLabToken. 
+When you are using one of the source which requires the authorization you can pass tokens using these parameters: GithubToken, AzureToken, GitLabToken.
+
+Since version 3.17.0 this target installs stable versions of modules by default. If you need the latest available versions you should use -Edge parameter
 Examples:
 ```console
 vc-build install (with no args)
@@ -237,7 +239,7 @@ vc-build UpdateCloudEnvironment -CloudToken <your token> -ArgoConfigFile <path t
 :::
 ## SetEnvParameter
 Updates parameters of cloud environment
-Gets parameters: CloudToken, EnvironmentName, HelmParameters (Array)
+Gets parameters: CloudToken, EnvironmentName, HelmParameters (Array), Organization (optional)
 ```console
 vc-build SetEnvParameter -CloudToken <your token> -EnvironmentName <environment name> -HelmParameters platform.config.paramname=somevalue123
 ```
