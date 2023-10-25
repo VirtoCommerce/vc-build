@@ -462,30 +462,36 @@ internal partial class Build : NukeBuild
     public Target Publish => _ => _
         .DependsOn(Compile)
         .After(WebPackBuild, Test)
-        .Executes(() =>
-        {
-            Assert.NotNull(WebProject, "Web Project is not found!");
-            DotNetPublish(settings => settings
-                .SetProcessWorkingDirectory(WebProject.Directory)
-                .EnableNoRestore()
-                .SetOutput(IsModule ? ModuleOutputDirectory / "bin" : ArtifactsDirectory / "publish")
-                .SetConfiguration(Configuration));
-        });
+        .Executes(() => PublishBody(WebProject,
+                                    IsModule ? ModuleOutputDirectory / "bin" : ArtifactsDirectory / "publish",
+                                    Configuration));
+
+    private void PublishBody(Project webProject, string output, Configuration configuration)
+    {
+        Assert.NotNull(webProject, "Web Project is not found!");
+        DotNetPublish(settings => settings
+            .SetProcessWorkingDirectory(webProject.Directory)
+            .EnableNoRestore()
+            .SetOutput(output)
+            .SetConfiguration(configuration));
+    }
 
     public Target WebPackBuild => _ => _
-        .Executes(() =>
+        .Executes(() => WebPackBuildBody(WebProject));
+
+    private void WebPackBuildBody(Project webProject)
+    {
+        if (webProject != null && (webProject.Directory / "package.json").FileExists())
         {
-            if (WebProject != null && (WebProject.Directory / "package.json").FileExists())
-            {
-                NpmTasks.Npm("ci", WebProject.Directory);
-                NpmTasks.NpmRun(settings =>
-                    settings.SetProcessWorkingDirectory(WebProject.Directory).SetCommand("webpack:build"));
-            }
-            else
-            {
-                Log.Information("Nothing to build.");
-            }
-        });
+            NpmTasks.Npm("ci", webProject.Directory);
+            NpmTasks.NpmRun(settings =>
+                settings.SetProcessWorkingDirectory(webProject.Directory).SetCommand("webpack:build"));
+        }
+        else
+        {
+            Log.Information("Nothing to build.");
+        }
+    }
 
     public Target Compile => _ => _
         .DependsOn(Restore)

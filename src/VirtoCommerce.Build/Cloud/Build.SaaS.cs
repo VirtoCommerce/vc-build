@@ -1,15 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Cloud.Client;
 using Cloud.Models;
+using Microsoft.Build.Evaluation;
 using Nuke.Common;
 using Nuke.Common.IO;
+using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.Docker;
 using Nuke.Common.Tools.DotNet;
 using Serilog;
+using VirtoCommerce.Platform.Core.Common;
+using Project = Nuke.Common.ProjectModel.Project;
 
 namespace VirtoCommerce.Build;
 
@@ -120,7 +125,35 @@ internal partial class Build
                 .SetProcessWorkingDirectory(WebProject.Directory)
                 .SetOutput(platformDirectory));
 
-                FileSystemTasks.CopyDirectoryRecursively(WebProject.Directory / "modules", modulesPath, DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
+                var modulesDirectories = Directory.EnumerateDirectories(WebProject.Directory / "modules");
+                foreach(var directory in modulesDirectories)
+                {
+                    var webProjects = Directory.EnumerateFiles(directory, $"*.Web.csproj");
+                    var moduleDirectoryName = Path.GetFileName(directory);
+                    var moduleDestinationPath = Path.Combine(modulesPath, moduleDirectoryName);
+                    if (!webProjects.Any()){
+                        FileSystemTasks.CopyDirectoryRecursively(directory, moduleDestinationPath, DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
+                    }
+                    else
+                    {
+                        var webProjectPath = webProjects.FirstOrDefault();
+                        var directoryInfo = new DirectoryInfo(directory);
+                        if(directoryInfo.LinkTarget != null)
+                        {
+                            webProjectPath = Path.Combine(directoryInfo.LinkTarget, Path.GetFileName(webProjectPath));
+                        }
+
+                        var solutionDir = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(webProjectPath)));
+                        var solutions = Directory.EnumerateFiles(solutionDir, "*.sln");
+                        Assert.True(solutions.Count() == 1, $"Solutions found: {solutions.Count()}");
+                        var solutionPath = solutions.FirstOrDefault();
+                        var solution = ProjectModelTasks.ParseSolution(solutionPath);
+                        var webProject = solution.AllProjects.FirstOrDefault(p => p.Name.EndsWith(".Web"));
+
+                        WebPackBuildBody(webProject);
+                        PublishBody(webProject, moduleDestinationPath, Configuration);
+                    }
+                }
             }
             else
             {
@@ -134,7 +167,7 @@ internal partial class Build
                 DockerImageName = $"{DockerUsername}/{EnvironmentName}";
             }
 
-            DockerImageTag ??= "latest";
+            DockerImageTag ??= DateTime.Now.ToString("MMddyyHHmmss");
             DockerfilePath = dockerfilePath;
         });
 
