@@ -14,14 +14,16 @@ namespace VirtoCommerce.Build
         [Parameter("Docker Image Name")] public static string DockerImageName { get; set; }
         [Parameter("Docker Image Tag")] public static string DockerImageTag { get; set; }
         [Parameter("Dockerfile Path")] public static string DockerfilePath { get; set; }
+        [Parameter("Docker build context path")] public static string DockerBuildContextPath { get; set; }
 
         private static string DockerImageFullName => string.IsNullOrEmpty(DockerImageTag) ? DockerImageName : DockerImageName.Append($":{DockerImageTag}");
 
         Target DockerLogin => _ => _
         .Before(BuildImage, PushImage)
+        .OnlyWhenDynamic(() => !string.IsNullOrEmpty(DockerUsername) && !string.IsNullOrEmpty(DockerPassword))
         .Executes(() =>
         {
-            DockerTasks.DockerLogger = (t, m) => Log.Debug(m);
+            DockerTasks.DockerLogger = (_, m) => Log.Debug(m);
 
             var settings = new DockerLoginSettings()
                 .SetServer(DockerRegistryUrl)
@@ -38,7 +40,7 @@ namespace VirtoCommerce.Build
             var settings = new DockerBuildSettings()
                 .SetFile(DockerfilePath)
                 .SetPull(true)
-                .SetPath(RootDirectory)
+                .SetPath(DockerBuildContextPath ?? RootDirectory)
                 .SetTag(DockerImageFullName);
             DockerTasks.DockerBuild(settings);
         });

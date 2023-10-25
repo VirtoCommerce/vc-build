@@ -1,9 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Cloud.Client;
 using Cloud.Models;
 using Nuke.Common;
+using Nuke.Common.IO;
+using Nuke.Common.Tooling;
+using Nuke.Common.Tools.Docker;
+using Nuke.Common.Tools.DotNet;
 using Serilog;
 
 namespace VirtoCommerce.Build;
@@ -95,4 +100,56 @@ internal partial class Build
 
         return false;
     }
+
+    public static string DockerfileUrl { get; set; } = "https://raw.githubusercontent.com/krankenbro/vc-ci-test/master/Dockerfile";
+    public Target PrepareDockerContext => _ => _
+        .Before(DockerLogin, BuildImage, PushImage, BuildAndPush)
+        .Executes(async () =>
+        {
+            var dockerBuildContext = ArtifactsDirectory / "docker";
+            var platformDirectory = dockerBuildContext / "platform";
+            var modulesPath = platformDirectory / "modules";
+            var dockerfilePath = dockerBuildContext / "Dockerfile";
+
+            await HttpTasks.HttpDownloadFileAsync(DockerfileUrl, dockerfilePath);
+
+            if (Solution != null)
+            {
+                DotNetTasks.DotNetPublish(settings => settings
+                .SetConfiguration(Configuration)
+                .SetProcessWorkingDirectory(WebProject.Directory)
+                .SetOutput(platformDirectory));
+
+                FileSystemTasks.CopyDirectoryRecursively(WebProject.Directory / "modules", modulesPath, DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
+            }
+            else
+            {
+                FileSystemTasks.CopyDirectoryRecursively(RootDirectory, platformDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
+            }
+
+            DockerBuildContextPath = dockerBuildContext;
+
+            if (string.IsNullOrWhiteSpace(DockerImageName))
+            {
+                DockerImageName = $"{DockerUsername}/{EnvironmentName}";
+            }
+
+            DockerImageTag ??= "latest";
+            DockerfilePath = dockerfilePath;
+        });
+
+    public Target DeployImage => _ => _
+        .DependsOn(PrepareDockerContext, BuildAndPush)
+        .Executes(async () =>
+        {
+            var cloudClient = new VirtoCloudClient(CloudUrl, CloudToken);
+            var env = await cloudClient.GetEnvironment(EnvironmentName, SaaSOrganizationName);
+
+            var envHelmParameters = env.Helm.Parameters;
+
+            envHelmParameters["platform.image.repository"] = DockerImageName;
+            envHelmParameters["platform.image.tag"] = DockerImageTag;
+
+            await cloudClient.UpdateEnvironmentAsync(env);
+        });
 }
