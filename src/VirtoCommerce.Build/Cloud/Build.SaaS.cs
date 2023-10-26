@@ -1,10 +1,20 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Cloud.Client;
 using Cloud.Models;
+using Microsoft.Build.Evaluation;
 using Nuke.Common;
+using Nuke.Common.IO;
+using Nuke.Common.ProjectModel;
+using Nuke.Common.Tooling;
+using Nuke.Common.Tools.Docker;
+using Nuke.Common.Tools.DotNet;
 using Serilog;
+using VirtoCommerce.Platform.Core.Common;
+using Project = Nuke.Common.ProjectModel.Project;
 
 namespace VirtoCommerce.Build;
 
@@ -95,4 +105,97 @@ internal partial class Build
 
         return false;
     }
+
+    public static string DockerfileUrl { get; set; } = "https://raw.githubusercontent.com/krankenbro/vc-ci-test/master/Dockerfile";
+    public Target PrepareDockerContext => _ => _
+        .Before(InitPlatform, DockerLogin, BuildImage, PushImage, BuildAndPush)
+        .Triggers(InitPlatform)
+        .Executes(async () =>
+        {
+            var dockerBuildContext = ArtifactsDirectory / "docker";
+            var platformDirectory = dockerBuildContext / "platform";
+            var modulesPath = platformDirectory / "modules";
+            var dockerfilePath = dockerBuildContext / "Dockerfile";
+
+            await HttpTasks.HttpDownloadFileAsync(DockerfileUrl, dockerfilePath);
+
+            // Copy the platform
+            if (Solution != null)
+            {
+                DotNetTasks.DotNetPublish(settings => settings
+                .SetConfiguration(Configuration)
+                .SetProcessWorkingDirectory(WebProject.Directory)
+                .SetOutput(platformDirectory));
+            }
+            else
+            {
+                FileSystemTasks.CopyDirectoryRecursively(RootDirectory, platformDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer, d => !d.FullName.EndsWith("modules"));
+            }
+
+            // Copy modules
+            var modulesDirectories = Directory.EnumerateDirectories(WebProject.Directory / "modules");
+            foreach (var directory in modulesDirectories)
+            {
+                var webProjects = Directory.EnumerateFiles(directory, $"*.Web.csproj");
+                var moduleDirectoryName = Path.GetFileName(directory);
+                var moduleDestinationPath = Path.Combine(modulesPath, moduleDirectoryName);
+                if (!webProjects.Any())
+                {
+                    FileSystemTasks.CopyDirectoryRecursively(directory, moduleDestinationPath, DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
+                }
+                else
+                {
+                    var webProjectPath = webProjects.FirstOrDefault();
+                    var directoryInfo = new DirectoryInfo(directory);
+                    if (directoryInfo.LinkTarget != null)
+                    {
+                        webProjectPath = Path.Combine(directoryInfo.LinkTarget, Path.GetFileName(webProjectPath));
+                    }
+
+                    var solutionDir = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(webProjectPath)));
+                    var solutions = Directory.EnumerateFiles(solutionDir, "*.sln");
+                    Assert.True(solutions.Count() == 1, $"Solutions found: {solutions.Count()}");
+                    var solutionPath = solutions.FirstOrDefault();
+                    var solution = ProjectModelTasks.ParseSolution(solutionPath);
+                    var webProject = solution.AllProjects.FirstOrDefault(p => p.Name.EndsWith(".Web"));
+
+                    WebPackBuildBody(webProject);
+                    PublishBody(webProject, Path.Combine(moduleDestinationPath, "bin"), Configuration);
+                    foreach (var contentDirectory in _moduleContentFolders)
+                    {
+                        var contentDestination = Path.Combine(moduleDestinationPath, contentDirectory);
+                        var contentSource = Path.Combine(webProject.Directory, contentDirectory);
+                        FileSystemTasks.CopyDirectoryRecursively(contentSource, contentDestination, DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
+                    }
+                }
+            }
+
+            DockerBuildContextPath = dockerBuildContext;
+
+            if (string.IsNullOrWhiteSpace(DockerImageName))
+            {
+                DockerImageName = $"{DockerUsername}/{EnvironmentName}";
+            }
+
+            DockerImageTag ??= DateTime.Now.ToString("MMddyyHHmmss");
+            DockerfilePath = dockerfilePath;
+            DiscoveryPath = modulesPath;
+            ProbingPath = Path.Combine(platformDirectory, "app_data", "modules");
+            AppsettingsPath = Path.Combine(platformDirectory, "appsettings.json");
+        });
+
+    public Target DeployImage => _ => _
+        .DependsOn(PrepareDockerContext, BuildAndPush)
+        .Executes(async () =>
+        {
+            var cloudClient = new VirtoCloudClient(CloudUrl, CloudToken);
+            var env = await cloudClient.GetEnvironment(EnvironmentName, SaaSOrganizationName);
+
+            var envHelmParameters = env.Helm.Parameters;
+
+            envHelmParameters["platform.image.repository"] = DockerImageName;
+            envHelmParameters["platform.image.tag"] = DockerImageTag;
+
+            await cloudClient.UpdateEnvironmentAsync(env);
+        });
 }
