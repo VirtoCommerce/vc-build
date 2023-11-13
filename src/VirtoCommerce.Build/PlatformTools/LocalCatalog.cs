@@ -149,7 +149,7 @@ namespace PlatformTools
             {
                 foreach (var manifestFile in Directory.EnumerateFiles(_options.DiscoveryPath, "module.manifest", SearchOption.AllDirectories))
                 {
-                    if (!manifestFile.Contains("artifacts"))
+                    if (!manifestFile.Contains("artifacts") || _options.DiscoveryPath.Contains("artifacts"))
                     {
                         var manifest = ManifestReader.Read(manifestFile);
                         result.Add(manifestFile, manifest);
