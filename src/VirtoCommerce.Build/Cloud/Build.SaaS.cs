@@ -117,10 +117,16 @@ internal partial class Build
             var modulesPath = platformDirectory / "modules";
             var dockerfilePath = dockerBuildContext / "Dockerfile";
 
+            FileSystemTasks.EnsureCleanDirectory(dockerBuildContext);
+
             await HttpTasks.HttpDownloadFileAsync(DockerfileUrl, dockerfilePath);
 
+            var modulesSourcePath = Solution?.Path != null
+                ? WebProject.Directory / "modules"
+                : RootDirectory / "modules";
+
             // Copy the platform
-            if (Solution != null)
+            if (Solution?.Path != null)
             {
                 DotNetTasks.DotNetPublish(settings => settings
                 .SetConfiguration(Configuration)
@@ -129,11 +135,25 @@ internal partial class Build
             }
             else
             {
-                FileSystemTasks.CopyDirectoryRecursively(RootDirectory, platformDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer, d => !d.FullName.EndsWith("modules"));
+                var nukeDir = Path.Combine(RootDirectory, ".nuke");
+                var directories = Directory.GetDirectories(RootDirectory).Where(d => !PathConstruction.IsDescendantPath(modulesSourcePath, d)
+                        && !PathConstruction.IsDescendantPath(nukeDir, d)
+                        && !PathConstruction.IsDescendantPath(ArtifactsDirectory, d)).ToArray();
+                var files = Directory.GetFiles(RootDirectory);
+
+                foreach ( var dir in directories)
+                {
+                    FileSystemTasks.CopyDirectoryRecursively(dir, platformDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
+                }
+
+                foreach( var file in files)
+                {
+                    FileSystemTasks.CopyFileToDirectory(file, platformDirectory);
+                }
             }
 
             // Copy modules
-            var modulesDirectories = Directory.EnumerateDirectories(WebProject.Directory / "modules");
+            var modulesDirectories =  Directory.EnumerateDirectories(modulesSourcePath);
             foreach (var directory in modulesDirectories)
             {
                 var webProjects = Directory.EnumerateFiles(directory, $"*.Web.csproj");
