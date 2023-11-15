@@ -143,7 +143,8 @@ internal partial class Build
 
                 foreach ( var dir in directories)
                 {
-                    FileSystemTasks.CopyDirectoryRecursively(dir, platformDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
+                    var dirName = Path.GetFileName(dir);
+                    FileSystemTasks.CopyDirectoryRecursively(dir, Path.Combine(platformDirectory, dirName), DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
                 }
 
                 foreach( var file in files)
@@ -187,6 +188,9 @@ internal partial class Build
                         var contentSource = Path.Combine(webProject.Directory, contentDirectory);
                         FileSystemTasks.CopyDirectoryRecursively(contentSource, contentDestination, DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
                     }
+
+                    var moduleManifestPath = webProject.Directory / "module.manifest";
+                    FileSystemTasks.CopyFileToDirectory(moduleManifestPath, moduleDestinationPath, FileExistsPolicy.OverwriteIfNewer);
                 }
             }
 
