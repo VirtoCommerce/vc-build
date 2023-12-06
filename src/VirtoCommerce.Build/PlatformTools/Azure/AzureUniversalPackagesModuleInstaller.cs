@@ -1,12 +1,12 @@
+using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
-using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
-using Serilog;
 using VirtoCommerce.Build.PlatformTools;
+using VirtoCommerce.Platform.Core.Modularity;
 
 namespace PlatformTools.Azure
 {
@@ -21,12 +21,12 @@ namespace PlatformTools.Azure
             this.discoveryPath = discoveryPath;
         }
 
-        protected override Task InnerInstall(ModuleSource source)
+        protected override Task InnerInstall(ModuleSource source, IProgress<ProgressMessage> progress)
         {
             var artifacts = (AzureUniversalPackages)source;
             foreach (var module in artifacts.Modules)
             {
-                Log.Information($"Installing {module.Id}");
+                progress.ReportInfo($"Installing {module.Id}");
                 var moduleDestination = Path.Join(discoveryPath, module.Id);
                 Directory.CreateDirectory(moduleDestination);
                 FileSystemTasks.EnsureCleanDirectory(moduleDestination);
@@ -49,20 +49,15 @@ namespace PlatformTools.Azure
                 var zipPath = Directory.GetFiles(moduleDestination).FirstOrDefault(p => p.EndsWith(".zip"));
                 if (zipPath == null)
                 {
-                    Assert.Fail($"Can't download {module.Id} - {module.Version}");
+                    progress.ReportError($"Can't download {module.Id} - {module.Version}");
                 }
 
-                Log.Information($"Extracting {zipPath}");
+                progress.ReportInfo($"Extracting {zipPath}");
                 ZipFile.ExtractToDirectory(zipPath, moduleDestination);
-                Log.Information($"Successfully installed {module.Id}");
+                progress.ReportInfo($"Successfully installed {module.Id}");
             }
 
             return Task.CompletedTask;
-        }
-
-        public override Task Install(ModuleSource source)
-        {
-            return InnerInstall((AzureUniversalPackages)source);
         }
     }
 }

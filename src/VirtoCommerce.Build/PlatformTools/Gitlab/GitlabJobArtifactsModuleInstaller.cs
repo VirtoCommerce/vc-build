@@ -1,9 +1,10 @@
+using System;
 using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
 using Nuke.Common.IO;
-using Serilog;
 using VirtoCommerce.Build.PlatformTools;
+using VirtoCommerce.Platform.Core.Modularity;
 
 namespace PlatformTools.Gitlab;
 
@@ -18,7 +19,7 @@ internal class GitlabJobArtifactsModuleInstaller : ModulesInstallerBase
         _client = new GitLabClient(token, server);
     }
 
-    protected override async Task InnerInstall(ModuleSource source)
+    protected override async Task InnerInstall(ModuleSource source, IProgress<ProgressMessage> progress)
     {
         var gitlabJobArtifacts = (GitlabJobArtifacts) source;
         foreach (var module in gitlabJobArtifacts.Modules)
@@ -26,11 +27,11 @@ internal class GitlabJobArtifactsModuleInstaller : ModulesInstallerBase
             var moduleDestination = Path.Join(_discoveryPath, module.Id);
             Directory.CreateDirectory(moduleDestination);
             FileSystemTasks.EnsureCleanDirectory(moduleDestination);
-            Log.Information($"Downloading {module.Id}");
+            progress.ReportInfo($"Downloading {module.Id}");
             var artifactZipPath = await _client.DownloadArtifact(module.Id, module.JobId, module.ArtifactName, moduleDestination);
-            Log.Information($"Extracting {module.Id}");
+            progress.ReportInfo($"Extracting {module.Id}");
             ZipFile.ExtractToDirectory(artifactZipPath, moduleDestination);
-            Log.Information($"Successfully installed {module.Id}");
+            progress.ReportInfo($"Successfully installed {module.Id}");
         }
     }
 }
