@@ -308,7 +308,7 @@ namespace VirtoCommerce.Build
             {
                 var versionInfo = FileVersionInfo.GetVersionInfo(platformWebDllPath);
 
-                if (versionInfo.ProductVersion != null && newVersion <= Version.Parse(versionInfo.ProductVersion))
+                if (versionInfo.FileVersion != null && newVersion <= Version.Parse(versionInfo.FileVersion))
                 {
                     result = false;
                 }
