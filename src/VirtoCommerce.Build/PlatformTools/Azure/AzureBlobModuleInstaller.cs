@@ -3,8 +3,8 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
-using Serilog;
 using VirtoCommerce.Build.PlatformTools;
+using VirtoCommerce.Platform.Core.Modularity;
 using AzureBlobs = Azure.Storage.Blobs;
 
 namespace PlatformTools.Azure
@@ -20,7 +20,7 @@ namespace PlatformTools.Azure
             _destination = destination;
         }
 
-        protected override Task InnerInstall(ModuleSource source)
+        protected override Task InnerInstall(ModuleSource source, IProgress<ProgressMessage> progress)
         {
             var azureBlobSource = (AzureBlob)source;
             var blobClientOptions = new AzureBlobs.BlobClientOptions();
@@ -29,7 +29,7 @@ namespace PlatformTools.Azure
             Directory.CreateDirectory(_destination);
             foreach (var moduleBlobName in azureBlobSource.Modules.Select(m => m.BlobName))
             {
-                Log.Information($"Installing {moduleBlobName}");
+                progress.ReportInfo($"Installing {moduleBlobName}");
                 var zipName = moduleBlobName;
                 if(!zipName.EndsWith(".zip"))
                 {
@@ -42,12 +42,12 @@ namespace PlatformTools.Azure
                 {
                     moduleDestination = moduleDestination.Replace(".zip", "");
                 }
-                Log.Information($"Downloading Blob {moduleBlobName}");
+                progress.ReportInfo($"Downloading Blob {moduleBlobName}");
                 var blobClient = containerClient.GetBlobClient(moduleBlobName);
                 blobClient.DownloadTo(zipPath);
-                Log.Information($"Extracting Blob {moduleBlobName}");
+                progress.ReportInfo($"Extracting Blob {moduleBlobName}");
                 ZipFile.ExtractToDirectory(zipPath, moduleDestination, true);
-                Log.Information($"Successfully installed {moduleBlobName}");
+                progress.ReportInfo($"Successfully installed {moduleBlobName}");
             }
             return Task.CompletedTask;
         }
