@@ -308,7 +308,7 @@ namespace VirtoCommerce.Build
             {
                 var versionInfo = FileVersionInfo.GetVersionInfo(platformWebDllPath);
 
-                if (versionInfo.ProductVersion != null && newVersion <= Version.Parse(versionInfo.ProductVersion))
+                if (versionInfo.FileVersion != null && newVersion <= Version.Parse(versionInfo.FileVersion))
                 {
                     result = false;
                 }
@@ -369,7 +369,7 @@ namespace VirtoCommerce.Build
                  {
                      if (m.Level == ProgressMessageLevel.Error)
                      {
-                         Log.Error(m.Message);
+                         Assert.Fail(m.Message);
                      }
                      else
                      {
@@ -404,7 +404,7 @@ namespace VirtoCommerce.Build
                  {
                      var installer = GetModuleInstaller(moduleSource);
 
-                     await installer.Install(moduleSource);
+                     await installer.Install(moduleSource, progress);
                  }
                  var absoluteDiscoveryPath = (AbsolutePath)Path.GetFullPath(discoveryPath);
                  var zipFiles = absoluteDiscoveryPath.GlobFiles("*/*.zip");
