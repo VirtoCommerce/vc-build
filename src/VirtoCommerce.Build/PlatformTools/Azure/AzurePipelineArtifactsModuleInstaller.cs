@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
-using Serilog;
 using VirtoCommerce.Build.PlatformTools;
+using VirtoCommerce.Platform.Core.Modularity;
 
 namespace PlatformTools.Azure
 {
@@ -19,7 +19,7 @@ namespace PlatformTools.Azure
             this._discoveryPath = discoveryPath;
         }
 
-        protected override async Task InnerInstall(ModuleSource source)
+        protected override async Task InnerInstall(ModuleSource source, IProgress<ProgressMessage> progress)
         {
             var artifacts = (AzurePipelineArtifacts)source;
             var azureClient = new AzureDevClient(artifacts.Organization, _token);
@@ -27,13 +27,13 @@ namespace PlatformTools.Azure
             var downloadClient = new AzurePipelineArtifactsClient(clientOptions);
             foreach (var module in artifacts.Modules)
             {
-                Log.Information($"Installing {module.Id}");
+                progress.ReportInfo($"Installing {module.Id}");
                 var moduleDestination = Path.Join(_discoveryPath, module.Id);
                 Directory.CreateDirectory(moduleDestination);
                 var zipName = $"{module.Id}.zip";
                 var zipDestination = Path.Join(moduleDestination, zipName);
                 var artifactUrl = await azureClient.GetArtifactUrl(Guid.Parse(artifacts.Project), module.Branch, module.Definition);
-                Log.Information($"Downloading {artifactUrl}");
+                progress.ReportInfo($"Downloading {artifactUrl}");
                 using (var stream = downloadClient.OpenRead(artifactUrl))
                 {
                     using (var output = File.OpenWrite(zipDestination))
@@ -41,9 +41,9 @@ namespace PlatformTools.Azure
                         await stream.CopyToAsync(output);
                     }
                 }
-                Log.Information($"Extracting {zipName}");
+                progress.ReportInfo($"Extracting {zipName}");
                 ZipFile.ExtractToDirectory(zipDestination, moduleDestination);
-                Log.Information($"Successfully installed {module.Id}");
+                progress.ReportInfo($"Successfully installed {module.Id}");
             }
         }
     }
