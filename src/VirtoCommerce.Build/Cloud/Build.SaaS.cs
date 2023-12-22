@@ -238,7 +238,7 @@ internal partial class Build
         });
 
     public Target CloudAuth => _ => _
-        .Executes(() =>
+        .Executes(async () =>
         {
             var port = "60123";
             var listenerPrefix = $"http://localhost:{port}/";
@@ -254,10 +254,10 @@ internal partial class Build
             var authUrl = $"{CloudUrl}/externalsignin?authenticationType={CloudAuthProvider}&returnUrl=/api/saas/token/{port}";
             Process.Start(new ProcessStartInfo(authUrl) { UseShellExecute = true });
 
-            var context = listener.GetContextAsync();
-            context.Result.Response.StatusCode = 200;
-            var apiKey = context.Result.Request.QueryString["apiKey"];
-            context.Result.Response.Close(Encoding.UTF8.GetBytes("You can close this browser tab now."), false);
+            var context = await listener.GetContextAsync();
+            context.Response.StatusCode = (int)HttpStatusCode.OK;
+            var apiKey = context.Request.QueryString["apiKey"];
+            context.Response.Close(Encoding.UTF8.GetBytes("You can close this browser tab now."), false);
 
             SaveCloudToken(apiKey);
         });
@@ -345,18 +345,12 @@ internal partial class Build
     public Target CloudUp => _ => _
         .DependsOn(CloudInit, CloudDeploy);
 
-    public Target CloudMonitor => _ => _
-        .Executes(() =>
-        {
-
-        });
-
-    private ISaaSDeploymentApi CreateVirtocloudClient(string url, string token)
+    private static ISaaSDeploymentApi CreateVirtocloudClient(string url, string token)
     {
         var config = new VirtoCloud.Client.Client.Configuration();
         config.BasePath = url;
         config.AccessToken = token;
         config.DefaultHeaders.Add("api_key", token);
-        return new SaaSDeploymentApi(config);   
+        return new SaaSDeploymentApi(config);
     }
 }

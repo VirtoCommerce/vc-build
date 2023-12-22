@@ -1,9 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo><!-- setting GenerateAssemblyInfo to false causes this bug https://github.com/dotnet/project-system/issues/3934 -->
     <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>VirtoCloud.Client</AssemblyName>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <PackageId>VirtoCloud.Client</PackageId>
     <OutputType>Library</OutputType>
     <Authors>OpenAPI</Authors>
