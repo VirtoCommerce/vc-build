@@ -95,4 +95,8 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Virtocloud.Client\src\VirtoCloud.Client\VirtoCloud.Client.csproj" />
+  </ItemGroup>
 </Project>

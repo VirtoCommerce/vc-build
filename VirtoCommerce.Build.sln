@@ -4,8 +4,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.0.32112.339
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VirtoCommerce.Build", "src\VirtoCommerce.Build\VirtoCommerce.Build.csproj", "{826FB1DE-BF4F-4314-AA00-FC5BC7627D7F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{46099661-167D-4212-AFBE-855179D6F67D} = {46099661-167D-4212-AFBE-855179D6F67D}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VirtoCommerce.Build.Tests", "src\VirtoCommerce.Build.Tests\VirtoCommerce.Build.Tests.csproj", "{9E6E4723-DBA4-4A4B-807D-F9184D792DCF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VirtoCloud.Client", "src\Virtocloud.Client\src\VirtoCloud.Client\VirtoCloud.Client.csproj", "{46099661-167D-4212-AFBE-855179D6F67D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +26,10 @@ Global
 		{9E6E4723-DBA4-4A4B-807D-F9184D792DCF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9E6E4723-DBA4-4A4B-807D-F9184D792DCF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9E6E4723-DBA4-4A4B-807D-F9184D792DCF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{46099661-167D-4212-AFBE-855179D6F67D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{46099661-167D-4212-AFBE-855179D6F67D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{46099661-167D-4212-AFBE-855179D6F67D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{46099661-167D-4212-AFBE-855179D6F67D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -414,6 +414,11 @@ namespace VirtoCommerce.Build
 
         private static ManifestModuleInfo LoadModuleInfo(ModuleItem module, ManifestModuleInfo externalModule)
         {
+            if (!externalModule.Ref.Contains(externalModule.Version.ToString()))
+            {
+                Log.Error("Error in file modules_v3.json for module {0}: Version {1} not found in Reference {2}", externalModule.Id, externalModule.Version.ToString(), externalModule.Ref);
+            }
+
             var currentModule = new ModuleManifest
             {
                 Id = module.Id,
