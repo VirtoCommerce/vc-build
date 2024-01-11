@@ -22,6 +22,7 @@ using VirtoCloud.Client.Model;
 using System.Net;
 using System.Diagnostics;
 using Microsoft.AspNetCore.Identity;
+using System.Runtime.InteropServices;
 
 namespace VirtoCommerce.Build;
 
@@ -340,6 +341,16 @@ internal partial class Build
             
             var cloudClient = CreateVirtocloudClient(CloudUrl, await GetCloudTokenAsync());
             await cloudClient.EnvironmentsCreateAsync(model);
+        });
+
+    public Target CloudEnvLogs => _ => _
+        .Requires(() => EnvironmentName)
+        .Executes(async () =>
+        {
+            var cloudClient = CreateVirtocloudClient(CloudUrl, await GetCloudTokenAsync());
+            var logs = await cloudClient.EnvironmentsGetEnvironmentLogsAsync(EnvironmentName);
+            logs = string.Join(Environment.NewLine, logs.Split("\\n"));
+            Console.WriteLine(logs);
         });
 
     public Target CloudUp => _ => _
