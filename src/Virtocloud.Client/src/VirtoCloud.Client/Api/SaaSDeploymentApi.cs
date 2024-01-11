@@ -307,6 +307,31 @@ namespace VirtoCloud.Client.Api
         /// <param name="envName"></param>
         /// <returns>ApiResponse of List&lt;CloudEnvironment&gt;</returns>
         ApiResponse<List<CloudEnvironment>> EnvironmentsGetEnvironmentWithHttpInfo(string envName);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <exception cref="VirtoCloud.Client.Client.ApiException">Thrown when fails to make API call</exception>
+        /// <param name="envName"></param>
+        /// <param name="filter"> (optional)</param>
+        /// <param name="tail"> (optional, default to 100)</param>
+        /// <param name="resourceName"> (optional)</param>
+        /// <returns>string</returns>
+        string EnvironmentsGetEnvironmentLogs(string envName, string? filter = default(string?), int? tail = default(int?), string? resourceName = default(string?));
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <remarks>
+        /// 
+        /// </remarks>
+        /// <exception cref="VirtoCloud.Client.Client.ApiException">Thrown when fails to make API call</exception>
+        /// <param name="envName"></param>
+        /// <param name="filter"> (optional)</param>
+        /// <param name="tail"> (optional, default to 100)</param>
+        /// <param name="resourceName"> (optional)</param>
+        /// <returns>ApiResponse of string</returns>
+        ApiResponse<string> EnvironmentsGetEnvironmentLogsWithHttpInfo(string envName, string? filter = default(string?), int? tail = default(int?), string? resourceName = default(string?));
         /// <summary>
         /// 
         /// </summary>
@@ -997,6 +1022,36 @@ namespace VirtoCloud.Client.Api
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
         /// <returns>Task of ApiResponse (List&lt;CloudEnvironment&gt;)</returns>
         System.Threading.Tasks.Task<ApiResponse<List<CloudEnvironment>>> EnvironmentsGetEnvironment_0WithHttpInfoAsync(string organizationName, string envName, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <remarks>
+        /// 
+        /// </remarks>
+        /// <exception cref="VirtoCloud.Client.Client.ApiException">Thrown when fails to make API call</exception>
+        /// <param name="envName"></param>
+        /// <param name="filter"> (optional)</param>
+        /// <param name="tail"> (optional, default to 100)</param>
+        /// <param name="resourceName"> (optional)</param>
+        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
+        /// <returns>Task of string</returns>
+        System.Threading.Tasks.Task<string> EnvironmentsGetEnvironmentLogsAsync(string envName, string? filter = default(string?), int? tail = default(int?), string? resourceName = default(string?), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <remarks>
+        /// 
+        /// </remarks>
+        /// <exception cref="VirtoCloud.Client.Client.ApiException">Thrown when fails to make API call</exception>
+        /// <param name="envName"></param>
+        /// <param name="filter"> (optional)</param>
+        /// <param name="tail"> (optional, default to 100)</param>
+        /// <param name="resourceName"> (optional)</param>
+        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
+        /// <returns>Task of ApiResponse (string)</returns>
+        System.Threading.Tasks.Task<ApiResponse<string>> EnvironmentsGetEnvironmentLogsWithHttpInfoAsync(string envName, string? filter = default(string?), int? tail = default(int?), string? resourceName = default(string?), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
         /// <summary>
         /// 
         /// </summary>
@@ -3588,6 +3643,179 @@ namespace VirtoCloud.Client.Api
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsGetEnvironment_0", localVarResponse);
                 if (_exception != null) throw _exception;
+            }
+
+            return localVarResponse;
+        }
+
+        /// <summary>
+        ///  
+        /// </summary>
+        /// <exception cref="VirtoCloud.Client.Client.ApiException">Thrown when fails to make API call</exception>
+        /// <param name="envName"></param>
+        /// <param name="filter"> (optional)</param>
+        /// <param name="tail"> (optional, default to 100)</param>
+        /// <param name="resourceName"> (optional)</param>
+        /// <returns>string</returns>
+        public string EnvironmentsGetEnvironmentLogs(string envName, string? filter = default(string?), int? tail = default(int?), string? resourceName = default(string?))
+        {
+            VirtoCloud.Client.Client.ApiResponse<string> localVarResponse = EnvironmentsGetEnvironmentLogsWithHttpInfo(envName, filter, tail, resourceName);
+            return localVarResponse.Data;
+        }
+
+        /// <summary>
+        ///  
+        /// </summary>
+        /// <exception cref="VirtoCloud.Client.Client.ApiException">Thrown when fails to make API call</exception>
+        /// <param name="envName"></param>
+        /// <param name="filter"> (optional)</param>
+        /// <param name="tail"> (optional, default to 100)</param>
+        /// <param name="resourceName"> (optional)</param>
+        /// <returns>ApiResponse of string</returns>
+        public VirtoCloud.Client.Client.ApiResponse<string> EnvironmentsGetEnvironmentLogsWithHttpInfo(string envName, string? filter = default(string?), int? tail = default(int?), string? resourceName = default(string?))
+        {
+            // verify the required parameter 'envName' is set
+            if (envName == null)
+                throw new VirtoCloud.Client.Client.ApiException(400, "Missing required parameter 'envName' when calling SaaSDeploymentApi->EnvironmentsGetEnvironmentLogs");
+
+            VirtoCloud.Client.Client.RequestOptions localVarRequestOptions = new VirtoCloud.Client.Client.RequestOptions();
+
+            string[] _contentTypes = new string[] {
+            };
+
+            // to determine the Accept header
+            string[] _accepts = new string[] {
+                "text/plain",
+                "application/json",
+                "text/json"
+            };
+
+            var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+
+            var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+
+            localVarRequestOptions.PathParameters.Add("envName", VirtoCloud.Client.Client.ClientUtils.ParameterToString(envName)); // path parameter
+            if (filter != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(VirtoCloud.Client.Client.ClientUtils.ParameterToMultiMap("", "filter", filter));
+            }
+            if (tail != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(VirtoCloud.Client.Client.ClientUtils.ParameterToMultiMap("", "tail", tail));
+            }
+            if (resourceName != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(VirtoCloud.Client.Client.ClientUtils.ParameterToMultiMap("", "resourceName", resourceName));
+            }
+
+            // authentication (oauth2) required
+            // oauth required
+            if (!string.IsNullOrEmpty(this.Configuration.AccessToken) && !localVarRequestOptions.HeaderParameters.ContainsKey("Authorization"))
+            {
+                localVarRequestOptions.HeaderParameters.Add("Authorization", "Bearer " + this.Configuration.AccessToken);
+            }
+
+            // make the HTTP request
+            var localVarResponse = this.Client.Get<string>("/api/saas/environments/{envName}/logs", localVarRequestOptions, this.Configuration);
+
+            if (this.ExceptionFactory != null)
+            {
+                Exception _exception = this.ExceptionFactory("EnvironmentsGetEnvironmentLogs", localVarResponse);
+                if (_exception != null)
+                    throw _exception;
+            }
+
+            return localVarResponse;
+        }
+
+        /// <summary>
+        ///  
+        /// </summary>
+        /// <exception cref="VirtoCloud.Client.Client.ApiException">Thrown when fails to make API call</exception>
+        /// <param name="envName"></param>
+        /// <param name="filter"> (optional)</param>
+        /// <param name="tail"> (optional, default to 100)</param>
+        /// <param name="resourceName"> (optional)</param>
+        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
+        /// <returns>Task of string</returns>
+        public async System.Threading.Tasks.Task<string> EnvironmentsGetEnvironmentLogsAsync(string envName, string? filter = default(string?), int? tail = default(int?), string? resourceName = default(string?), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        {
+            VirtoCloud.Client.Client.ApiResponse<string> localVarResponse = await EnvironmentsGetEnvironmentLogsWithHttpInfoAsync(envName, filter, tail, resourceName, cancellationToken).ConfigureAwait(false);
+            return localVarResponse.Data;
+        }
+
+        /// <summary>
+        ///  
+        /// </summary>
+        /// <exception cref="VirtoCloud.Client.Client.ApiException">Thrown when fails to make API call</exception>
+        /// <param name="envName"></param>
+        /// <param name="filter"> (optional)</param>
+        /// <param name="tail"> (optional, default to 100)</param>
+        /// <param name="resourceName"> (optional)</param>
+        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
+        /// <returns>Task of ApiResponse (string)</returns>
+        public async System.Threading.Tasks.Task<VirtoCloud.Client.Client.ApiResponse<string>> EnvironmentsGetEnvironmentLogsWithHttpInfoAsync(string envName, string? filter = default(string?), int? tail = default(int?), string? resourceName = default(string?), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        {
+            // verify the required parameter 'envName' is set
+            if (envName == null)
+                throw new VirtoCloud.Client.Client.ApiException(400, "Missing required parameter 'envName' when calling SaaSDeploymentApi->EnvironmentsGetEnvironmentLogs");
+
+
+            VirtoCloud.Client.Client.RequestOptions localVarRequestOptions = new VirtoCloud.Client.Client.RequestOptions();
+
+            string[] _contentTypes = new string[] {
+            };
+
+            // to determine the Accept header
+            string[] _accepts = new string[] {
+                "text/plain",
+                "application/json",
+                "text/json"
+            };
+
+
+            var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+
+            var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+
+            localVarRequestOptions.PathParameters.Add("envName", VirtoCloud.Client.Client.ClientUtils.ParameterToString(envName)); // path parameter
+            if (filter != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(VirtoCloud.Client.Client.ClientUtils.ParameterToMultiMap("", "filter", filter));
+            }
+            if (tail != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(VirtoCloud.Client.Client.ClientUtils.ParameterToMultiMap("", "tail", tail));
+            }
+            if (resourceName != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(VirtoCloud.Client.Client.ClientUtils.ParameterToMultiMap("", "resourceName", resourceName));
+            }
+
+            // authentication (oauth2) required
+            // oauth required
+            if (!string.IsNullOrEmpty(this.Configuration.AccessToken) && !localVarRequestOptions.HeaderParameters.ContainsKey("Authorization"))
+            {
+                localVarRequestOptions.HeaderParameters.Add("Authorization", "Bearer " + this.Configuration.AccessToken);
+            }
+
+            // make the HTTP request
+
+            var localVarResponse = await this.AsynchronousClient.GetAsync<string>("/api/saas/environments/{envName}/logs", localVarRequestOptions, this.Configuration, cancellationToken).ConfigureAwait(false);
+
+            if (this.ExceptionFactory != null)
+            {
+                Exception _exception = this.ExceptionFactory("EnvironmentsGetEnvironmentLogs", localVarResponse);
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
