@@ -57,7 +57,7 @@ internal partial class Build
     [Parameter("SaaS Auth Provider")] public string CloudAuthProvider { get; set; } = "GitHub";
     [Parameter("App Project Name")] public string AppProject { get; set; }
     [Parameter("Cloud Environment Name")] public string EnvironmentName { get; set; }
-    [Parameter("Cloud Environment Service Plan")] public string ServicePlan { get; set; }
+    [Parameter("Cloud Environment Service Plan")] public string ServicePlan { get; set; } = "F1";
     [Parameter("Cloud Environment Cluster Name")] public string ClusterName { get; set; }
     [Parameter("Cloud Environment Db Provider")] public string DbProvider { get; set; }
     [Parameter("Cloud Environment Db Name")] public string DbName { get; set; }
@@ -326,7 +326,7 @@ internal partial class Build
 
     public Target CloudInit => _ => _
         .Before(PrepareDockerContext, BuildAndPush, CloudDeploy)
-        .Requires(() => ServicePlan, () => EnvironmentName)
+        .Requires(() => EnvironmentName)
         .Executes(async () =>
         {
             var model = new NewEnvironmentModel
