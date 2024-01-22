@@ -580,13 +580,18 @@ namespace VirtoCommerce.Build
 
             foreach (var module in githubModules)
             {
-                var externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.Id == module.Id).FirstOrDefault(m => m.Ref.Contains("github.com"));
+                var externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().FirstOrDefault(m => m.Id == module.Id);
 
                 if (externalModule == null)
                 {
                     var errorMessage = $"No module {module.Id} found";
                     Assert.Fail(errorMessage);
                     throw new ArgumentNullException(errorMessage); // for sonarQube
+                }
+                else if (externalModule.Ref.StartsWith("file:///"))
+                {
+                    Log.Information($"{module.Id} already installed.");
+                    continue;
                 }
 
                 module.Version = externalModule.Version.ToString();
