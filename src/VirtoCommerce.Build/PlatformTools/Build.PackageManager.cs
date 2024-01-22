@@ -62,7 +62,7 @@ namespace VirtoCommerce.Build
              .Executes(async () =>
              {
                  var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
-                 var packageManifest = PackageManager.CreatePackageManifest(platformRelease.TagName, platformRelease.Assets.First().BrowserDownloadUrl);
+                 var packageManifest = PackageManager.CreatePackageManifest(platformRelease.TagName, platformRelease.Assets[0].BrowserDownloadUrl);
                  PackageManager.ToFile(packageManifest, PackageManifestPath);
              });
 
@@ -118,7 +118,7 @@ namespace VirtoCommerce.Build
                 module.Id = externalModule.Id;
                 module.Version = module.Version.EmptyToNull() ?? externalModule.Version.ToString();
 
-                var existingModule = modules.FirstOrDefault(m => m.Id == module.Id);
+                var existingModule = modules.Find(m => m.Id == module.Id);
 
                 if (existingModule == null)
                 {
@@ -159,7 +159,7 @@ namespace VirtoCommerce.Build
 
                 if (parts.Length > 1)
                 {
-                    moduleId = parts.First();
+                    moduleId = parts[0];
                     moduleVersion = parts.Last();
                 }
                 else if (moduleStrings.Length == 1 && !string.IsNullOrEmpty(VersionToInstall))
@@ -539,14 +539,14 @@ namespace VirtoCommerce.Build
 
         private Task<ManifestBase> UpdateStableModulesAsync(MixedPackageManifest manifest, MixedPackageManifest bundle)
         {
-            var githubModules = (GithubReleases)manifest.Sources.FirstOrDefault(s => s.Name == nameof(GithubReleases));
+            var githubModules = (GithubReleases)manifest.Sources.Find(s => s.Name == nameof(GithubReleases));
             if(githubModules == null)
             {
                 Assert.Fail("There is no GithubReleases source in the manifest");
                 return Task.FromResult((ManifestBase)manifest); // for sonarQube
             }
 
-            var bundleGithubModules = (GithubReleases)bundle.Sources.FirstOrDefault(s => s.Name == nameof(GithubReleases));
+            var bundleGithubModules = (GithubReleases)bundle.Sources.Find(s => s.Name == nameof(GithubReleases));
             if(bundleGithubModules == null)
             {
                 Assert.Fail($"Github releases not found in the bundle {BundleName}");
@@ -555,7 +555,7 @@ namespace VirtoCommerce.Build
 
             foreach (var module in githubModules.Modules)
             {
-                var bundleModule = bundleGithubModules.Modules.FirstOrDefault(m => m.Id == module.Id);
+                var bundleModule = bundleGithubModules.Modules.Find(m => m.Id == module.Id);
                 if(bundleModule != null)
                 {
                     module.Version = bundleModule.Version;

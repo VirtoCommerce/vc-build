@@ -25,7 +25,7 @@ namespace PlatformTools
                         {
                             _defaultModuleManifest
                         },
-                        Modules = new List<ModuleItem>()                        
+                        Modules = new List<ModuleItem>()
                     }
                 }
             };
@@ -91,7 +91,7 @@ namespace PlatformTools
         public static GithubReleases GetGithubModulesSource(ManifestBase manifest)
         {
             var sources = GetModuleSources(manifest);
-            return (GithubReleases)sources.FirstOrDefault(s => s.Name == nameof(GithubReleases));
+            return (GithubReleases)sources.Find(s => s.Name == nameof(GithubReleases));
         }
 
         public static List<string> GetGithubModuleManifests(ManifestBase manifest)
