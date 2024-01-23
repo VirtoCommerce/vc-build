@@ -187,7 +187,7 @@ internal partial class Build
                 Assert.True(solutions.Count() == 1, $"Solutions found: {solutions.Count()}");
                 var solutionPath = solutions.FirstOrDefault();
                 var solution = ProjectModelTasks.ParseSolution(solutionPath);
-                var webProject = solution.AllProjects.FirstOrDefault(p => p.Name.EndsWith(".Web"));
+                var webProject = solution.AllProjects.First(p => p.Name.EndsWith(".Web"));
 
                 WebPackBuildMethod(webProject);
                 PublishMethod(webProject, Path.Combine(moduleDestinationPath, "bin"), Configuration);

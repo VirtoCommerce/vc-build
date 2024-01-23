@@ -225,7 +225,7 @@ internal partial class Build : NukeBuild
     protected string ZipFilePath => ArtifactsDirectory / ZipFileName;
     protected static string GitRepositoryName => GitRepository.Identifier.Split('/')[1];
 
-    protected string ModulePackageUrl => CustomModulePackageUri.IsNullOrEmpty()
+    protected static string ModulePackageUrl => CustomModulePackageUri.IsNullOrEmpty()
         ? $"https://github.com/VirtoCommerce/{GitRepositoryName}/releases/download/{ReleaseVersion}/{ModuleManifest.Id}_{ReleaseVersion}.zip"
         : CustomModulePackageUri;
 
