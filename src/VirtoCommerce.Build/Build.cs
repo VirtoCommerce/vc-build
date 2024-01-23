@@ -214,7 +214,7 @@ internal partial class Build : NukeBuild
 
     protected static ModuleManifest ModuleManifest => ManifestReader.Read(ModuleManifestFile);
 
-    protected AbsolutePath ModuleOutputDirectory => ArtifactsDirectory / ModuleManifest.Id;
+    protected static AbsolutePath ModuleOutputDirectory => ArtifactsDirectory / ModuleManifest.Id;
 
     protected static AbsolutePath DirectoryBuildPropsPath => Solution.Directory / "Directory.Build.props";
 
@@ -223,7 +223,7 @@ internal partial class Build : NukeBuild
         : $"{WebProject.Solution.Name}.{ReleaseVersion}.zip";
 
     protected string ZipFilePath => ArtifactsDirectory / ZipFileName;
-    protected string GitRepositoryName => GitRepository.Identifier.Split('/')[1];
+    protected static string GitRepositoryName => GitRepository.Identifier.Split('/')[1];
 
     protected string ModulePackageUrl => CustomModulePackageUri.IsNullOrEmpty()
         ? $"https://github.com/VirtoCommerce/{GitRepositoryName}/releases/download/{ReleaseVersion}/{ModuleManifest.Id}_{ReleaseVersion}.zip"

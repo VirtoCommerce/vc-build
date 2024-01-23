@@ -142,34 +142,26 @@ internal partial class Build
             ? WebProject.Directory / "modules"
             : RootDirectory / "modules";
 
-        // Copy the platform
-        if (Solution?.Path != null)
-        {
-            DotNetTasks.DotNetPublish(settings => settings
-            .SetConfiguration(Configuration)
-            .SetProcessWorkingDirectory(WebProject.Directory)
-            .SetOutput(platformDirectory));
-        }
-        else
-        {
-            var nukeDir = Path.Combine(RootDirectory, ".nuke");
-            var directories = Directory.GetDirectories(RootDirectory).Where(d => !PathConstruction.IsDescendantPath(modulesSourcePath, d)
-                    && !PathConstruction.IsDescendantPath(nukeDir, d)
-                    && !PathConstruction.IsDescendantPath(ArtifactsDirectory, d)).ToArray();
-            var files = Directory.GetFiles(RootDirectory);
+        CopyPlatformDirectory(platformDirectory, modulesSourcePath);
 
-            foreach (var dir in directories)
-            {
-                var dirName = Path.GetFileName(dir);
-                FileSystemTasks.CopyDirectoryRecursively(dir, Path.Combine(platformDirectory, dirName), DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
-            }
+        CopyModules(modulesPath, modulesSourcePath);
 
-            foreach (var file in files)
-            {
-                FileSystemTasks.CopyFileToDirectory(file, platformDirectory);
-            }
+        DockerBuildContextPath = dockerBuildContext;
+
+        if (string.IsNullOrWhiteSpace(DockerImageName))
+        {
+            DockerImageName = $"{DockerUsername}/{EnvironmentName}";
         }
 
+        DockerImageTag ??= DateTime.Now.ToString("MMddyyHHmmss");
+        DockerfilePath = dockerfilePath;
+        DiscoveryPath = modulesPath;
+        ProbingPath = Path.Combine(platformDirectory, "app_data", "modules");
+        AppsettingsPath = Path.Combine(platformDirectory, "appsettings.json");
+    }
+
+    private static void CopyModules(AbsolutePath modulesPath, AbsolutePath modulesSourcePath)
+    {
         // Copy modules
         var modulesDirectories = Directory.EnumerateDirectories(modulesSourcePath);
         foreach (var directory in modulesDirectories)
@@ -210,19 +202,37 @@ internal partial class Build
                 FileSystemTasks.CopyFileToDirectory(moduleManifestPath, moduleDestinationPath, FileExistsPolicy.OverwriteIfNewer);
             }
         }
+    }
 
-        DockerBuildContextPath = dockerBuildContext;
-
-        if (string.IsNullOrWhiteSpace(DockerImageName))
+    private static void CopyPlatformDirectory(AbsolutePath platformDirectory, AbsolutePath modulesSourcePath)
+    {
+        // Copy the platform
+        if (Solution?.Path != null)
         {
-            DockerImageName = $"{DockerUsername}/{EnvironmentName}";
+            DotNetTasks.DotNetPublish(settings => settings
+            .SetConfiguration(Configuration)
+            .SetProcessWorkingDirectory(WebProject.Directory)
+            .SetOutput(platformDirectory));
         }
+        else
+        {
+            var nukeDir = Path.Combine(RootDirectory, ".nuke");
+            var directories = Directory.GetDirectories(RootDirectory).Where(d => !PathConstruction.IsDescendantPath(modulesSourcePath, d)
+                    && !PathConstruction.IsDescendantPath(nukeDir, d)
+                    && !PathConstruction.IsDescendantPath(ArtifactsDirectory, d)).ToArray();
+            var files = Directory.GetFiles(RootDirectory);
 
-        DockerImageTag ??= DateTime.Now.ToString("MMddyyHHmmss");
-        DockerfilePath = dockerfilePath;
-        DiscoveryPath = modulesPath;
-        ProbingPath = Path.Combine(platformDirectory, "app_data", "modules");
-        AppsettingsPath = Path.Combine(platformDirectory, "appsettings.json");
+            foreach (var dir in directories)
+            {
+                var dirName = Path.GetFileName(dir);
+                FileSystemTasks.CopyDirectoryRecursively(dir, Path.Combine(platformDirectory, dirName), DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
+            }
+
+            foreach (var file in files)
+            {
+                FileSystemTasks.CopyFileToDirectory(file, platformDirectory);
+            }
+        }
     }
 
     public Target CloudDeploy => _ => _
