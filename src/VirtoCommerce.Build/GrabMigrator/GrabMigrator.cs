@@ -16,7 +16,7 @@ namespace GrabMigrator
     /// <summary>
     ///     Grab-migrator target implementation
     /// </summary>
-    internal class GrabMigrator
+    internal static class GrabMigrator
     {
         public static void Do(string configFilePath)
         {
@@ -232,6 +232,11 @@ namespace GrabMigrator
                 migrationFiles = migrationFiles.GroupBy(x => new FileInfo(x).Directory?.FullName).Select(x => x.FirstOrDefault()).ToArray();
             }
 
+            ProcessMigrations(sqlStatements, migrationDirectory, config, moduleRegex, migrationNameRegex, migrationFiles);
+        }
+
+        private static void ProcessMigrations(Dictionary<string, List<string>> sqlStatements, string migrationDirectory, Config config, Regex moduleRegex, Regex migrationNameRegex, string[] migrationFiles)
+        {
             Out($"Found {migrationFiles.Length} migrations in directory {migrationDirectory}");
 
             foreach (var migrationFile in migrationFiles)
