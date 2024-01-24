@@ -95,7 +95,7 @@ namespace VirtoCommerce.Build
                  PackageManager.ToFile(packageManifest, PackageManifestPath);
              });
 
-        private void UpdateModules(string[] modulesArg, IModuleCatalog externalModuleCatalog, List<ModuleItem> modules)
+        private static void UpdateModules(string[] modulesArg, IModuleCatalog externalModuleCatalog, List<ModuleItem> modules)
         {
             foreach (var module in ParseModuleParameter(modulesArg))
             {
