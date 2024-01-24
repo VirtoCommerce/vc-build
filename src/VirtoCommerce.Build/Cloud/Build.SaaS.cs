@@ -125,103 +125,115 @@ internal partial class Build
     public Target PrepareDockerContext => _ => _
         .Before(InitPlatform, DockerLogin, BuildImage, PushImage, BuildAndPush)
         .Triggers(InitPlatform)
-        .Executes(async () =>
+        .Executes(async () => await PrepareDockerContextMethod());
+
+    private async Task PrepareDockerContextMethod()
+    {
+        var dockerBuildContext = ArtifactsDirectory / "docker";
+        var platformDirectory = dockerBuildContext / "platform";
+        var modulesPath = platformDirectory / "modules";
+        var dockerfilePath = dockerBuildContext / "Dockerfile";
+
+        FileSystemTasks.EnsureCleanDirectory(dockerBuildContext);
+
+        await HttpTasks.HttpDownloadFileAsync(DockerfileUrl, dockerfilePath);
+
+        var modulesSourcePath = Solution?.Path != null
+            ? WebProject.Directory / "modules"
+            : RootDirectory / "modules";
+
+        CopyPlatformDirectory(platformDirectory, modulesSourcePath);
+
+        CopyModules(modulesPath, modulesSourcePath);
+
+        DockerBuildContextPath = dockerBuildContext;
+
+        if (string.IsNullOrWhiteSpace(DockerImageName))
         {
-            var dockerBuildContext = ArtifactsDirectory / "docker";
-            var platformDirectory = dockerBuildContext / "platform";
-            var modulesPath = platformDirectory / "modules";
-            var dockerfilePath = dockerBuildContext / "Dockerfile";
+            DockerImageName = $"{DockerUsername}/{EnvironmentName}";
+        }
 
-            FileSystemTasks.EnsureCleanDirectory(dockerBuildContext);
+        DockerImageTag ??= DateTime.Now.ToString("MMddyyHHmmss");
+        DockerfilePath = dockerfilePath;
+        DiscoveryPath = modulesPath;
+        ProbingPath = Path.Combine(platformDirectory, "app_data", "modules");
+        AppsettingsPath = Path.Combine(platformDirectory, "appsettings.json");
+    }
 
-            await HttpTasks.HttpDownloadFileAsync(DockerfileUrl, dockerfilePath);
-
-            var modulesSourcePath = Solution?.Path != null
-                ? WebProject.Directory / "modules"
-                : RootDirectory / "modules";
-
-            // Copy the platform
-            if (Solution?.Path != null)
+    private static void CopyModules(AbsolutePath modulesPath, AbsolutePath modulesSourcePath)
+    {
+        // Copy modules
+        var modulesDirectories = Directory.EnumerateDirectories(modulesSourcePath);
+        foreach (var directory in modulesDirectories)
+        {
+            var webProjects = Directory.EnumerateFiles(directory, $"*.Web.csproj");
+            var moduleDirectoryName = Path.GetFileName(directory);
+            var moduleDestinationPath = Path.Combine(modulesPath, moduleDirectoryName);
+            if (!webProjects.Any())
             {
-                DotNetTasks.DotNetPublish(settings => settings
-                .SetConfiguration(Configuration)
-                .SetProcessWorkingDirectory(WebProject.Directory)
-                .SetOutput(platformDirectory));
+                FileSystemTasks.CopyDirectoryRecursively(directory, moduleDestinationPath, DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
             }
             else
             {
-                var nukeDir = Path.Combine(RootDirectory, ".nuke");
-                var directories = Directory.GetDirectories(RootDirectory).Where(d => !PathConstruction.IsDescendantPath(modulesSourcePath, d)
-                        && !PathConstruction.IsDescendantPath(nukeDir, d)
-                        && !PathConstruction.IsDescendantPath(ArtifactsDirectory, d)).ToArray();
-                var files = Directory.GetFiles(RootDirectory);
-
-                foreach ( var dir in directories)
+                var webProjectPath = webProjects.FirstOrDefault();
+                var directoryInfo = new DirectoryInfo(directory);
+                if (directoryInfo.LinkTarget != null)
                 {
-                    var dirName = Path.GetFileName(dir);
-                    FileSystemTasks.CopyDirectoryRecursively(dir, Path.Combine(platformDirectory, dirName), DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
+                    webProjectPath = Path.Combine(directoryInfo.LinkTarget, Path.GetFileName(webProjectPath));
                 }
 
-                foreach( var file in files)
+                var solutionDir = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(webProjectPath)));
+                var solutions = Directory.EnumerateFiles(solutionDir, "*.sln");
+                Assert.True(solutions.Count() == 1, $"Solutions found: {solutions.Count()}");
+                var solutionPath = solutions.FirstOrDefault();
+                var solution = ProjectModelTasks.ParseSolution(solutionPath);
+                var webProject = solution.AllProjects.First(p => p.Name.EndsWith(".Web"));
+
+                WebPackBuildMethod(webProject);
+                PublishMethod(webProject, Path.Combine(moduleDestinationPath, "bin"), Configuration);
+                foreach (var contentDirectory in _moduleContentFolders)
                 {
-                    FileSystemTasks.CopyFileToDirectory(file, platformDirectory);
+                    var contentDestination = Path.Combine(moduleDestinationPath, contentDirectory);
+                    var contentSource = Path.Combine(webProject.Directory, contentDirectory);
+                    FileSystemTasks.CopyDirectoryRecursively(contentSource, contentDestination, DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
                 }
+
+                var moduleManifestPath = webProject.Directory / "module.manifest";
+                FileSystemTasks.CopyFileToDirectory(moduleManifestPath, moduleDestinationPath, FileExistsPolicy.OverwriteIfNewer);
             }
+        }
+    }
 
-            // Copy modules
-            var modulesDirectories =  Directory.EnumerateDirectories(modulesSourcePath);
-            foreach (var directory in modulesDirectories)
+    private static void CopyPlatformDirectory(AbsolutePath platformDirectory, AbsolutePath modulesSourcePath)
+    {
+        // Copy the platform
+        if (Solution?.Path != null)
+        {
+            DotNetTasks.DotNetPublish(settings => settings
+            .SetConfiguration(Configuration)
+            .SetProcessWorkingDirectory(WebProject.Directory)
+            .SetOutput(platformDirectory));
+        }
+        else
+        {
+            var nukeDir = Path.Combine(RootDirectory, ".nuke");
+            var directories = Directory.GetDirectories(RootDirectory).Where(d => !PathConstruction.IsDescendantPath(modulesSourcePath, d)
+                    && !PathConstruction.IsDescendantPath(nukeDir, d)
+                    && !PathConstruction.IsDescendantPath(ArtifactsDirectory, d)).ToArray();
+            var files = Directory.GetFiles(RootDirectory);
+
+            foreach (var dir in directories)
             {
-                var webProjects = Directory.EnumerateFiles(directory, $"*.Web.csproj");
-                var moduleDirectoryName = Path.GetFileName(directory);
-                var moduleDestinationPath = Path.Combine(modulesPath, moduleDirectoryName);
-                if (!webProjects.Any())
-                {
-                    FileSystemTasks.CopyDirectoryRecursively(directory, moduleDestinationPath, DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
-                }
-                else
-                {
-                    var webProjectPath = webProjects.FirstOrDefault();
-                    var directoryInfo = new DirectoryInfo(directory);
-                    if (directoryInfo.LinkTarget != null)
-                    {
-                        webProjectPath = Path.Combine(directoryInfo.LinkTarget, Path.GetFileName(webProjectPath));
-                    }
-
-                    var solutionDir = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(webProjectPath)));
-                    var solutions = Directory.EnumerateFiles(solutionDir, "*.sln");
-                    Assert.True(solutions.Count() == 1, $"Solutions found: {solutions.Count()}");
-                    var solutionPath = solutions.FirstOrDefault();
-                    var solution = ProjectModelTasks.ParseSolution(solutionPath);
-                    var webProject = solution.AllProjects.FirstOrDefault(p => p.Name.EndsWith(".Web"));
-
-                    WebPackBuildBody(webProject);
-                    PublishBody(webProject, Path.Combine(moduleDestinationPath, "bin"), Configuration);
-                    foreach (var contentDirectory in _moduleContentFolders)
-                    {
-                        var contentDestination = Path.Combine(moduleDestinationPath, contentDirectory);
-                        var contentSource = Path.Combine(webProject.Directory, contentDirectory);
-                        FileSystemTasks.CopyDirectoryRecursively(contentSource, contentDestination, DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
-                    }
-
-                    var moduleManifestPath = webProject.Directory / "module.manifest";
-                    FileSystemTasks.CopyFileToDirectory(moduleManifestPath, moduleDestinationPath, FileExistsPolicy.OverwriteIfNewer);
-                }
+                var dirName = Path.GetFileName(dir);
+                FileSystemTasks.CopyDirectoryRecursively(dir, Path.Combine(platformDirectory, dirName), DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
             }
 
-            DockerBuildContextPath = dockerBuildContext;
-
-            if (string.IsNullOrWhiteSpace(DockerImageName))
+            foreach (var file in files)
             {
-                DockerImageName = $"{DockerUsername}/{EnvironmentName}";
+                FileSystemTasks.CopyFileToDirectory(file, platformDirectory);
             }
-
-            DockerImageTag ??= DateTime.Now.ToString("MMddyyHHmmss");
-            DockerfilePath = dockerfilePath;
-            DiscoveryPath = modulesPath;
-            ProbingPath = Path.Combine(platformDirectory, "app_data", "modules");
-            AppsettingsPath = Path.Combine(platformDirectory, "appsettings.json");
-        });
+        }
+    }
 
     public Target CloudDeploy => _ => _
         .DependsOn(PrepareDockerContext, BuildAndPush)

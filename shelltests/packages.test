@@ -4,7 +4,7 @@ vc-build install -stable -v 4
 >>>= 0
 
 # Update to Bundle #5
-vc-build update -v 4
+vc-build update -v 5
 >>>2
 >>>= 0
 

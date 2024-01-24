@@ -1,4 +1,5 @@
 using Nuke.Common;
+using GrabMigratorNamespace = GrabMigrator;
 
 namespace VirtoCommerce.Build
 {
@@ -11,7 +12,7 @@ namespace VirtoCommerce.Build
             .Requires(() => GrabMigratorConfig)
             .Executes(() =>
             {
-                new GrabMigrator.GrabMigrator().Do(GrabMigratorConfig);
+               GrabMigratorNamespace.GrabMigrator.Do(GrabMigratorConfig);
             });
     }
 }
