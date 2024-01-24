@@ -218,20 +218,20 @@ internal partial class Build : NukeBuild
 
     protected static AbsolutePath DirectoryBuildPropsPath => Solution.Directory / "Directory.Build.props";
 
-    protected string ZipFileName => IsModule
+    protected static string ZipFileName => IsModule
         ? $"{ModuleManifest.Id}_{ReleaseVersion}.zip"
         : $"{WebProject.Solution.Name}.{ReleaseVersion}.zip";
 
-    protected string ZipFilePath => ArtifactsDirectory / ZipFileName;
+    protected static string ZipFilePath => ArtifactsDirectory / ZipFileName;
     protected static string GitRepositoryName => GitRepository.Identifier.Split('/')[1];
 
     protected static string ModulePackageUrl => CustomModulePackageUri.IsNullOrEmpty()
         ? $"https://github.com/VirtoCommerce/{GitRepositoryName}/releases/download/{ReleaseVersion}/{ModuleManifest.Id}_{ReleaseVersion}.zip"
         : CustomModulePackageUri;
 
-    protected GitRepository ModulesRepository => GitRepository.FromUrl(ModulesJsonRepoUrl);
+    protected static GitRepository ModulesRepository => GitRepository.FromUrl(ModulesJsonRepoUrl);
 
-    protected bool IsModule => ModuleManifestFile.FileExists();
+    protected static bool IsModule => ModuleManifestFile.FileExists();
 
     public Target Clean => _ => _
         .Before(Restore)
@@ -467,7 +467,7 @@ internal partial class Build : NukeBuild
 
     private static void PublishMethod(Project webProject, string output, Configuration configuration)
     {
-        Assert.NotNull(webProject, "Web Project is not found!");
+        webProject.NotNull("Web Project is not found!");
         DotNetPublish(settings => settings
             .SetProcessWorkingDirectory(webProject.Directory)
             .EnableNoRestore()
@@ -737,10 +737,7 @@ internal partial class Build : NukeBuild
 
     public Target StartAnalyzer => _ => _
         .DependsOn(SonarQubeStart, SonarQubeEnd)
-        .Executes(() =>
-        {
-            Log.Information("Sonar validation done.");
-        });
+        .Executes(() => Log.Information("Sonar validation done."));
 
     public Target MassPullAndBuild => _ => _
         .Requires(() => ModulesFolderPath)
@@ -923,7 +920,7 @@ internal partial class Build : NukeBuild
         }
     }
 
-    public void ChangeProjectVersion(string versionPrefix = null, string versionSuffix = null)
+    public static void ChangeProjectVersion(string versionPrefix = null, string versionSuffix = null)
     {
         //theme
         if (IsTheme)
@@ -1015,7 +1012,7 @@ internal partial class Build : NukeBuild
         xmlDocument.Save(writer);
     }
 
-    private string GetThemeVersion(string packageJsonPath)
+    private static string GetThemeVersion(string packageJsonPath)
     {
         var json = JsonDocument.Parse(File.ReadAllText(packageJsonPath));
 
@@ -1042,7 +1039,7 @@ internal partial class Build : NukeBuild
         CustomVersionPrefix = newPrefix;
     }
 
-    private async Task<string> SendSwaggerSchemaToValidator(HttpClient httpClient, string schemaPath,
+    private static async Task<string> SendSwaggerSchemaToValidator(HttpClient httpClient, string schemaPath,
         string validatorUri)
     {
         var swaggerSchema = await File.ReadAllTextAsync(schemaPath);
@@ -1102,7 +1099,7 @@ internal partial class Build : NukeBuild
 
         var release = await githubClient.Repository.Release.Create(owner, repo, newRelease);
 
-        using var artifactStream = File.OpenRead(artifactPath);
+        await using var artifactStream = File.OpenRead(artifactPath);
         var assetUpload = new ReleaseAssetUpload
         {
             FileName = Path.GetFileName(artifactPath),

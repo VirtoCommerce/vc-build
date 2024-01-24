@@ -15,7 +15,6 @@ namespace PlatformTools
 {
     public class LocalCatalog : LocalStorageModuleCatalog
     {
-
         private readonly LocalStorageModuleCatalogOptions _options;
         private readonly ILogger<LocalStorageModuleCatalog> _logger;
         private readonly IInternalDistributedLockService _distributedLockProvider;
@@ -108,25 +107,21 @@ namespace PlatformTools
             {
                 if (File.Exists(markerFilePath))
                 {
-                    using (var stream = File.OpenText(markerFilePath))
-                    {
-                        marker = stream.ReadToEnd();
-                    }
+                    using var stream = File.OpenText(markerFilePath);
+                    marker = stream.ReadToEnd();
                 }
                 else
                 {
                     // Non-marked storage, mark by placing a file with resource id.                    
-                    using (var stream = File.CreateText(markerFilePath))
-                    {
-                        stream.Write(marker);
-                    }
+                    using var stream = File.CreateText(markerFilePath);
+                    stream.Write(marker);
                 }
             }
             catch (IOException exc)
             {
-                throw new PlatformException($"An IO error occurred while marking local modules storage.", exc);
+                throw new PlatformException("An IO error occurred while marking local modules storage.", exc);
             }
-            return $@"{nameof(LocalStorageModuleCatalog)}-{marker}";
+            return $"{nameof(LocalStorageModuleCatalog)}-{marker}";
         }
 
         private static string GetFileAbsoluteUri(string rootPath, string relativePath)
@@ -216,22 +211,11 @@ namespace PlatformTools
                 {
                     File.Copy(sourceFilePath, targetFilePath, true);
                 }
-                catch (IOException)
+                catch (IOException) when (versionsAreSameButLaterDate)
                 {
-                    // VP-3719: Need to catch to avoid possible problem when different instances are trying to update the same file with the same version but different dates in the probing folder.
-                    // We should not fail platform start in that case - just add warning into the log. In case of unability to place newer version - should fail platform start.
-                    if (versionsAreSameButLaterDate)
-                    {
-                        _logger.LogWarning("File '{TargetFilePath}' was not updated by '{SourceFilePath}' of the same version but later modified date, because probably it was used by another process", targetFilePath, sourceFilePath);
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    _logger.LogWarning("File '{TargetFilePath}' was not updated by '{SourceFilePath}' of the same version but later modified date, because probably it was used by another process", targetFilePath, sourceFilePath);
                 }
             }
         }
     }
-
-
 }

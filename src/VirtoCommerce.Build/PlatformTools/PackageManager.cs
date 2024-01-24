@@ -66,8 +66,6 @@ namespace PlatformTools
 
         public static List<ModuleSource> GetModuleSources(ManifestBase manifest)
         {
-
-            List<ModuleSource> result;
             switch (manifest)
             {
                 case PackageManifest pm:
@@ -76,16 +74,12 @@ namespace PlatformTools
                         Modules = pm.Modules,
                         ModuleSources = pm.ModuleSources
                     };
-                    result = new List<ModuleSource>() { githubReleases };
-                    break;
+                    return new List<ModuleSource>() { githubReleases };
                 case MixedPackageManifest mm:
-                    result = mm.Sources;
-                    break;
+                    return mm.Sources;
                 default:
-                    result = new List<ModuleSource>();
-                    break;
+                    return new List<ModuleSource>();
             }
-            return result;
         }
 
         public static GithubReleases GetGithubModulesSource(ManifestBase manifest)
@@ -96,40 +90,30 @@ namespace PlatformTools
 
         public static List<string> GetGithubModuleManifests(ManifestBase manifest)
         {
-            List<string> result;
             switch (manifest)
             {
                 case PackageManifest pm:
-                    result = pm.ModuleSources;
-                    break;
+                    return pm.ModuleSources;
                 case MixedPackageManifest mm:
                     var githubReleasesSource = mm.Sources.Where(s => s.Name == nameof(GithubReleases)).OfType<GithubReleases>().FirstOrDefault();
-                    result = githubReleasesSource?.ModuleSources ?? new List<string>();
-                    break;
+                    return githubReleasesSource?.ModuleSources ?? new List<string>();
                 default:
-                    result = new List<string>();
-                    break;
+                    return new List<string>();
             }
-            return result;
         }
 
         public static List<ModuleItem> GetGithubModules(ManifestBase manifest)
         {
-            List<ModuleItem> result;
             switch (manifest)
             {
                 case PackageManifest pm:
-                    result = pm.Modules;
-                    break;
+                    return pm.Modules;
                 case MixedPackageManifest mm:
                     var githubReleasesSource = mm.Sources.Where(s => s.Name == nameof(GithubReleases)).OfType<GithubReleases>().FirstOrDefault();
-                    result = githubReleasesSource?.Modules ?? new List<ModuleItem>();
-                    break;
+                    return githubReleasesSource?.Modules ?? new List<ModuleItem>();
                 default:
-                    result = new List<ModuleItem>();
-                    break;
+                    return new List<ModuleItem>();
             }
-            return result;
         }
     }
 }

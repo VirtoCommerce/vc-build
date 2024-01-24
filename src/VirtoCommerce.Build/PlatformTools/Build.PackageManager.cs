@@ -210,10 +210,7 @@ namespace VirtoCommerce.Build
             .After(Backup, Install, Update, InstallPlatform, InstallModules)
             .OnlyWhenDynamic(() => FailedTargets.Any() && SucceededTargets.Contains(Backup))
             .AssuredAfterFailure()
-            .Executes(() =>
-            {
-                CompressionTasks.UncompressTarGZip(BackupFile, RootDirectory);
-            });
+            .Executes(() => CompressionTasks.UncompressTarGZip(BackupFile, RootDirectory));
 
         public Target RemoveBackup => _ => _
             .After(Backup, Rollback)
@@ -221,10 +218,7 @@ namespace VirtoCommerce.Build
             .AssuredAfterFailure()
             .Unlisted()
             .DependsOn(Backup)
-            .Executes(() =>
-            {
-                FileSystemTasks.DeleteFile(BackupFile);
-            });
+            .Executes(() => FileSystemTasks.DeleteFile(BackupFile));
 
         public Target InstallPlatform => _ => _
              .OnlyWhenDynamic(() => PlatformVersionChanged() && !IsModulesInstallation())
@@ -287,7 +281,7 @@ namespace VirtoCommerce.Build
                 }
                 else
                 {
-                    Log.Information($"appsettings.json was restored");
+                    Log.Information("appsettings.json was restored");
                 }
             }
         }
@@ -388,10 +382,7 @@ namespace VirtoCommerce.Build
 
                      modulesToInstall.AddRange(missingModules);
                  }
-                 modulesToInstall.ForEach(module =>
-                 {
-                     module.DependsOn.Clear();
-                 });
+                 modulesToInstall.ForEach(module => module.DependsOn.Clear());
                  try
                  {
                     moduleInstaller.Install(modulesToInstall, progress);
@@ -507,7 +498,7 @@ namespace VirtoCommerce.Build
                  PackageManager.ToFile(manifest, PackageManifestPath);
              });
 
-        private async Task<ManifestBase> UpdateEdgeAsync(ManifestBase manifest, bool platformOnly)
+        private static async Task<ManifestBase> UpdateEdgeAsync(ManifestBase manifest, bool platformOnly)
         {
             manifest = await UpdateEdgePlatformAsync(manifest);
             if(!platformOnly)
@@ -602,35 +593,33 @@ namespace VirtoCommerce.Build
 
         private static async Task<ManifestBase> OpenOrCreateManifest(string packageManifestPath, bool isEdge)
         {
-            ManifestBase packageManifest;
             var platformWebDllPath = Path.Combine(Directory.GetParent(packageManifestPath).FullName, "VirtoCommerce.Platform.Web.dll");
             if (!isEdge)
             {
                 SkipDependencySolving = true;
-                if(!File.Exists(packageManifestPath))
+                if (!File.Exists(packageManifestPath))
                 {
                     await DownloadBundleManifest(BundleName, packageManifestPath);
-                } 
-                packageManifest = PackageManager.FromFile(packageManifestPath);
+                }
+                return PackageManager.FromFile(packageManifestPath);
             }
             else if (!File.Exists(packageManifestPath) && File.Exists(platformWebDllPath))
             {
                 var discoveryAbsolutePath = Path.GetFullPath(GetDiscoveryPath());
-                packageManifest = CreateManifestFromEnvironment(RootDirectory, (AbsolutePath)discoveryAbsolutePath);
+                return CreateManifestFromEnvironment(RootDirectory, (AbsolutePath)discoveryAbsolutePath);
             }
             else if (!File.Exists(packageManifestPath))
             {
                 Log.Information("vc-package.json does not exist.");
                 Log.Information("Looking for the platform release");
                 var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
-                packageManifest = PackageManager.CreatePackageManifest(platformRelease.TagName);
+                return PackageManager.CreatePackageManifest(platformRelease.TagName);
             }
             else
             {
                 SkipDependencySolving = true;
-                packageManifest = PackageManager.FromFile(PackageManifestPath);
+                return PackageManager.FromFile(PackageManifestPath);
             }
-            return packageManifest;
         }
 
         private static async Task DownloadBundleManifest(string bundleName, string outFile)
