@@ -36,93 +36,12 @@ namespace GrabMigrator
 
                         if (config?.Grab == true)
                         {
-                            OutBox("Grab mode");
-
-                            Out(@"Refresh connection strings references...");
-                            config.ConnectionStringsRefs = new Dictionary<string, List<string>>();
-
-                            foreach (var migrationDirectory in config.MigrationDirectories)
-                            {
-                                Out($@"Looking in {migrationDirectory}...");
-                                GrabConnectionStringsRefsFromModules(config.ConnectionStringsRefs, migrationDirectory);
-                            }
-
-                            File.WriteAllText(configFilePath, JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true }));
-
-                            Out(@"Looking for migrations in migration directories recursively...");
-                            sqlStatements = GrabSqlStatements(config);
+                            sqlStatements = EnableGrabMode(configFilePath, config, sqlStatements);
                         }
 
                         if (config?.Apply == true)
                         {
-                            OutBox("Apply mode");
-
-                            sqlStatements ??= ReadSavedStatements(config.StatementsDirectory);
-
-                            if (sqlStatements != null)
-                            {
-                                Out(@"Read platform config file...");
-
-                                var connectionStrings = GrabConnectionStrings(config.PlatformConfigFile);
-
-                                foreach (var module in config.ApplyingOrder)
-                                {
-                                    OutBox($@"Applying scripts for module: {module}...");
-
-                                    if (!sqlStatements.ContainsKey(module))
-                                    {
-                                        Out($@"Warning! There is no SQL expressions for module: {module}");
-                                        continue;
-                                    }
-
-                                    var connectionString = string.Empty;
-
-                                    if (config.ConnectionStringsRefs.ContainsKey(module))
-                                    {
-                                        foreach (var moduleConnStringKey in config.ConnectionStringsRefs[module])
-                                        {
-                                            connectionString = connectionStrings.ContainsKey(moduleConnStringKey) ? connectionStrings[moduleConnStringKey] : string.Empty;
-
-                                            if (!string.IsNullOrEmpty(connectionString))
-                                            {
-                                                break;
-                                            }
-                                        }
-                                    }
-
-                                    // Fallback connection string key is always "VirtoCommerce"
-                                    connectionString = connectionString.EmptyToNull() ?? connectionStrings["VirtoCommerce"];
-
-                                    using (var connection = (IDbConnection)new SqlConnection(connectionString))
-                                    {
-                                        // One connection and transaction per each module
-                                        connection.Open();
-                                        var transaction = connection.BeginTransaction();
-
-                                        try
-                                        {
-                                            foreach (var commandText in sqlStatements[module])
-                                            {
-                                                Out($@"Run SQL statement:{Environment.NewLine}{commandText}");
-                                                var command = connection.CreateCommand();
-                                                command.Transaction = transaction;
-                                                command.CommandTimeout = config.CommandTimeout;
-                                                command.CommandText = commandText;
-                                                command.ExecuteNonQuery();
-                                            }
-
-                                            transaction.Commit();
-                                            Out($@"Successfully applied for module: {module}!");
-                                        }
-                                        catch
-                                        {
-                                            transaction.Rollback();
-                                            Out($@"Statement not executed. Transaction for module {module} rolled back.");
-                                            throw;
-                                        }
-                                    }
-                                }
-                            }
+                            EnableApplyMode(config, sqlStatements);
                         }
 
                         OutBox(@"Complete!");
@@ -143,6 +62,99 @@ namespace GrabMigrator
                 Out("vc-build GrabMigrator --grab-migrator-config <ConfigFile>");
                 Fail("Configuration file required!");
             }
+        }
+
+        private void EnableApplyMode(Config config, Dictionary<string, List<string>> sqlStatements)
+        {
+            OutBox("Apply mode");
+
+            sqlStatements ??= ReadSavedStatements(config.StatementsDirectory);
+
+            if (sqlStatements != null)
+            {
+                Out(@"Read platform config file...");
+
+                var connectionStrings = GrabConnectionStrings(config.PlatformConfigFile);
+
+                foreach (var module in config.ApplyingOrder)
+                {
+                    OutBox($@"Applying scripts for module: {module}...");
+
+                    if (!sqlStatements.ContainsKey(module))
+                    {
+                        Out($@"Warning! There is no SQL expressions for module: {module}");
+                        continue;
+                    }
+
+                    var connectionString = string.Empty;
+
+                    if (config.ConnectionStringsRefs.ContainsKey(module))
+                    {
+                        foreach (var moduleConnStringKey in config.ConnectionStringsRefs[module])
+                        {
+                            connectionString = connectionStrings.ContainsKey(moduleConnStringKey) ? connectionStrings[moduleConnStringKey] : string.Empty;
+
+                            if (!string.IsNullOrEmpty(connectionString))
+                            {
+                                break;
+                            }
+                        }
+                    }
+
+                    // Fallback connection string key is always "VirtoCommerce"
+                    connectionString = connectionString.EmptyToNull() ?? connectionStrings["VirtoCommerce"];
+
+                    using (var connection = (IDbConnection)new SqlConnection(connectionString))
+                    {
+                        // One connection and transaction per each module
+                        connection.Open();
+                        var transaction = connection.BeginTransaction();
+
+                        try
+                        {
+                            foreach (var commandText in sqlStatements[module])
+                            {
+                                Out($@"Run SQL statement:{Environment.NewLine}{commandText}");
+                                var command = connection.CreateCommand();
+                                command.Transaction = transaction;
+                                command.CommandTimeout = config.CommandTimeout;
+                                command.CommandText = commandText;
+                                command.ExecuteNonQuery();
+                            }
+
+                            transaction.Commit();
+                            Out($@"Successfully applied for module: {module}!");
+                        }
+                        catch
+                        {
+                            transaction.Rollback();
+                            Out($@"Statement not executed. Transaction for module {module} rolled back.");
+                            throw;
+                        }
+                    }
+                }
+            }
+        }
+
+        private Dictionary<string, List<string>> EnableGrabMode(string configFilePath, Config config, Dictionary<string, List<string>> sqlStatements)
+        {
+            sqlStatements ??= new Dictionary<string, List<string>>();
+            OutBox("Grab mode");
+
+            Out(@"Refresh connection strings references...");
+            config.ConnectionStringsRefs = new Dictionary<string, List<string>>();
+
+            foreach (var migrationDirectory in config.MigrationDirectories)
+            {
+                Out($@"Looking in {migrationDirectory}...");
+                GrabConnectionStringsRefsFromModules(config.ConnectionStringsRefs, migrationDirectory);
+            }
+
+            File.WriteAllText(configFilePath, JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true }));
+
+            Out(@"Looking for migrations in migration directories recursively...");
+            sqlStatements = GrabSqlStatements(config);
+            return sqlStatements;
         }
 
         private Dictionary<string, string> GrabConnectionStrings(string platformConfigFile)

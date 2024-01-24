@@ -779,11 +779,9 @@ internal partial class Build : NukeBuild
             }
             catch (AggregateException ex)
             {
-                foreach (var innerException in ex.Flatten().InnerExceptions)
+                foreach (var innerException in ex.Flatten().InnerExceptions.OfType<ApiValidationException>())
                 {
-                    if (innerException is ApiValidationException exception)
-                    {
-                        var responseString = exception?.HttpResponse?.Body.ToString() ?? string.Empty;
+                        var responseString = innerException.HttpResponse?.Body.ToString() ?? string.Empty;
                         var responseDocument = JsonDocument.Parse(responseString);
                         var alreadyExistsError = false;
 
@@ -804,14 +802,9 @@ internal partial class Build : NukeBuild
                         }
 
                         Log.Error($"Api Validation Error: {responseString}");
-                    }
-                    else
-                    {
-                        Log.Error(innerException, "Error");
-                    }
                 }
 
-                Assert.Fail("Publish Release Failed");
+                Assert.Fail("Publish Release Failed", ex);
             }
         });
 
@@ -823,30 +816,30 @@ internal partial class Build : NukeBuild
 
     public static int Main(string[] args)
     {
-        if (!MSBuildLocator.IsRegistered)
-        {
-            MSBuildLocator.RegisterDefaults();
-        }
+        RegisterMSBuildLocator();
 
         Environment.SetEnvironmentVariable("NUKE_TELEMETRY_OPTOUT", "1");
-        if (args.ElementAtOrDefault(0)?.ToLowerInvariant() == "help" || args.Length == 0)
+
+        CheckHelpRequested(args);
+
+        CreateNukeDirectory();
+
+        ClearTempOnExit();
+
+        var exitCode = Execute<Build>(x => x.Compile);
+        return _exitCode ?? exitCode;
+    }
+
+    private static void ClearTempOnExit()
+    {
+        if (ClearTempBeforeExit)
         {
-            if (args.Length >= 2)
-            {
-                var help = HelpProvider.HelpProvider.GetHelpForTarget(args[1]);
-                Console.WriteLine(help);
-            }
-            else if (args.Length <= 1)
-            {
-                var targets = HelpProvider.HelpProvider.GetTargets();
-                var stringBuilder = new StringBuilder("There is a help for targets:" + Environment.NewLine);
-                targets.ForEach(target => stringBuilder = stringBuilder.Append("- ").AppendLine(target));
-                Console.WriteLine(stringBuilder.ToString());
-            }
-
-            Environment.Exit(0);
+            FileSystemTasks.DeleteDirectory(TemporaryDirectory);
         }
+    }
 
+    private static void CreateNukeDirectory()
+    {
         var currentDirectory = Directory.GetCurrentDirectory();
 
         var nukeFiles = Directory.GetFiles(currentDirectory, ".nuke");
@@ -872,14 +865,35 @@ internal partial class Build : NukeBuild
             var nukeFile = nukeFiles[0];
             ConvertDotNukeFile(nukeFile);
         }
+    }
 
-        if (ClearTempBeforeExit)
+    private static void CheckHelpRequested(string[] args)
+    {
+        if (args.ElementAtOrDefault(0)?.ToLowerInvariant() == "help" || args.Length == 0)
         {
-            FileSystemTasks.DeleteDirectory(TemporaryDirectory);
-        }
+            if (args.Length >= 2)
+            {
+                var help = HelpProvider.HelpProvider.GetHelpForTarget(args[1]);
+                Console.WriteLine(help);
+            }
+            else if (args.Length <= 1)
+            {
+                var targets = HelpProvider.HelpProvider.GetTargets();
+                var stringBuilder = new StringBuilder("There is a help for targets:" + Environment.NewLine);
+                targets.ForEach(target => stringBuilder = stringBuilder.Append("- ").AppendLine(target));
+                Console.WriteLine(stringBuilder.ToString());
+            }
 
-        var exitCode = Execute<Build>(x => x.Compile);
-        return _exitCode ?? exitCode;
+            Environment.Exit(0);
+        }
+    }
+
+    private static void RegisterMSBuildLocator()
+    {
+        if (!MSBuildLocator.IsRegistered)
+        {
+            MSBuildLocator.RegisterDefaults();
+        }
     }
 
     private static void ConvertDotNukeFile(string path)
