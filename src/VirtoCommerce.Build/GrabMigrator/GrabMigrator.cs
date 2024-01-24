@@ -83,21 +83,7 @@ namespace GrabMigrator
                     Out($@"Warning! There is no SQL expressions for module: {module}");
                     continue;
                 }
-
-                var connectionString = string.Empty;
-
-                if (config.ConnectionStringsRefs.ContainsKey(module))
-                {
-                    foreach (var moduleConnStringKey in config.ConnectionStringsRefs[module])
-                    {
-                        connectionString = connectionStrings.ContainsKey(moduleConnStringKey) ? connectionStrings[moduleConnStringKey] : string.Empty;
-
-                        if (!string.IsNullOrEmpty(connectionString))
-                        {
-                            break;
-                        }
-                    }
-                }
+                var connectionString = GetConnectionString(config, connectionStrings, module);
 
                 // Fallback connection string key is always "VirtoCommerce"
                 connectionString = connectionString.EmptyToNull() ?? connectionStrings["VirtoCommerce"];
@@ -131,6 +117,26 @@ namespace GrabMigrator
                     }
                 }
             }
+        }
+
+        private static string GetConnectionString(Config config, Dictionary<string, string> connectionStrings, string module)
+        {
+            var connectionString = string.Empty;
+
+            if (config.ConnectionStringsRefs.ContainsKey(module))
+            {
+                foreach (var moduleConnStringKey in config.ConnectionStringsRefs[module])
+                {
+                    connectionString = connectionStrings.ContainsKey(moduleConnStringKey) ? connectionStrings[moduleConnStringKey] : string.Empty;
+
+                    if (!string.IsNullOrEmpty(connectionString))
+                    {
+                        return connectionString;
+                    }
+                }
+            }
+
+            return connectionString;
         }
 
         private Dictionary<string, List<string>> EnableGrabMode(string configFilePath, Config config, Dictionary<string, List<string>> sqlStatements)
