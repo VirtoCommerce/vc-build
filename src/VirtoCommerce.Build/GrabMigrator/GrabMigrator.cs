@@ -70,67 +70,64 @@ namespace GrabMigrator
 
             sqlStatements ??= ReadSavedStatements(config.StatementsDirectory);
 
-            if (sqlStatements != null)
+            Out(@"Read platform config file...");
+
+            var connectionStrings = GrabConnectionStrings(config.PlatformConfigFile);
+
+            foreach (var module in config.ApplyingOrder)
             {
-                Out(@"Read platform config file...");
+                OutBox($@"Applying scripts for module: {module}...");
 
-                var connectionStrings = GrabConnectionStrings(config.PlatformConfigFile);
-
-                foreach (var module in config.ApplyingOrder)
+                if (!sqlStatements.ContainsKey(module))
                 {
-                    OutBox($@"Applying scripts for module: {module}...");
+                    Out($@"Warning! There is no SQL expressions for module: {module}");
+                    continue;
+                }
 
-                    if (!sqlStatements.ContainsKey(module))
+                var connectionString = string.Empty;
+
+                if (config.ConnectionStringsRefs.ContainsKey(module))
+                {
+                    foreach (var moduleConnStringKey in config.ConnectionStringsRefs[module])
                     {
-                        Out($@"Warning! There is no SQL expressions for module: {module}");
-                        continue;
-                    }
+                        connectionString = connectionStrings.ContainsKey(moduleConnStringKey) ? connectionStrings[moduleConnStringKey] : string.Empty;
 
-                    var connectionString = string.Empty;
-
-                    if (config.ConnectionStringsRefs.ContainsKey(module))
-                    {
-                        foreach (var moduleConnStringKey in config.ConnectionStringsRefs[module])
+                        if (!string.IsNullOrEmpty(connectionString))
                         {
-                            connectionString = connectionStrings.ContainsKey(moduleConnStringKey) ? connectionStrings[moduleConnStringKey] : string.Empty;
-
-                            if (!string.IsNullOrEmpty(connectionString))
-                            {
-                                break;
-                            }
+                            break;
                         }
                     }
+                }
 
-                    // Fallback connection string key is always "VirtoCommerce"
-                    connectionString = connectionString.EmptyToNull() ?? connectionStrings["VirtoCommerce"];
+                // Fallback connection string key is always "VirtoCommerce"
+                connectionString = connectionString.EmptyToNull() ?? connectionStrings["VirtoCommerce"];
 
-                    using (var connection = (IDbConnection)new SqlConnection(connectionString))
+                using (var connection = (IDbConnection)new SqlConnection(connectionString))
+                {
+                    // One connection and transaction per each module
+                    connection.Open();
+                    var transaction = connection.BeginTransaction();
+
+                    try
                     {
-                        // One connection and transaction per each module
-                        connection.Open();
-                        var transaction = connection.BeginTransaction();
-
-                        try
+                        foreach (var commandText in sqlStatements[module])
                         {
-                            foreach (var commandText in sqlStatements[module])
-                            {
-                                Out($@"Run SQL statement:{Environment.NewLine}{commandText}");
-                                var command = connection.CreateCommand();
-                                command.Transaction = transaction;
-                                command.CommandTimeout = config.CommandTimeout;
-                                command.CommandText = commandText;
-                                command.ExecuteNonQuery();
-                            }
+                            Out($@"Run SQL statement:{Environment.NewLine}{commandText}");
+                            var command = connection.CreateCommand();
+                            command.Transaction = transaction;
+                            command.CommandTimeout = config.CommandTimeout;
+                            command.CommandText = commandText;
+                            command.ExecuteNonQuery();
+                        }
 
-                            transaction.Commit();
-                            Out($@"Successfully applied for module: {module}!");
-                        }
-                        catch
-                        {
-                            transaction.Rollback();
-                            Out($@"Statement not executed. Transaction for module {module} rolled back.");
-                            throw;
-                        }
+                        transaction.Commit();
+                        Out($@"Successfully applied for module: {module}!");
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        Out($@"Statement not executed. Transaction for module {module} rolled back.");
+                        throw;
                     }
                 }
             }
