@@ -201,7 +201,7 @@ internal partial class Build : NukeBuild
 
     protected static Microsoft.Build.Evaluation.Project MSBuildProject => WebProject?.GetMSBuildProject();
 
-    protected string VersionPrefix => IsTheme
+    protected static string VersionPrefix => IsTheme
         ? GetThemeVersion(PackageJsonPath)
         : MSBuildProject.GetProperty("VersionPrefix")?.EvaluatedValue;
 
@@ -1081,7 +1081,7 @@ internal partial class Build : NukeBuild
         }
     }
 
-    private async Task PublishRelease(string owner, string repo, string token, string tag, string description,
+    private static async Task PublishRelease(string owner, string repo, string token, string tag, string description,
         string artifactPath, bool prerelease)
     {
         var tokenAuth = new Credentials(token);

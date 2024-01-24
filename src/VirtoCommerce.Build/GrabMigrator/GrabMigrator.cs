@@ -18,7 +18,7 @@ namespace GrabMigrator
     /// </summary>
     internal class GrabMigrator
     {
-        public void Do(string configFilePath)
+        public static void Do(string configFilePath)
         {
             OutBox("VirtoCommerce EF-migration grabbing and applying tool.");
 
@@ -64,7 +64,7 @@ namespace GrabMigrator
             }
         }
 
-        private void EnableApplyMode(Config config, Dictionary<string, List<string>> sqlStatements)
+        private static void EnableApplyMode(Config config, Dictionary<string, List<string>> sqlStatements)
         {
             OutBox("Apply mode");
 
@@ -137,7 +137,7 @@ namespace GrabMigrator
             return connectionString;
         }
 
-        private Dictionary<string, List<string>> EnableGrabMode(string configFilePath, Config config, Dictionary<string, List<string>> sqlStatements)
+        private static Dictionary<string, List<string>> EnableGrabMode(string configFilePath, Config config, Dictionary<string, List<string>> sqlStatements)
         {
             sqlStatements ??= new Dictionary<string, List<string>>();
             OutBox("Grab mode");
@@ -157,7 +157,7 @@ namespace GrabMigrator
             return GrabSqlStatements(config);
         }
 
-        private Dictionary<string, string> GrabConnectionStrings(string platformConfigFile)
+        private static Dictionary<string, string> GrabConnectionStrings(string platformConfigFile)
         {
             var result = new Dictionary<string, string>();
 
@@ -175,7 +175,7 @@ namespace GrabMigrator
             return result;
         }
 
-        private void GrabConnectionStringsRefsFromModules(Dictionary<string, List<string>> refs, string migrationDirectory)
+        private static void GrabConnectionStringsRefsFromModules(Dictionary<string, List<string>> refs, string migrationDirectory)
         {
             var connKeyRegex = new Regex(@"\.GetConnectionString\(""(?<connkey>((?!GetConnectionString)[\w.])*)""\)", RegexOptions.Singleline);
             var moduleRegex = new Regex(@"[\\\w^\.-]*\\(?<module>.+)\.Web");
@@ -201,7 +201,7 @@ namespace GrabMigrator
             }
         }
 
-        private Dictionary<string, List<string>> GrabSqlStatements(Config config)
+        private static Dictionary<string, List<string>> GrabSqlStatements(Config config)
         {
             var result = new Dictionary<string, List<string>>();
 
@@ -213,7 +213,7 @@ namespace GrabMigrator
             return result;
         }
 
-        private void GrabSqlStatementsWithEFTool(Dictionary<string, List<string>> sqlStatements, string migrationDirectory, Config config)
+        private static void GrabSqlStatementsWithEFTool(Dictionary<string, List<string>> sqlStatements, string migrationDirectory, Config config)
         {
             Directory.CreateDirectory(config.StatementsDirectory);
             var moduleRegex = new Regex(@"[\\\w^\.-]*\\(?<module>.+)\\Migrations");
@@ -271,7 +271,7 @@ namespace GrabMigrator
             }
         }
 
-        private Dictionary<string, List<string>> ReadSavedStatements(string statementsDirectory)
+        private static Dictionary<string, List<string>> ReadSavedStatements(string statementsDirectory)
         {
             var result = new Dictionary<string, List<string>>();
             var migrationFiles = Directory.GetFiles(statementsDirectory, "*.sql");
@@ -286,7 +286,7 @@ namespace GrabMigrator
             return result;
         }
 
-        private List<string> SplitStatements(string statements)
+        private static List<string> SplitStatements(string statements)
         {
             var statementsSplitRegex = new Regex(@"(?<statement>((?!\s*GO\s*).)+)\s*GO\s*", RegexOptions.Singleline);
 
