@@ -149,7 +149,7 @@ namespace VirtoCommerce.Build
             modules.AddRange(commerceModules);
         }
 
-        private IEnumerable<ModuleItem> ParseModuleParameter(string[] moduleStrings)
+        private static IEnumerable<ModuleItem> ParseModuleParameter(string[] moduleStrings)
         {
             foreach (var moduleString in moduleStrings)
             {
@@ -292,7 +292,7 @@ namespace VirtoCommerce.Build
             }
         }
 
-        private string GetDiscoveryPath()
+        private static string GetDiscoveryPath()
         {
             var configuration = AppSettings.GetConfiguration(RootDirectory, AppsettingsPath);
             return DiscoveryPath.EmptyToNull() ?? configuration.GetModulesDiscoveryPath();

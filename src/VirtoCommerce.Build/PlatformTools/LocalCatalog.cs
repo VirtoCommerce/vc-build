@@ -169,18 +169,14 @@ namespace PlatformTools
 
             if (Directory.Exists(sourceDirectoryPath))
             {
-                foreach (var sourceFilePath in Directory.EnumerateFiles(sourceDirectoryPath, "*.*", SearchOption.AllDirectories))
+                foreach (var sourceFilePath in Directory.EnumerateFiles(sourceDirectoryPath, "*.*", SearchOption.AllDirectories).Where(f => IsAssemblyRelatedFile(f)))
                 {
-                    // Copy all assembly related files except assemblies that are inlcuded in TPA list
-                    if (IsAssemblyRelatedFile(sourceFilePath))
-                    {
-                        // Copy localization resource files to related subfolders
-                        var targetFilePath = Path.Combine(
-                            IsLocalizationFile(sourceFilePath) ? Path.Combine(targetDirectoryPath, Path.GetFileName(Path.GetDirectoryName(sourceFilePath)))
-                            : targetDirectoryPath,
-                            Path.GetFileName(sourceFilePath));
-                        CopyFile(sourceFilePath, targetFilePath);
-                    }
+                    // Copy localization resource files to related subfolders
+                    var targetFilePath = Path.Combine(
+                        IsLocalizationFile(sourceFilePath) ? Path.Combine(targetDirectoryPath, Path.GetFileName(Path.GetDirectoryName(sourceFilePath)))
+                        : targetDirectoryPath,
+                        Path.GetFileName(sourceFilePath));
+                    CopyFile(sourceFilePath, targetFilePath);
                 }
             }
         }
