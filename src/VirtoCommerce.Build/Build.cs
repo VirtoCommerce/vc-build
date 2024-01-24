@@ -944,7 +944,7 @@ internal partial class Build : NukeBuild
         UpdateDirectoryBuildProps(versionPrefix, versionSuffix);
     }
 
-    private void UpdateDirectoryBuildProps(string versionPrefix, string versionSuffix)
+    private static void UpdateDirectoryBuildProps(string versionPrefix, string versionSuffix)
     {
         var xmlDocument = LoadXml(DirectoryBuildPropsPath);
 

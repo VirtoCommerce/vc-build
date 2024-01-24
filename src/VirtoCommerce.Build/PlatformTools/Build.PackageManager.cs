@@ -458,7 +458,7 @@ namespace VirtoCommerce.Build
             return moduleInfo;
         }
 
-        private ModulesInstallerBase GetModuleInstaller(ModuleSource moduleSource) => moduleSource switch
+        private static ModulesInstallerBase GetModuleInstaller(ModuleSource moduleSource) => moduleSource switch
         {
             AzurePipelineArtifacts => new AzurePipelineArtifactsModuleInstaller(AzureToken, GetDiscoveryPath()),
             AzureUniversalPackages => new AzureUniversalPackagesModuleInstaller(AzureToken, GetDiscoveryPath()),
@@ -570,7 +570,7 @@ namespace VirtoCommerce.Build
             return manifest;
         }
 
-        private async Task<ManifestBase> UpdateEdgeModulesAsync(ManifestBase manifest)
+        private static async Task<ManifestBase> UpdateEdgeModulesAsync(ManifestBase manifest)
         {
             var githubModules = PackageManager.GetGithubModules(manifest);
             var githubModuleManifests = PackageManager.GetGithubModuleManifests(manifest);
@@ -600,7 +600,7 @@ namespace VirtoCommerce.Build
             return manifest;
         }
 
-        private async Task<ManifestBase> OpenOrCreateManifest(string packageManifestPath, bool isEdge)
+        private static async Task<ManifestBase> OpenOrCreateManifest(string packageManifestPath, bool isEdge)
         {
             ManifestBase packageManifest;
             var platformWebDllPath = Path.Combine(Directory.GetParent(packageManifestPath).FullName, "VirtoCommerce.Platform.Web.dll");
