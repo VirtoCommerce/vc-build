@@ -53,11 +53,11 @@ internal partial class Build : NukeBuild
 
     private enum ExitCodes
     {
-        GithubReleaseAlreadyExists = 422,
-        HttpRequestConflict = 409,
-        GitNothingToCommit = 423,
+        ModuleCouldNotBeLoaded = 126,
         GithubNoModuleFound = 404,
-        ModuleCouldNotBeLoaded = 126
+        HttpRequestConflict = 409,
+        GithubReleaseAlreadyExists = 422,
+        GitNothingToCommit = 423
     }
 
     private static bool ClearTempBeforeExit { get; set; }
@@ -69,7 +69,7 @@ internal partial class Build : NukeBuild
             var solutions = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.sln", SearchOption.TopDirectoryOnly);
             if (solutions.Any())
             {
-                return ProjectModelTasks.ParseSolution(solutions.First());
+                return ProjectModelTasks.ParseSolution(solutions[0]);
             }
 
             Log.Warning("No solution files found in the current directory");
@@ -84,11 +84,11 @@ internal partial class Build : NukeBuild
     [Parameter("API key for the specified source")]
     public static string ApiKey { get; set; }
 
-    [Parameter] public static string Source { get; set; } = @"https://api.nuget.org/v3/index.json";
+    [Parameter] public static string Source { get; set; } = "https://api.nuget.org/v3/index.json";
 
     [Parameter]
     public static string GlobalModuleIgnoreFileUrl { get; set; } =
-        @"https://raw.githubusercontent.com/VirtoCommerce/vc-platform/dev/module.ignore";
+        "https://raw.githubusercontent.com/VirtoCommerce/vc-platform/dev/module.ignore";
 
     [Parameter] public static string SonarAuthToken { get; set; } = "";
 
@@ -182,57 +182,56 @@ internal partial class Build : NukeBuild
     [Parameter("Http tasks timeout in seconds")]
     public static int HttpTimeout { get; set; } = 15;
 
-    // TODO: Convert to a method because GitRepository.FromLocalDirectory() is a heavy method and it should not be used as a property
-    protected GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
+    protected static GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
 
     protected static AbsolutePath SourceDirectory => RootDirectory / "src";
     protected static AbsolutePath TestsDirectory => RootDirectory / "tests";
     protected static AbsolutePath SamplesDirectory => RootDirectory / "samples";
 
-    protected AbsolutePath ModulesLocalDirectory => ArtifactsDirectory / ModulesJsonDirectoryName;
+    protected static AbsolutePath ModulesLocalDirectory => ArtifactsDirectory / ModulesJsonDirectoryName;
 
     protected static Project WebProject => Solution?.AllProjects.FirstOrDefault(x =>
         x.Name.EndsWith(DefaultProject) || x.Name.EndsWith("VirtoCommerce.Storefront") ||
         x.Name.EndsWith("VirtoCommerce.Build"));
 
     protected static AbsolutePath ModuleManifestFile => WebProject?.Directory / "module.manifest";
-    protected AbsolutePath ModuleIgnoreFile => RootDirectory / "module.ignore";
-    protected AbsolutePath ModuleKeepFile => RootDirectory / "module.keep";
+    protected static AbsolutePath ModuleIgnoreFile => RootDirectory / "module.ignore";
+    protected static AbsolutePath ModuleKeepFile => RootDirectory / "module.keep";
     protected static AbsolutePath WebDirectory => WebProject?.Directory;
 
     protected static Microsoft.Build.Evaluation.Project MSBuildProject => WebProject?.GetMSBuildProject();
 
-    protected string VersionPrefix => IsTheme
+    protected static string VersionPrefix => IsTheme
         ? GetThemeVersion(PackageJsonPath)
         : MSBuildProject.GetProperty("VersionPrefix")?.EvaluatedValue;
 
-    protected string VersionSuffix => MSBuildProject?.GetProperty("VersionSuffix")?.EvaluatedValue;
+    protected static string VersionSuffix => MSBuildProject?.GetProperty("VersionSuffix")?.EvaluatedValue;
 
-    protected string ReleaseVersion => MSBuildProject?.GetProperty("PackageVersion")?.EvaluatedValue ??
+    protected static string ReleaseVersion => MSBuildProject?.GetProperty("PackageVersion")?.EvaluatedValue ??
                                        WebProject.GetProperty("Version");
 
-    protected bool IsTheme => string.IsNullOrEmpty(Solution?.Directory);
+    protected static bool IsTheme => string.IsNullOrEmpty(Solution?.Directory);
 
-    protected ModuleManifest ModuleManifest => ManifestReader.Read(ModuleManifestFile);
+    protected static ModuleManifest ModuleManifest => ManifestReader.Read(ModuleManifestFile);
 
-    protected AbsolutePath ModuleOutputDirectory => ArtifactsDirectory / ModuleManifest.Id;
+    protected static AbsolutePath ModuleOutputDirectory => ArtifactsDirectory / ModuleManifest.Id;
 
-    protected AbsolutePath DirectoryBuildPropsPath => Solution.Directory / "Directory.Build.props";
+    protected static AbsolutePath DirectoryBuildPropsPath => Solution.Directory / "Directory.Build.props";
 
-    protected string ZipFileName => IsModule
+    protected static string ZipFileName => IsModule
         ? $"{ModuleManifest.Id}_{ReleaseVersion}.zip"
         : $"{WebProject.Solution.Name}.{ReleaseVersion}.zip";
 
-    protected string ZipFilePath => ArtifactsDirectory / ZipFileName;
-    protected string GitRepositoryName => GitRepository.Identifier.Split('/')[1];
+    protected static string ZipFilePath => ArtifactsDirectory / ZipFileName;
+    protected static string GitRepositoryName => GitRepository.Identifier.Split('/')[1];
 
-    protected string ModulePackageUrl => CustomModulePackageUri.IsNullOrEmpty()
+    protected static string ModulePackageUrl => CustomModulePackageUri.IsNullOrEmpty()
         ? $"https://github.com/VirtoCommerce/{GitRepositoryName}/releases/download/{ReleaseVersion}/{ModuleManifest.Id}_{ReleaseVersion}.zip"
         : CustomModulePackageUri;
 
-    protected GitRepository ModulesRepository => GitRepository.FromUrl(ModulesJsonRepoUrl);
+    protected static GitRepository ModulesRepository => GitRepository.FromUrl(ModulesJsonRepoUrl);
 
-    protected bool IsModule => ModuleManifestFile.FileExists();
+    protected static bool IsModule => ModuleManifestFile.FileExists();
 
     public Target Clean => _ => _
         .Before(Restore)
@@ -462,13 +461,13 @@ internal partial class Build : NukeBuild
     public Target Publish => _ => _
         .DependsOn(Compile)
         .After(WebPackBuild, Test)
-        .Executes(() => PublishBody(WebProject,
+        .Executes(() => PublishMethod(WebProject,
                                     IsModule ? ModuleOutputDirectory / "bin" : ArtifactsDirectory / "publish",
                                     Configuration));
 
-    private void PublishBody(Project webProject, string output, Configuration configuration)
+    private static void PublishMethod(Project webProject, string output, Configuration configuration)
     {
-        Assert.NotNull(webProject, "Web Project is not found!");
+        webProject.NotNull("Web Project is not found!");
         DotNetPublish(settings => settings
             .SetProcessWorkingDirectory(webProject.Directory)
             .EnableNoRestore()
@@ -477,9 +476,9 @@ internal partial class Build : NukeBuild
     }
 
     public Target WebPackBuild => _ => _
-        .Executes(() => WebPackBuildBody(WebProject));
+        .Executes(() => WebPackBuildMethod(WebProject));
 
-    private void WebPackBuildBody(Project webProject)
+    private static void WebPackBuildMethod(Project webProject)
     {
         if (webProject != null && (webProject.Directory / "package.json").FileExists())
         {
@@ -534,7 +533,7 @@ internal partial class Build : NukeBuild
             var modulesJsonFilePath = ModulesLocalDirectory / ModulesJsonName;
             var externalManifests =
                 JsonConvert.DeserializeObject<List<ExternalModuleManifest>>(TextTasks.ReadAllText(modulesJsonFilePath));
-            var externalManifest = externalManifests?.FirstOrDefault(x => x.Id == manifest.Id);
+            var externalManifest = externalManifests?.Find(x => x.Id == manifest.Id);
 
             if (externalManifest != null)
             {
@@ -738,10 +737,7 @@ internal partial class Build : NukeBuild
 
     public Target StartAnalyzer => _ => _
         .DependsOn(SonarQubeStart, SonarQubeEnd)
-        .Executes(() =>
-        {
-            Log.Information("Sonar validation done.");
-        });
+        .Executes(() => Log.Information("Sonar validation done."));
 
     public Target MassPullAndBuild => _ => _
         .Requires(() => ModulesFolderPath)
@@ -780,11 +776,9 @@ internal partial class Build : NukeBuild
             }
             catch (AggregateException ex)
             {
-                foreach (var innerException in ex.Flatten().InnerExceptions)
+                foreach (var innerException in ex.Flatten().InnerExceptions.OfType<ApiValidationException>())
                 {
-                    if (innerException is ApiValidationException exception)
-                    {
-                        var responseString = exception?.HttpResponse?.Body.ToString() ?? string.Empty;
+                        var responseString = innerException.HttpResponse?.Body.ToString() ?? string.Empty;
                         var responseDocument = JsonDocument.Parse(responseString);
                         var alreadyExistsError = false;
 
@@ -805,52 +799,44 @@ internal partial class Build : NukeBuild
                         }
 
                         Log.Error($"Api Validation Error: {responseString}");
-                    }
-                    else
-                    {
-                        Log.Error(innerException, "Error");
-                    }
                 }
 
-                Assert.Fail("Publish Release Failed");
+                Assert.Fail("Publish Release Failed", ex);
             }
         });
 
     public Target ClearTemp => _ => _
-        .Executes(() =>
-        {
-            ClearTempBeforeExit = true;
-        });
+        .Executes(() => ClearTempBeforeExit = true);
 
     public Target ValidateManifest => _ => _
         .Executes(ValidateManifestsDependencies);
 
     public static int Main(string[] args)
     {
-        if (!MSBuildLocator.IsRegistered)
-        {
-            MSBuildLocator.RegisterDefaults();
-        }
+        RegisterMSBuildLocator();
 
         Environment.SetEnvironmentVariable("NUKE_TELEMETRY_OPTOUT", "1");
-        if (args.ElementAtOrDefault(0)?.ToLowerInvariant() == "help" || args.Length == 0)
+
+        CheckHelpRequested(args);
+
+        CreateNukeDirectory();
+
+        ClearTempOnExit();
+
+        var exitCode = Execute<Build>(x => x.Compile);
+        return _exitCode ?? exitCode;
+    }
+
+    private static void ClearTempOnExit()
+    {
+        if (ClearTempBeforeExit)
         {
-            if (args.Length >= 2)
-            {
-                var help = HelpProvider.HelpProvider.GetHelpForTarget(args[1]);
-                Console.WriteLine(help);
-            }
-            else if (args.Length <= 1)
-            {
-                var targets = HelpProvider.HelpProvider.GetTargets();
-                var stringBuilder = new StringBuilder("There is a help for targets:" + Environment.NewLine);
-                targets.ForEach(target => stringBuilder = stringBuilder.AppendLine($"- {target}"));
-                Console.WriteLine(stringBuilder.ToString());
-            }
-
-            Environment.Exit(0);
+            FileSystemTasks.DeleteDirectory(TemporaryDirectory);
         }
+    }
 
+    private static void CreateNukeDirectory()
+    {
         var currentDirectory = Directory.GetCurrentDirectory();
 
         var nukeFiles = Directory.GetFiles(currentDirectory, ".nuke");
@@ -862,7 +848,7 @@ internal partial class Build : NukeBuild
 
             if (solutions.Length == 1)
             {
-                var solutionFileName = Path.GetFileName(solutions.First());
+                var solutionFileName = Path.GetFileName(solutions[0]);
                 Console.WriteLine($"Solution found: {solutionFileName}");
                 CreateDotNuke(currentDirectory, solutionFileName);
             }
@@ -873,17 +859,38 @@ internal partial class Build : NukeBuild
         }
         else if (nukeFiles.Any())
         {
-            var nukeFile = nukeFiles.First();
+            var nukeFile = nukeFiles[0];
             ConvertDotNukeFile(nukeFile);
         }
+    }
 
-        if (ClearTempBeforeExit)
+    private static void CheckHelpRequested(string[] args)
+    {
+        if (args.ElementAtOrDefault(0)?.ToLowerInvariant() == "help" || args.Length == 0)
         {
-            FileSystemTasks.DeleteDirectory(TemporaryDirectory);
-        }
+            if (args.Length >= 2)
+            {
+                var help = HelpProvider.HelpProvider.GetHelpForTarget(args[1]);
+                Console.WriteLine(help);
+            }
+            else if (args.Length <= 1)
+            {
+                var targets = HelpProvider.HelpProvider.GetTargets();
+                var stringBuilder = new StringBuilder("There is a help for targets:" + Environment.NewLine);
+                targets.ForEach(target => stringBuilder = stringBuilder.Append("- ").AppendLine(target));
+                Console.WriteLine(stringBuilder.ToString());
+            }
 
-        var exitCode = Execute<Build>(x => x.Compile);
-        return _exitCode ?? exitCode;
+            Environment.Exit(0);
+        }
+    }
+
+    private static void RegisterMSBuildLocator()
+    {
+        if (!MSBuildLocator.IsRegistered)
+        {
+            MSBuildLocator.RegisterDefaults();
+        }
     }
 
     private static void ConvertDotNukeFile(string path)
@@ -913,7 +920,7 @@ internal partial class Build : NukeBuild
         }
     }
 
-    public void ChangeProjectVersion(string versionPrefix = null, string versionSuffix = null)
+    public static void ChangeProjectVersion(string versionPrefix = null, string versionSuffix = null)
     {
         //theme
         if (IsTheme)
@@ -934,7 +941,7 @@ internal partial class Build : NukeBuild
         UpdateDirectoryBuildProps(versionPrefix, versionSuffix);
     }
 
-    private void UpdateDirectoryBuildProps(string versionPrefix, string versionSuffix)
+    private static void UpdateDirectoryBuildProps(string versionPrefix, string versionSuffix)
     {
         var xmlDocument = LoadXml(DirectoryBuildPropsPath);
 
@@ -1005,7 +1012,7 @@ internal partial class Build : NukeBuild
         xmlDocument.Save(writer);
     }
 
-    private string GetThemeVersion(string packageJsonPath)
+    private static string GetThemeVersion(string packageJsonPath)
     {
         var json = JsonDocument.Parse(File.ReadAllText(packageJsonPath));
 
@@ -1032,7 +1039,7 @@ internal partial class Build : NukeBuild
         CustomVersionPrefix = newPrefix;
     }
 
-    private async Task<string> SendSwaggerSchemaToValidator(HttpClient httpClient, string schemaPath,
+    private static async Task<string> SendSwaggerSchemaToValidator(HttpClient httpClient, string schemaPath,
         string validatorUri)
     {
         var swaggerSchema = await File.ReadAllTextAsync(schemaPath);
@@ -1074,7 +1081,7 @@ internal partial class Build : NukeBuild
         }
     }
 
-    private async Task PublishRelease(string owner, string repo, string token, string tag, string description,
+    private static async Task PublishRelease(string owner, string repo, string token, string tag, string description,
         string artifactPath, bool prerelease)
     {
         var tokenAuth = new Credentials(token);
@@ -1092,17 +1099,15 @@ internal partial class Build : NukeBuild
 
         var release = await githubClient.Repository.Release.Create(owner, repo, newRelease);
 
-        using (var artifactStream = File.OpenRead(artifactPath))
+        await using var artifactStream = File.OpenRead(artifactPath);
+        var assetUpload = new ReleaseAssetUpload
         {
-            var assetUpload = new ReleaseAssetUpload
-            {
-                FileName = Path.GetFileName(artifactPath),
-                ContentType = "application/zip",
-                RawData = artifactStream
-            };
+            FileName = Path.GetFileName(artifactPath),
+            ContentType = "application/zip",
+            RawData = artifactStream
+        };
 
-            await githubClient.Repository.Release.UploadAsset(release, assetUpload);
-        }
+        await githubClient.Repository.Release.UploadAsset(release, assetUpload);
     }
 
     protected override void OnBuildCreated()
@@ -1197,7 +1202,7 @@ internal partial class Build : NukeBuild
     {
         if (SourceDirectory.DirectoryExists())
         {
-            if (ignorePaths != null && ignorePaths.Any())
+            if (ignorePaths?.Any() == true)
             {
                 SourceDirectory
                     .GlobDirectories(searchPattern)

@@ -1,0 +1,872 @@
+openapi: 3.0.1
+info:
+  title: VirtoCommerce.SaaS
+  version: v1
+servers:
+- url: /
+paths:
+  /api/saas/app-projects/create:
+    post:
+      operationId: AppProjects_Create
+      requestBody:
+        content:
+          application/json-patch+json:
+            schema: {}
+          application/json:
+            schema: {}
+          text/json:
+            schema: {}
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:config
+      tags:
+      - SaaS Deployment
+  /api/saas/app-projects/update:
+    put:
+      operationId: AppProjects_Update
+      requestBody:
+        content:
+          application/json-patch+json:
+            schema: {}
+          application/json:
+            schema: {}
+          text/json:
+            schema: {}
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:config
+      tags:
+      - SaaS Deployment
+  /api/saas/app-projects/list:
+    get:
+      operationId: AppProjects_List
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:read
+      tags:
+      - SaaS Deployment
+  /api/saas/app-projects/delete:
+    post:
+      operationId: AppProjects_Delete
+      requestBody:
+        content:
+          application/json-patch+json:
+            schema: {}
+          application/json:
+            schema: {}
+          text/json:
+            schema: {}
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:config
+      tags:
+      - SaaS Deployment
+  /api/saas/app-projects/org-list:
+    get:
+      operationId: AppProjects_GetOrganizationsList
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:config
+      tags:
+      - SaaS Deployment
+  /apps/kibana:
+    get:
+      operationId: Apps_Kibana
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:read
+      tags:
+      - SaaS Deployment
+  /api/saas/cache/clear:
+    get:
+      operationId: Cache_Clear
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:config
+      tags:
+      - SaaS Deployment
+  /api/saas/Docs/menu:
+    get:
+      operationId: Docs_GetMenu
+      responses:
+        "200":
+          description: Success
+      tags:
+      - SaaS Deployment
+  /api/saas/Docs/content/{path}:
+    get:
+      operationId: Docs_GetContent
+      parameters:
+      - explode: false
+        in: path
+        name: path
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          description: Success
+      tags:
+      - SaaS Deployment
+  /api/saas/environments:
+    delete:
+      operationId: Environments_Delete
+      parameters:
+      - explode: true
+        in: query
+        name: complexIds
+        required: false
+        schema:
+          items:
+            type: string
+          type: array
+        style: form
+      - explode: true
+        in: query
+        name: appProjectId
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:delete
+      tags:
+      - SaaS Deployment
+    get:
+      operationId: Environments_List
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CloudEnvironment'
+                type: array
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CloudEnvironment'
+                type: array
+            text/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CloudEnvironment'
+                type: array
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:read
+      tags:
+      - SaaS Deployment
+    post:
+      operationId: Environments_Create
+      requestBody:
+        content:
+          application/json-patch+json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/NewEnvironmentModel'
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/NewEnvironmentModel'
+          text/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/NewEnvironmentModel'
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:create
+      tags:
+      - SaaS Deployment
+    put:
+      operationId: Environments_Update
+      requestBody:
+        content:
+          application/json-patch+json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/CloudEnvironment'
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/CloudEnvironment'
+          text/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/CloudEnvironment'
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:update
+      tags:
+      - SaaS Deployment
+  /api/saas/environments/{envName}:
+    get:
+      operationId: Environments_GetEnvironment
+      parameters:
+      - explode: false
+        in: path
+        name: envName
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CloudEnvironment'
+                type: array
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CloudEnvironment'
+                type: array
+            text/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CloudEnvironment'
+                type: array
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:read
+      tags:
+      - SaaS Deployment
+  /api/saas/environments/{organizationName}/{envName}:
+    get:
+      operationId: Environments_GetEnvironment
+      parameters:
+      - explode: false
+        in: path
+        name: organizationName
+        required: true
+        schema:
+          type: string
+        style: simple
+      - explode: false
+        in: path
+        name: envName
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CloudEnvironment'
+                type: array
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CloudEnvironment'
+                type: array
+            text/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CloudEnvironment'
+                type: array
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:read
+      tags:
+      - SaaS Deployment
+  /api/saas/environments/can-create/{appProject}:
+    get:
+      operationId: Environments_CanCreate
+      parameters:
+      - explode: false
+        in: path
+        name: appProject
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:read
+      tags:
+      - SaaS Deployment
+  /api/saas/environments/limits:
+    get:
+      operationId: Environments_GetLimits
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:read
+      tags:
+      - SaaS Deployment
+  /api/saas/environments/can-save:
+    post:
+      operationId: Environments_CanSave
+      requestBody:
+        content:
+          application/json-patch+json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/CloudEnvironment'
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/CloudEnvironment'
+          text/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/CloudEnvironment'
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:update
+      tags:
+      - SaaS Deployment
+  /api/saas/environments/tier:
+    get:
+      operationId: Environments_GetTier
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:read
+      tags:
+      - SaaS Deployment
+  /api/saas/environments/summary:
+    get:
+      operationId: Environments_GetSummary
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:read
+      tags:
+      - SaaS Deployment
+  /api/saas/environments/manifest/{appProject}/{appName}:
+    get:
+      operationId: Environments_DownloadManifest
+      parameters:
+      - explode: false
+        in: path
+        name: appProject
+        required: true
+        schema:
+          type: string
+        style: simple
+      - explode: false
+        in: path
+        name: appName
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:read
+      tags:
+      - SaaS Deployment
+  /api/saas/environments/images/{appProjectName}:
+    get:
+      operationId: Environments_GetImages
+      parameters:
+      - explode: false
+        in: path
+        name: appProjectName
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:read
+      tags:
+      - SaaS Deployment
+  /api/saas/environments/tags:
+    get:
+      operationId: Environments_GetImageTags
+      parameters:
+      - explode: true
+        in: query
+        name: imageName
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:read
+      tags:
+      - SaaS Deployment
+  /api/saas/environments/update:
+    put:
+      operationId: Environments_Update
+      requestBody:
+        content:
+          multipart/form-data:
+            encoding:
+              manifest:
+                style: form
+              appProject:
+                style: form
+            schema:
+              $ref: '#/components/schemas/Environments_Update_request'
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:update
+      tags:
+      - SaaS Deployment
+  /api/saas/environments/service-plan/{name}:
+    get:
+      operationId: Environments_GetServicePlan
+      parameters:
+      - explode: false
+        in: path
+        name: name
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:read
+      tags:
+      - SaaS Deployment
+  /api/saas/environments/validate-name:
+    post:
+      operationId: Environments_ValidateName
+      requestBody:
+        content:
+          application/json-patch+json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/EnvironmentNameValidationRequest'
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/EnvironmentNameValidationRequest'
+          text/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/EnvironmentNameValidationRequest'
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:read
+      tags:
+      - SaaS Deployment
+  /api/saas/environments/clusters:
+    get:
+      operationId: Environments_GetClusters
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:read
+      tags:
+      - SaaS Deployment
+  /api/saas/metrics:
+    post:
+      operationId: Metrics_GetMetrics
+      requestBody:
+        content:
+          application/json-patch+json:
+            schema: {}
+          application/json:
+            schema: {}
+          text/json:
+            schema: {}
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:read
+      tags:
+      - SaaS Deployment
+  /api/saas/Rss/news:
+    get:
+      operationId: Rss_GetNews
+      responses:
+        "200":
+          description: Success
+      tags:
+      - SaaS Deployment
+  /api/saas/system/version:
+    post:
+      operationId: System_Version
+      requestBody:
+        content:
+          application/json-patch+json:
+            schema: {}
+          application/json:
+            schema: {}
+          text/json:
+            schema: {}
+      responses:
+        "200":
+          description: Success
+      tags:
+      - SaaS Deployment
+  /api/saas/templates/service-plan/{name}:
+    get:
+      operationId: Templates_GetServicePlan
+      parameters:
+      - explode: false
+        in: path
+        name: name
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:read
+      tags:
+      - SaaS Deployment
+  /api/saas/templates/service-plans:
+    get:
+      operationId: Templates_GetServicePlans
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:read
+      tags:
+      - SaaS Deployment
+  /api/saas/templates/clusters:
+    get:
+      operationId: Templates_GetClusters
+      responses:
+        "200":
+          description: Success
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+      - oauth2:
+        - saas:env:read
+      tags:
+      - SaaS Deployment
+components:
+  schemas:
+    CloudEnvironment:
+      additionalProperties: false
+      example:
+        urls:
+        - urls
+        - urls
+        created: 2000-01-23T04:56:07.000+00:00
+        appProjectId: appProjectId
+        tenantId: tenantId
+        name: name
+        metadataName: metadataName
+        id: id
+        updated: 2000-01-23T04:56:07.000+00:00
+        syncStatus: syncStatus
+        helm: ""
+        labels:
+          key: labels
+        status: status
+      properties:
+        labels:
+          additionalProperties:
+            type: string
+          nullable: true
+          type: object
+        appProjectId:
+          nullable: true
+          type: string
+        metadataName:
+          nullable: true
+          type: string
+        tenantId:
+          nullable: true
+          type: string
+        id:
+          nullable: true
+          type: string
+        name:
+          nullable: true
+          type: string
+        status:
+          nullable: true
+          type: string
+        syncStatus:
+          nullable: true
+          type: string
+        created:
+          format: date-time
+          type: string
+        updated:
+          format: date-time
+          type: string
+        urls:
+          items:
+            type: string
+          nullable: true
+          type: array
+        helm:
+          allOf:
+          - $ref: '#/components/schemas/Helm'
+          nullable: true
+      type: object
+    EnvironmentNameValidationRequest:
+      additionalProperties: false
+      example:
+        appProject: appProject
+        name: name
+      properties:
+        appProject:
+          nullable: true
+          type: string
+        name:
+          nullable: true
+          type: string
+      type: object
+    Helm:
+      additionalProperties: false
+      properties:
+        parameters:
+          additionalProperties:
+            type: string
+          nullable: true
+          type: object
+      type: object
+    HelmObject:
+      additionalProperties: false
+      properties:
+        parameters:
+          additionalProperties:
+            type: string
+          nullable: true
+          type: object
+      type: object
+    NewEnvironmentModel:
+      additionalProperties: false
+      example:
+        cluster: cluster
+        servicePlan: servicePlan
+        dbName: dbName
+        name: name
+        appProjectId: appProjectId
+        dbProvider: dbProvider
+        helm: ""
+      properties:
+        name:
+          nullable: true
+          type: string
+        dbName:
+          nullable: true
+          type: string
+        appProjectId:
+          nullable: true
+          type: string
+        cluster:
+          nullable: true
+          type: string
+        servicePlan:
+          nullable: true
+          type: string
+        dbProvider:
+          nullable: true
+          type: string
+        helm:
+          allOf:
+          - $ref: '#/components/schemas/HelmObject'
+          nullable: true
+      type: object
+    Environments_Update_request:
+      properties:
+        manifest:
+          type: string
+        appProject:
+          type: string
+      type: object
+  securitySchemes:
+    oauth2:
+      description: OAuth2 Resource Owner Password Grant flow
+      flows:
+        password:
+          scopes: {}
+          tokenUrl: /connect/token
+      type: oauth2
+
