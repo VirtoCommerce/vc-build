@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nuke.Common;
 using Nuke.Common.IO;
+using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
 using PlatformTools;
 using PlatformTools.Azure;
@@ -56,7 +57,7 @@ namespace VirtoCommerce.Build
         [Parameter("Url to Bundles file")]
         public static string BundlesUrl { get; set; } = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/bundles/stable.json";
 
-        [Parameter("Backup file path")] public static string BackupFile { get; set; } = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        [Parameter("Backup file path")] public static AbsolutePath BackupFile { get; set; } = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
         public Target Init => _ => _
              .Executes(async () =>
@@ -82,7 +83,7 @@ namespace VirtoCommerce.Build
                  {
                      UpdateModules(Module, externalModuleCatalog, modules);
                  }
-                 else if (!PlatformParameter && !modules.Any() && !FileSystemTasks.FileExists((AbsolutePath)Path.GetFullPath(PackageManifestPath)))
+                 else if (!PlatformParameter && !modules.Any() && !File.Exists(Path.GetFullPath(PackageManifestPath)))
                  {
                      AddCommerceModules(externalModuleCatalog, modules);
                  }
@@ -160,7 +161,7 @@ namespace VirtoCommerce.Build
                 if (parts.Length > 1)
                 {
                     moduleId = parts[0];
-                    moduleVersion = parts.Last();
+                    moduleVersion = parts[parts.Count() - 1];
                 }
                 else if (moduleStrings.Length == 1 && !string.IsNullOrEmpty(VersionToInstall))
                 {
@@ -201,8 +202,7 @@ namespace VirtoCommerce.Build
                     modulesDirs = Directory.EnumerateDirectories(discoveryPath).ToList();
                 }
                 var symlinks = modulesDirs.Where(m => new DirectoryInfo(m).LinkTarget != null).ToList();
-                CompressionTasks.CompressTarGZip(RootDirectory, BackupFile, filter: f => !f.FullName.StartsWith(RootDirectory / ".nuke") && !symlinks.Any(s => f.FullName.StartsWith(s)));
-
+                CompressionExtensions.TarGZipTo(RootDirectory, BackupFile, filter: f => !f.ToFileInfo().FullName.StartsWith(RootDirectory / ".nuke") && !symlinks.Any(s => f.ToFileInfo().FullName.StartsWith(s)));
             });
 
         public Target Rollback => _ => _
@@ -210,7 +210,7 @@ namespace VirtoCommerce.Build
             .After(Backup, Install, Update, InstallPlatform, InstallModules)
             .OnlyWhenDynamic(() => FailedTargets.Any() && SucceededTargets.Contains(Backup))
             .AssuredAfterFailure()
-            .Executes(() => CompressionTasks.UncompressTarGZip(BackupFile, RootDirectory));
+            .Executes(() => CompressionExtensions.UnTarGZipTo(BackupFile, RootDirectory));
 
         public Target RemoveBackup => _ => _
             .After(Backup, Rollback)
@@ -218,14 +218,14 @@ namespace VirtoCommerce.Build
             .AssuredAfterFailure()
             .Unlisted()
             .DependsOn(Backup)
-            .Executes(() => FileSystemTasks.DeleteFile(BackupFile));
+            .Executes(() => BackupFile.DeleteFile());
 
         public Target InstallPlatform => _ => _
              .OnlyWhenDynamic(() => PlatformVersionChanged() && !IsModulesInstallation())
              .Executes(async () =>
              {
                  var packageManifest = PackageManager.FromFile(PackageManifestPath);
-                 var mixedManifest = SerializationTasks.JsonDeserializeFromFile<MixedPackageManifest>(PackageManifestPath);
+                 var mixedManifest = JsonExtensions.ReadJson<MixedPackageManifest>(PackageManifestPath);
                  var platformAssetUrlFromManifest = mixedManifest.PlatformAssetUrl;
                  var platformAssetUrl = string.IsNullOrWhiteSpace(PlatformAssetUrl)
                      ? platformAssetUrlFromManifest
@@ -263,8 +263,8 @@ namespace VirtoCommerce.Build
                 FileSystemTasks.MoveFile(AppsettingsPath, tempFile, FileExistsPolicy.Overwrite);
             }
 
-            CompressionTasks.Uncompress(platformZip, RootDirectory);
-            FileSystemTasks.DeleteFile(platformZip);
+            platformZip.UncompressTo(RootDirectory);
+            platformZip.DeleteFile();
 
             // return appsettings.json back
             if (!string.IsNullOrEmpty(tempFile))
@@ -399,7 +399,7 @@ namespace VirtoCommerce.Build
                  }
                  var absoluteDiscoveryPath = (AbsolutePath)Path.GetFullPath(discoveryPath);
                  var zipFiles = absoluteDiscoveryPath.GlobFiles("*/*.zip");
-                 zipFiles.ForEach(f => FileSystemTasks.DeleteFile(f));
+                 zipFiles.ForEach(f => f.DeleteFile());
                  localModuleCatalog.Reload();
              });
 
@@ -466,8 +466,8 @@ namespace VirtoCommerce.Build
                  var packageManifest = PackageManager.FromFile(PackageManifestPath);
                  var localModulesCatalog = LocalModuleCatalog.GetCatalog(discoveryPath, ProbingPath);
                  var githubModules = PackageManager.GetGithubModules(packageManifest);
-                 FileSystemTasks.DeleteDirectory(ProbingPath);
-                 Module.ForEach(m => FileSystemTasks.DeleteDirectory(Path.Combine(discoveryPath, m)));
+                 ProbingPath.DeleteDirectory();
+                 Module.ForEach(m => AbsolutePath.Create(Path.Combine(discoveryPath, m)).DeleteDirectory());
                  githubModules.RemoveAll(m => Module.Contains(m.Id));
                  PackageManager.ToFile(packageManifest, PackageManifestPath);
                  if (PlatformVersion.CurrentVersion == null)
@@ -625,7 +625,7 @@ namespace VirtoCommerce.Build
         private static async Task DownloadBundleManifest(string bundleName, string outFile)
         {
             var rawBundlesFile = await HttpTasks.HttpDownloadStringAsync(BundlesUrl);
-            var bundlesDictionary = SerializationTasks.JsonDeserialize<Dictionary<string, string>>(rawBundlesFile);
+            var bundlesDictionary = JsonExtensions.GetJson<Dictionary<string, string>>(rawBundlesFile);
             KeyValuePair<string, string> bundle;
             if (string.IsNullOrEmpty(bundleName))
             {
@@ -643,7 +643,7 @@ namespace VirtoCommerce.Build
         private static ManifestBase CreateManifestFromEnvironment(AbsolutePath platformPath, AbsolutePath discoveryPath)
         {
             var platformWebDllPath = platformPath / "VirtoCommerce.Platform.Web.dll";
-            if (!FileSystemTasks.FileExists(platformWebDllPath))
+            if (!File.Exists(platformWebDllPath))
             {
                 Assert.Fail($"{platformWebDllPath} can't be found!");
             }
