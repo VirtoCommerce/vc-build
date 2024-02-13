@@ -19,7 +19,7 @@ namespace VirtoCommerce.Build
              .Executes(() =>
              {
                  var allPackages = new List<PackageItem>();
-                 var allProjects = Solution.GetProjects("*");
+                 var allProjects = Solution.GetAllProjects("*");
 
                  foreach (var project in allProjects)
                  {

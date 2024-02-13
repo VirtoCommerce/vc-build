@@ -45,9 +45,9 @@ internal partial class Build : NukeBuild
     /// - JetBrains Rider            https://nuke.build/rider
     /// - Microsoft VisualStudio     https://nuke.build/visualstudio
     /// - Microsoft VSCode           https://nuke.build/vscode
-    private static readonly string[] _moduleContentFolders = { "dist", "Localizations", "Scripts", "Content" };
+    private static readonly string[] _moduleContentFolders = ["dist", "Localizations", "Scripts", "Content"];
 
-    private static readonly string[] _sonarLongLiveBranches = { "master", "develop", "dev", "main" };
+    private static readonly string[] _sonarLongLiveBranches = ["master", "develop", "dev", "main"];
     private static readonly HttpClient _httpClient = new();
     private static int? _exitCode;
 
@@ -67,7 +67,7 @@ internal partial class Build : NukeBuild
         get
         {
             var solutions = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.sln", SearchOption.TopDirectoryOnly);
-            if (solutions.Any())
+            if (solutions.Length > 0)
             {
                 return SolutionModelTasks.ParseSolution(solutions[0]);
             }
