@@ -134,7 +134,7 @@ internal partial class Build
         var modulesPath = platformDirectory / "modules";
         var dockerfilePath = dockerBuildContext / "Dockerfile";
 
-        FileSystemTasks.EnsureCleanDirectory(dockerBuildContext);
+        dockerBuildContext.CreateOrCleanDirectory();
 
         await HttpTasks.HttpDownloadFileAsync(DockerfileUrl, dockerfilePath);
 
@@ -186,7 +186,7 @@ internal partial class Build
                 var solutions = Directory.EnumerateFiles(solutionDir, "*.sln");
                 Assert.True(solutions.Count() == 1, $"Solutions found: {solutions.Count()}");
                 var solutionPath = solutions.FirstOrDefault();
-                var solution = ProjectModelTasks.ParseSolution(solutionPath);
+                var solution = SolutionModelTasks.ParseSolution(solutionPath);
                 var webProject = solution.AllProjects.First(p => p.Name.EndsWith(".Web"));
 
                 WebPackBuildMethod(webProject);
@@ -262,7 +262,6 @@ internal partial class Build
             Log.Information("Start listening to {0}", listenerPrefix);
             listener.Start();
 
-
             Log.Information("Openning browser window");
             var authUrl = $"{CloudUrl}/externalsignin?authenticationType={CloudAuthProvider}&returnUrl=/api/saas/token/{port}";
             Process.Start(new ProcessStartInfo(authUrl) { UseShellExecute = true });
@@ -293,7 +292,8 @@ internal partial class Build
 
     private void SaveCloudToken(string token)
     {
-        FileSystemTasks.EnsureExistingDirectory(Path.GetDirectoryName(CloudTokenFile));
+        AbsolutePath cloudTokenDir = Path.GetDirectoryName(CloudTokenFile);
+        cloudTokenDir.CreateDirectory();
         File.WriteAllText(CloudTokenFile, token);
     }
 

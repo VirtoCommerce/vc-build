@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Nuke.Common.IO;
+using Nuke.Common.Utilities;
 using VirtoCommerce.Build.PlatformTools;
 
 namespace PlatformTools
@@ -45,7 +46,7 @@ namespace PlatformTools
 
         public static void ToFile(ManifestBase manifest, string path = "./vc-package.json")
         {
-            SerializationTasks.JsonSerializeToFile(manifest, path);
+            ((AbsolutePath)path).WriteJson(manifest);
         }
 
         public static ManifestBase FromFile(string path = "./vc-package.json")

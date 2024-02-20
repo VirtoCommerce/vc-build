@@ -24,9 +24,8 @@ internal class GitlabJobArtifactsModuleInstaller : ModulesInstallerBase
         var gitlabJobArtifacts = (GitlabJobArtifacts) source;
         foreach (var module in gitlabJobArtifacts.Modules)
         {
-            var moduleDestination = Path.Join(_discoveryPath, module.Id);
-            Directory.CreateDirectory(moduleDestination);
-            FileSystemTasks.EnsureCleanDirectory(moduleDestination);
+            var moduleDestination = AbsolutePath.Create(Path.Join(_discoveryPath, module.Id));
+            moduleDestination.CreateOrCleanDirectory();
             progress.ReportInfo($"Downloading {module.Id}");
             var artifactZipPath = await _client.DownloadArtifact(module.Id, module.JobId, module.ArtifactName, moduleDestination);
             progress.ReportInfo($"Extracting {module.Id}");

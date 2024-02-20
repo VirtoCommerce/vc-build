@@ -9,10 +9,10 @@ namespace Utils
 {
     public static class ArtifactPacker
     {
-        public static void CompressPlatform(string sourceDirectory, string outputZipPath)
+        public static void CompressPlatform(AbsolutePath sourceDirectory, AbsolutePath outputZipPath)
         {
-            FileSystemTasks.DeleteFile(outputZipPath);
-            CompressionTasks.CompressZip(sourceDirectory, outputZipPath);
+            outputZipPath.DeleteFile();
+            sourceDirectory.ZipTo(outputZipPath);
         }
 
         public static void CompressModule(Action<ModuleCompressionOptionsBuilder> optionsBuilderAction)
@@ -40,13 +40,16 @@ namespace Utils
                 }
             }
 
-            bool FilesFilter(FileInfo x) =>
-                (!SkipFileByList(x.Name, options.IgnoreList) &&
-                 !SkipFileByRegex(x.Name, ignoreModuleFilesRegex)) || KeepFileByList(x.Name, options.KeepList) ||
-                KeepFileByRegex(x.Name, includeModuleFilesRegex);
+            bool FilesFilter(AbsolutePath path)
+            {
+                var fileInfo = path.ToFileInfo();
+                return (!SkipFileByList(fileInfo.Name, options.IgnoreList) &&
+                 !SkipFileByRegex(fileInfo.Name, ignoreModuleFilesRegex)) || KeepFileByList(fileInfo.Name, options.KeepList) ||
+                KeepFileByRegex(fileInfo.Name, includeModuleFilesRegex);
+            }
 
-            FileSystemTasks.DeleteFile(options.OutputZipPath);
-            CompressionTasks.CompressZip(options.SourceDirectory, options.OutputZipPath, FilesFilter);
+            ((AbsolutePath)options.OutputZipPath).DeleteFile();
+            ((AbsolutePath)options.SourceDirectory).ZipTo(options.OutputZipPath, FilesFilter);
         }
 
 
