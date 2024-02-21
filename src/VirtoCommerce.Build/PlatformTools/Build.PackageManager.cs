@@ -73,7 +73,7 @@ namespace VirtoCommerce.Build
              .DependsOn(Backup)
              .Executes(async () =>
              {
-                 var packageManifest = await OpenOrCreateManifest(PackageManifestPath, Edge);
+                 var packageManifest = await OpenOrCreateManifest(PackageManifestPath.ToAbsolutePath(), Edge);
                  var githubModuleSources = PackageManager.GetGithubModuleManifests(packageManifest);
                  var modules = PackageManager.GetGithubModules(packageManifest);
 
@@ -226,7 +226,7 @@ namespace VirtoCommerce.Build
              .Executes(async () =>
              {
                  var packageManifest = PackageManager.FromFile(PackageManifestPath);
-                 var mixedManifest = JsonExtensions.ReadJson<MixedPackageManifest>(PackageManifestPath);
+                 var mixedManifest = PackageManifestPath.ToAbsolutePath().ReadJson<MixedPackageManifest>();
                  var platformAssetUrlFromManifest = mixedManifest.PlatformAssetUrl;
                  var platformAssetUrl = string.IsNullOrWhiteSpace(PlatformAssetUrl)
                      ? platformAssetUrlFromManifest
