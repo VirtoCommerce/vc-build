@@ -841,7 +841,7 @@ internal partial class Build : NukeBuild
 
         var nukeFiles = Directory.GetFiles(currentDirectory, ".nuke");
 
-        if (!nukeFiles.Any() && !Directory.Exists(Path.Join(currentDirectory, ".nuke")))
+        if (nukeFiles.Length == 0 && !Directory.Exists(Path.Join(currentDirectory, ".nuke")))
         {
             Console.WriteLine("No .nuke file found!");
             var solutions = Directory.GetFiles(currentDirectory, "*.sln");
@@ -857,7 +857,7 @@ internal partial class Build : NukeBuild
                 CreateDotNuke(currentDirectory);
             }
         }
-        else if (nukeFiles.Any())
+        else if (nukeFiles.Length > 0)
         {
             var nukeFile = nukeFiles[0];
             ConvertDotNukeFile(nukeFile);
@@ -1202,7 +1202,7 @@ internal partial class Build : NukeBuild
     {
         if (SourceDirectory.DirectoryExists())
         {
-            if (ignorePaths?.Any() == true)
+            if (ignorePaths?.Length > 0)
             {
                 SourceDirectory
                     .GlobDirectories(searchPattern)

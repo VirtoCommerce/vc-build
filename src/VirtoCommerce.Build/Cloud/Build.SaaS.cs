@@ -378,7 +378,7 @@ internal partial class Build
     public Target CloudUp => _ => _
         .DependsOn(CloudInit, CloudDeploy);
 
-    private static ISaaSDeploymentApi CreateVirtocloudClient(string url, string token)
+    private static SaaSDeploymentApi CreateVirtocloudClient(string url, string token)
     {
         var config = new VirtoCloud.Client.Client.Configuration();
         config.BasePath = url;
