@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Extensions;
 using Nuke.Common.IO;
 
 namespace Utils
@@ -48,8 +49,8 @@ namespace Utils
                 KeepFileByRegex(fileInfo.Name, includeModuleFilesRegex);
             }
 
-            ((AbsolutePath)options.OutputZipPath).DeleteFile();
-            ((AbsolutePath)options.SourceDirectory).ZipTo(options.OutputZipPath, FilesFilter);
+            options.OutputZipPath.ToAbsolutePath().DeleteFile();
+            options.SourceDirectory.ToAbsolutePath().ZipTo(options.OutputZipPath, FilesFilter);
         }
 
 

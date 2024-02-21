@@ -14,7 +14,7 @@ namespace VirtoCommerce.Build
         public static AbsolutePath ProbingPath { get; set; } = RootDirectory / "app_data" / "modules";
 
         [Parameter("appsettings.json path")]
-        public static string AppsettingsPath { get; set; } = RootDirectory / "appsettings.json";
+        public static AbsolutePath AppsettingsPath { get; set; } = RootDirectory / "appsettings.json";
 
         public Target InitPlatform => _ => _
              .Executes(() =>

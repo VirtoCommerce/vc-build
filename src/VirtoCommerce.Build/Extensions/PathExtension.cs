@@ -12,6 +12,8 @@ namespace Extensions
     {
         public static AbsolutePath ToAbsolutePath(this string path)
         {
+            if(path == null) return null;
+
             return AbsolutePath.Create(Path.GetFullPath(path));
         }
     }

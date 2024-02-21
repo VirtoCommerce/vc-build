@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Xml;
+using Extensions;
 using Microsoft.Build.Locator;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -721,7 +722,7 @@ internal partial class Build : NukeBuild
                 var sonarScannerShRightPath = Directory.GetParent(sonarScannerShPath)?.Parent?.FullName ?? string.Empty;
                 var tmpFile = TemporaryDirectory / sonarScript;
                 FileSystemTasks.MoveFile(sonarScannerShPath, tmpFile);
-                ((AbsolutePath)sonarScannerShRightPath).DeleteDirectory();
+                sonarScannerShRightPath.ToAbsolutePath().DeleteDirectory();
                 var sonarScriptDestinationPath = Path.Combine(sonarScannerShRightPath, sonarScript);
                 FileSystemTasks.MoveFile(tmpFile, sonarScriptDestinationPath);
                 Log.Information($"{sonarScript} path: {sonarScriptDestinationPath}");
@@ -747,7 +748,7 @@ internal partial class Build : NukeBuild
                 foreach (var moduleDirectory in Directory.GetDirectories(ModulesFolderPath))
                 {
                     var isGitRepository =
-                        ((AbsolutePath)moduleDirectory).FindParentOrSelf(x => x.GetDirectories(".git").Any()) !=
+                        moduleDirectory.ToAbsolutePath().FindParentOrSelf(x => x.GetDirectories(".git").Any()) !=
                         null;
 
                     if (isGitRepository)
@@ -904,7 +905,7 @@ internal partial class Build : NukeBuild
     {
         var dotnukeDir = Path.Join(path, ".nuke");
         var paramsFilePath = Path.Join(dotnukeDir, "parameters.json");
-        ((AbsolutePath)dotnukeDir).CreateDirectory();
+        dotnukeDir.ToAbsolutePath().CreateDirectory();
         var parameters = new NukeParameters { Solution = solutionPath };
         JsonExtensions.WriteJson(paramsFilePath, parameters);
     }

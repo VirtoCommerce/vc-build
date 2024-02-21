@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Extensions;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Utilities;
@@ -272,7 +273,7 @@ namespace VirtoCommerce.Build
                 var bakFileName = new StringBuilder("appsettings.")
                     .Append(DateTime.Now.ToString("MMddyyHHmmss"))
                     .Append(".bak");
-                var destinationSettingsPath = !Force ? AppsettingsPath : Path.Join(Path.GetDirectoryName(AppsettingsPath), bakFileName.ToString());
+                AbsolutePath destinationSettingsPath = !Force ? AppsettingsPath : Path.Join(Path.GetDirectoryName(AppsettingsPath), bakFileName.ToString());
                 FileSystemTasks.MoveFile(tempFile, destinationSettingsPath, FileExistsPolicy.Overwrite);
 
                 if (Force)
@@ -397,7 +398,7 @@ namespace VirtoCommerce.Build
 
                      await installer.Install(moduleSource, progress);
                  }
-                 var absoluteDiscoveryPath = (AbsolutePath)Path.GetFullPath(discoveryPath);
+                 AbsolutePath absoluteDiscoveryPath = Path.GetFullPath(discoveryPath);
                  var zipFiles = absoluteDiscoveryPath.GlobFiles("*/*.zip");
                  zipFiles.ForEach(f => f.DeleteFile());
                  localModuleCatalog.Reload();
@@ -606,7 +607,7 @@ namespace VirtoCommerce.Build
             else if (!File.Exists(packageManifestPath) && File.Exists(platformWebDllPath))
             {
                 var discoveryAbsolutePath = Path.GetFullPath(GetDiscoveryPath());
-                return CreateManifestFromEnvironment(RootDirectory, (AbsolutePath)discoveryAbsolutePath);
+                return CreateManifestFromEnvironment(RootDirectory, discoveryAbsolutePath.ToAbsolutePath());
             }
             else if (!File.Exists(packageManifestPath))
             {
