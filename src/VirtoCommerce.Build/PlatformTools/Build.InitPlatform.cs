@@ -1,4 +1,5 @@
 using Nuke.Common;
+using Nuke.Common.IO;
 using PlatformTools;
 using VirtoCommerce.Platform.Core.Common;
 
@@ -10,10 +11,10 @@ namespace VirtoCommerce.Build
         public static string DiscoveryPath { get; set; }
 
         [Parameter("Probing path")]
-        public static string ProbingPath { get; set; } = RootDirectory / "app_data" / "modules";
+        public static AbsolutePath ProbingPath { get; set; } = RootDirectory / "app_data" / "modules";
 
         [Parameter("appsettings.json path")]
-        public static string AppsettingsPath { get; set; } = RootDirectory / "appsettings.json";
+        public static AbsolutePath AppsettingsPath { get; set; } = RootDirectory / "appsettings.json";
 
         public Target InitPlatform => _ => _
              .Executes(() =>

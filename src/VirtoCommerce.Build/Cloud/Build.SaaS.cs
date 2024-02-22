@@ -144,7 +144,7 @@ internal partial class Build
         var modulesPath = platformDirectory / "modules";
         var dockerfilePath = dockerBuildContext / "Dockerfile";
 
-        FileSystemTasks.EnsureCleanDirectory(dockerBuildContext);
+        dockerBuildContext.CreateOrCleanDirectory();
 
         await HttpTasks.HttpDownloadFileAsync(DockerfileUrl, dockerfilePath);
 
@@ -196,7 +196,7 @@ internal partial class Build
                 var solutions = Directory.EnumerateFiles(solutionDir, "*.sln");
                 Assert.True(solutions.Count() == 1, $"Solutions found: {solutions.Count()}");
                 var solutionPath = solutions.FirstOrDefault();
-                var solution = ProjectModelTasks.ParseSolution(solutionPath);
+                var solution = SolutionModelTasks.ParseSolution(solutionPath);
                 var webProject = solution.AllProjects.First(p => p.Name.EndsWith(".Web"));
 
                 WebPackBuildMethod(webProject);
@@ -271,7 +271,6 @@ internal partial class Build
             };
             listener.Start();
 
-
             Log.Information("Openning browser window");
             var authUrl = $"{CloudUrl}/externalsignin?authenticationType={CloudAuthProvider}&returnUrl=/api/saas/token/{port}";
             Process.Start(new ProcessStartInfo(authUrl) { UseShellExecute = true });
@@ -303,7 +302,8 @@ internal partial class Build
 
     private void SaveCloudToken(string token)
     {
-        FileSystemTasks.EnsureExistingDirectory(Path.GetDirectoryName(CloudTokenFile));
+        AbsolutePath cloudTokenDir = Path.GetDirectoryName(CloudTokenFile);
+        cloudTokenDir.CreateDirectory();
         File.WriteAllText(CloudTokenFile, token);
     }
 
@@ -378,7 +378,7 @@ internal partial class Build
     public Target CloudUp => _ => _
         .DependsOn(CloudInit, CloudDeploy);
 
-    private static ISaaSDeploymentApi CreateVirtocloudClient(string url, string token)
+    private static SaaSDeploymentApi CreateVirtocloudClient(string url, string token)
     {
         var config = new VirtoCloud.Client.Client.Configuration();
         config.BasePath = url;

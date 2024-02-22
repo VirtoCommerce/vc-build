@@ -30,10 +30,9 @@ namespace PlatformTools.Github
             var githubPrivateRepos = (GithubPrivateRepos) source;
             foreach (var module in githubPrivateRepos.Modules)
             {
-                var moduleDestination = Path.Join(_discoveryPath, module.Id);
+                var moduleDestination = AbsolutePath.Create(Path.Join(_discoveryPath, module.Id));
                 progress.ReportInfo($"Installing {module.Id}");
-                Directory.CreateDirectory(moduleDestination);
-                FileSystemTasks.EnsureCleanDirectory(moduleDestination);
+                moduleDestination.CreateOrCleanDirectory();
                 var zipName = $"{module.Id}.zip";
                 var zipDestination = Path.Join(moduleDestination, zipName);
                 var release = await _client.Repository.Release.Get(githubPrivateRepos.Owner, module.Id, module.Version);

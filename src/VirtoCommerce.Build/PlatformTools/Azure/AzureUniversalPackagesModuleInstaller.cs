@@ -3,6 +3,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
+using Extensions;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
 using VirtoCommerce.Build.PlatformTools;
@@ -27,9 +28,9 @@ namespace PlatformTools.Azure
             foreach (var module in artifacts.Modules)
             {
                 progress.ReportInfo($"Installing {module.Id}");
-                var moduleDestination = Path.Join(discoveryPath, module.Id);
+                var moduleDestination = Path.Join(discoveryPath, module.Id).ToAbsolutePath();
                 Directory.CreateDirectory(moduleDestination);
-                FileSystemTasks.EnsureCleanDirectory(moduleDestination);
+                moduleDestination.CreateOrCleanDirectory();
                 var azPath = ToolPathResolver.GetPathExecutable("az");
                 var azToolSettings = new AzureCliToolSettings()
                     .AddProcessEnvironmentVariable("AZURE_DEVOPS_EXT_PAT", token)
