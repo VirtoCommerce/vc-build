@@ -80,7 +80,7 @@ namespace VirtoCommerce.Build
         /// <summary>
         /// Check match between manifest platform version and platform packages
         /// </summary>
-        private List<string> ValdatePlatformVersion(IEnumerable<PackageItem> packages)
+        private static List<string> ValdatePlatformVersion(IEnumerable<PackageItem> packages)
         {
             return packages
                 .Where(package => package.IsPlatformPackage && SemanticVersion.Parse(package.Version) != SemanticVersion.Parse(ModuleManifest.PlatformVersion))
@@ -92,7 +92,7 @@ namespace VirtoCommerce.Build
         /// <summary>
         /// Check dependencies for module packages versions mismatch
         /// </summary>
-        private List<string> ValidateModuleDependenciesVersions(IEnumerable<PackageItem> packages)
+        private static List<string> ValidateModuleDependenciesVersions(IEnumerable<PackageItem> packages)
         {
             var result = new List<string>();
 
@@ -119,7 +119,7 @@ namespace VirtoCommerce.Build
         /// <summary>
         /// Check project packages for missed dependency in manifest
         /// </summary>
-        private List<string> ValidateForMissedDependencies(IEnumerable<PackageItem> packages)
+        private static List<string> ValidateForMissedDependencies(IEnumerable<PackageItem> packages)
         {
             var result = new List<string>();
 
