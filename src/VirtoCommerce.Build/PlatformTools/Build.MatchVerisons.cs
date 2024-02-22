@@ -5,7 +5,6 @@ using System.Text.RegularExpressions;
 using Nuke.Common;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Utilities;
-using Nuke.Common.Utilities.Collections;
 using PlatformTools;
 using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.Platform.Core.Modularity;
@@ -40,7 +39,7 @@ namespace VirtoCommerce.Build
                  var missedDependenciesErrors = ValidateForMissedDependencies(allPackages);
                  errors.AddRange(missedDependenciesErrors);
 
-                 if (!errors.IsEmpty())
+                 if (errors.Count > 0)
                  {
                      Assert.Fail(errors.Join(Environment.NewLine));
                  }
@@ -81,12 +80,13 @@ namespace VirtoCommerce.Build
         /// <summary>
         /// Check match between manifest platform version and platform packages
         /// </summary>
-        private IEnumerable<string> ValdatePlatformVersion(IEnumerable<PackageItem> packages)
+        private List<string> ValdatePlatformVersion(IEnumerable<PackageItem> packages)
         {
             return packages
                 .Where(package => package.IsPlatformPackage && SemanticVersion.Parse(package.Version) != SemanticVersion.Parse(ModuleManifest.PlatformVersion))
                 .Select(x =>
-                        $"Mismatched platform dependency version found. Platform version: {ModuleManifest.PlatformVersion}, Platform package name: {x.Name}, platform package version: {x.Version}, project name: {x.ProjectName}");
+                        $"Mismatched platform dependency version found. Platform version: {ModuleManifest.PlatformVersion}, Platform package name: {x.Name}, platform package version: {x.Version}, project name: {x.ProjectName}")
+                .ToList();
         }
 
         /// <summary>
