@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using Nuke.Common;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Utilities;
+using Nuke.Common.Utilities.Collections;
 using PlatformTools;
 using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.Platform.Core.Modularity;
@@ -39,7 +40,7 @@ namespace VirtoCommerce.Build
                  var missedDependenciesErrors = ValidateForMissedDependencies(allPackages);
                  errors.AddRange(missedDependenciesErrors);
 
-                 if (errors.Count != 0)
+                 if (!errors.IsEmpty())
                  {
                      Assert.Fail(errors.Join(Environment.NewLine));
                  }
@@ -48,7 +49,7 @@ namespace VirtoCommerce.Build
         /// <summary>
         /// Get list of VirtoCommerce packages (platform and module)
         /// </summary>
-        private IEnumerable<PackageItem> GetProjectPackages(Project project)
+        private static IEnumerable<PackageItem> GetProjectPackages(Project project)
         {
             var msBuildProject = project.GetMSBuildProject();
 
@@ -127,18 +128,18 @@ namespace VirtoCommerce.Build
                 return result;
             }
 
-            foreach (var packageGroup in packages.Where(x => !x.IsPlatformPackage).GroupBy(x => x.Name))
+            foreach (var packageGroupKey in packages.Where(x => !x.IsPlatformPackage).GroupBy(x => x.Name).Select(packageGroup => packageGroup.Key))
             {
-                if (!ModuleManifest.Dependencies.Any(dependency => HasNameMatch(packageGroup.Key, dependency.Id)))
+                if (!ModuleManifest.Dependencies.Any(dependency => HasNameMatch(packageGroupKey, dependency.Id)))
                 {
-                    result.Add($"Dependency in module.manifest is missing. Package name: {packageGroup.Key}");
+                    result.Add($"Dependency in module.manifest is missing. Package name: {packageGroupKey}");
                 }
             }
 
             return result;
         }
 
-        private bool HasNameMatch(string packageName, string dependencyName)
+        private static bool HasNameMatch(string packageName, string dependencyName)
         {
             var match = ModuleNameRegEx().Match(packageName);
             return match.Groups.Values.Any(x => x.Value == dependencyName);
