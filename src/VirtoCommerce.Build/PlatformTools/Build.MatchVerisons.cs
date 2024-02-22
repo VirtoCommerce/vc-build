@@ -13,7 +13,8 @@ namespace VirtoCommerce.Build
 {
     internal partial class Build
     {
-        private Regex _moduleNameRegEx = new Regex(@"(VirtoCommerce.+)Module", RegexOptions.Compiled);
+        [GeneratedRegex(@"(VirtoCommerce.+)Module", RegexOptions.Compiled)]
+        private static partial Regex ModuleNameRegEx();
 
         public Target MatchVersions => _ => _
              .Executes(() =>
@@ -38,7 +39,7 @@ namespace VirtoCommerce.Build
                  var missedDependenciesErrors = ValidateForMissedDependencies(allPackages);
                  errors.AddRange(missedDependenciesErrors);
 
-                 if (errors.Any())
+                 if (errors.Count != 0)
                  {
                      Assert.Fail(errors.Join(Environment.NewLine));
                  }
@@ -54,7 +55,7 @@ namespace VirtoCommerce.Build
             // find all VirtoCommerce references
             return msBuildProject.Items
                 .Where(x => x.ItemType == "PackageReference"
-                    && (x.EvaluatedInclude.StartsWith("VirtoCommerce.Platform.") || _moduleNameRegEx.IsMatch(x.EvaluatedInclude)))
+                    && (x.EvaluatedInclude.StartsWith("VirtoCommerce.Platform.") || ModuleNameRegEx().IsMatch(x.EvaluatedInclude)))
                 .Select(x =>
                 {
                     var versionMetadata = x.Metadata.FirstOrDefault(x => x.Name == "Version");
@@ -90,7 +91,7 @@ namespace VirtoCommerce.Build
         /// <summary>
         /// Check dependencies for module packages versions mismatch
         /// </summary>
-        private IEnumerable<string> ValidateModuleDependenciesVersions(IEnumerable<PackageItem> packages)
+        private List<string> ValidateModuleDependenciesVersions(IEnumerable<PackageItem> packages)
         {
             var result = new List<string>();
 
@@ -117,7 +118,7 @@ namespace VirtoCommerce.Build
         /// <summary>
         /// Check project packages for missed dependency in manifest
         /// </summary>
-        private IEnumerable<string> ValidateForMissedDependencies(IEnumerable<PackageItem> packages)
+        private List<string> ValidateForMissedDependencies(IEnumerable<PackageItem> packages)
         {
             var result = new List<string>();
 
@@ -139,7 +140,7 @@ namespace VirtoCommerce.Build
 
         private bool HasNameMatch(string packageName, string dependencyName)
         {
-            var match = _moduleNameRegEx.Match(packageName);
+            var match = ModuleNameRegEx().Match(packageName);
             return match.Groups.Values.Any(x => x.Value == dependencyName);
         }
     }

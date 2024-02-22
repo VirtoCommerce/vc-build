@@ -84,7 +84,7 @@ namespace VirtoCommerce.Build
                  {
                      UpdateModules(Module, externalModuleCatalog, modules);
                  }
-                 else if (!PlatformParameter && !modules.Any() && !File.Exists(Path.GetFullPath(PackageManifestPath)))
+                 else if (!PlatformParameter && modules.IsEmpty() && !File.Exists(Path.GetFullPath(PackageManifestPath)))
                  {
                      AddCommerceModules(externalModuleCatalog, modules);
                  }
@@ -162,7 +162,7 @@ namespace VirtoCommerce.Build
                 if (parts.Length > 1)
                 {
                     moduleId = parts[0];
-                    moduleVersion = parts[parts.Count() - 1];
+                    moduleVersion = parts[parts.Length - 1];
                 }
                 else if (moduleStrings.Length == 1 && !string.IsNullOrEmpty(VersionToInstall))
                 {
@@ -209,7 +209,7 @@ namespace VirtoCommerce.Build
         public Target Rollback => _ => _
             .DependsOn(Backup)
             .After(Backup, Install, Update, InstallPlatform, InstallModules)
-            .OnlyWhenDynamic(() => FailedTargets.Any() && SucceededTargets.Contains(Backup))
+            .OnlyWhenDynamic(() => FailedTargets.Count > 0 && SucceededTargets.Contains(Backup))
             .AssuredAfterFailure()
             .Executes(() => CompressionExtensions.UnTarGZipTo(BackupFile, RootDirectory));
 

@@ -8,7 +8,7 @@ using Nuke.Common.IO;
 
 namespace Utils
 {
-    public static class ArtifactPacker
+    public static partial class ArtifactPacker
     {
         public static void CompressPlatform(AbsolutePath sourceDirectory, AbsolutePath outputZipPath)
         {
@@ -26,7 +26,7 @@ namespace Utils
                 FileExistsPolicy.Overwrite);
             
             //Exclude all ignored files and *module files not related to compressed module
-            var ignoreModuleFilesRegex = new Regex(@".+Module\..*", RegexOptions.IgnoreCase);
+            var ignoreModuleFilesRegex = IgnoreModuleFilesRegex();
             var includeModuleFilesRegex =
                 new Regex(@$".*{options.ModuleId}(Module)?\..*", RegexOptions.IgnoreCase);
 
@@ -73,5 +73,8 @@ namespace Utils
         {
             return keepRegex.IsMatch(name);
         }
+
+        [GeneratedRegex(@".+Module\..*", RegexOptions.IgnoreCase)]
+        private static partial Regex IgnoreModuleFilesRegex();
     }
 }

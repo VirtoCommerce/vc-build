@@ -234,12 +234,13 @@ internal partial class Build : NukeBuild
 
     protected static bool IsModule => ModuleManifestFile.FileExists();
 
+    private static readonly string[] cleanSearchPattern = new[] { "**/bin", "**/obj" };
+
     public Target Clean => _ => _
         .Before(Restore)
         .Executes(() =>
         {
-            var searchPattern = new[] { "**/bin", "**/obj" };
-            CleanSolution(searchPattern);
+            CleanSolution(cleanSearchPattern);
         });
 
     public Target Restore => _ => _
