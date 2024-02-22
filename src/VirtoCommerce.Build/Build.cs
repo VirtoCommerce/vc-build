@@ -181,7 +181,7 @@ internal partial class Build : NukeBuild
     [Parameter("Main branch")] public static string MainBranch { get; set; } = "master";
 
     [Parameter("Http tasks timeout in seconds")]
-    public static int HttpTimeout { get; set; } = 15;
+    public static int HttpTimeout { get; set; } = 180;
 
     protected static GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
 
