@@ -8,7 +8,21 @@ namespace VirtoCommerce.Build
     internal partial class Build
     {
         [Parameter("Connection String")] public static string DockerConnectionString { get; set; }
-        [Parameter("Docker Username")] public static string DockerUsername { get; set; }
+
+        private static string _dockerUsername = string.Empty;
+        [Parameter("Docker Username")]
+        public static string DockerUsername
+        {
+            get
+            {
+                return _dockerUsername;
+            }
+            set
+            {
+                _dockerUsername = value?.ToLowerInvariant();
+            }
+        }
+
         [Parameter("Docker Password")] public static string DockerPassword { get; set; }
         [Parameter("Docker Registry Url")] public static string DockerRegistryUrl { get; set; }
         [Parameter("Docker Image Name")] public static string DockerImageName { get; set; }
