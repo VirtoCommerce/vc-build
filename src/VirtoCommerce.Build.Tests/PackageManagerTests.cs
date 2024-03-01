@@ -1,6 +1,6 @@
 using Extensions;
-using Nuke.Common.IO;
 using PlatformTools;
+using PlatformTools.Modules;
 using VirtoCommerce.Build.PlatformTools;
 
 namespace VirtoCommerce.Build.Tests

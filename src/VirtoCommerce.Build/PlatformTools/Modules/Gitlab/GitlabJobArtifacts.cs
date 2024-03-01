@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using VirtoCommerce.Build.PlatformTools;
+using PlatformTools.Modules;
 
-namespace PlatformTools.Gitlab;
+namespace PlatformTools.Modules.Gitlab;
 
 internal class GitlabJobArtifacts : ModuleSource
 {

@@ -11,9 +11,11 @@ using Nuke.Common.IO;
 using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
 using PlatformTools;
-using PlatformTools.Azure;
-using PlatformTools.Github;
-using PlatformTools.Gitlab;
+using PlatformTools.Extensions;
+using PlatformTools.Modules;
+using PlatformTools.Modules.Azure;
+using PlatformTools.Modules.Github;
+using PlatformTools.Modules.Gitlab;
 using Serilog;
 using VirtoCommerce.Build.PlatformTools;
 using VirtoCommerce.Platform.Core.Common;
@@ -312,6 +314,7 @@ namespace VirtoCommerce.Build
             return result;
         }
 
+
         public Target InstallModules => _ => _
              .After(InstallPlatform)
              .OnlyWhenDynamic(() => !PlatformParameter)
@@ -322,6 +325,7 @@ namespace VirtoCommerce.Build
                  {
                      SkipDependencySolving = true;
                  }
+
                  var packageManifest = PackageManager.FromFile(PackageManifestPath);
                  var moduleSources = PackageManager.GetModuleSources(packageManifest).Where(s => s is not GithubReleases).ToList();
                  var githubReleases = PackageManager.GetGithubModulesSource(packageManifest);
@@ -343,7 +347,7 @@ namespace VirtoCommerce.Build
                          return;
                      }
 
-                     if (alreadyInstalledModules.Any(installedModule => installedModule.ModuleName == module.Id && installedModule.Version.ToString() == module.Version))
+                     if (alreadyInstalledModules.Exists(installedModule => installedModule.ModuleName == module.Id && installedModule.Version.ToString() == module.Version) || localModuleCatalog.IsModuleFromSourceCode(module.Id))
                      {
                          continue;
                      }
@@ -485,7 +489,7 @@ namespace VirtoCommerce.Build
              .Executes(async () =>
              {
                  SkipDependencySolving = true;
-                 var manifest = PackageManager.FromFile(PackageManifestPath);
+                 var manifest = await OpenOrCreateManifest(PackageManifestPath, Edge);
 
                  if (Edge)
                  {
@@ -638,7 +642,7 @@ namespace VirtoCommerce.Build
             }
 
             var manifestUrl = bundle.Value;
-            await HttpTasks.HttpDownloadFileAsync(manifestUrl, outFile);
+            await HttpTasks.HttpDownloadFileAsync(manifestUrl, outFile.ToAbsolutePath());
         }
 
         private static ManifestBase CreateManifestFromEnvironment(AbsolutePath platformPath, AbsolutePath discoveryPath)

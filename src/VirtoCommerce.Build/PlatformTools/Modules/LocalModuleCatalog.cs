@@ -4,7 +4,7 @@ using VirtoCommerce.Platform.Core.Modularity;
 using VirtoCommerce.Platform.DistributedLock;
 using VirtoCommerce.Platform.Modules;
 
-namespace PlatformTools
+namespace PlatformTools.Modules
 {
     internal static class LocalModuleCatalog
     {

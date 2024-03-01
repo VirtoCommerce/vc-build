@@ -3,11 +3,11 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
-using VirtoCommerce.Build.PlatformTools;
+using PlatformTools.Modules;
 using VirtoCommerce.Platform.Core.Modularity;
 using AzureBlobs = Azure.Storage.Blobs;
 
-namespace PlatformTools.Azure
+namespace PlatformTools.Modules.Azure
 {
     internal class AzureBlobModuleInstaller : ModulesInstallerBase
     {
@@ -31,7 +31,7 @@ namespace PlatformTools.Azure
             {
                 progress.ReportInfo($"Installing {moduleBlobName}");
                 var zipName = moduleBlobName;
-                if(!zipName.EndsWith(".zip"))
+                if (!zipName.EndsWith(".zip"))
                 {
                     zipName += ".zip";
                 }

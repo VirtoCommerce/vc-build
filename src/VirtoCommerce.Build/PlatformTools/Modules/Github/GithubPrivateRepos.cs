@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using VirtoCommerce.Build.PlatformTools;
+using PlatformTools.Modules;
 
-namespace PlatformTools.Github
+namespace PlatformTools.Modules.Github
 {
     internal class GithubPrivateRepos : ModuleSource
     {

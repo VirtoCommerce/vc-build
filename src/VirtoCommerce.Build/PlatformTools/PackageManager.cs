@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Extensions;
 using Nuke.Common.Utilities;
+using PlatformTools.Modules;
 using VirtoCommerce.Build.PlatformTools;
 
 namespace PlatformTools

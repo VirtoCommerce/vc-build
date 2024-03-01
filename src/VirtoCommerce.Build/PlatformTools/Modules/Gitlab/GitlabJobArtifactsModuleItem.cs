@@ -1,6 +1,8 @@
-namespace PlatformTools.Gitlab;
+using PlatformTools.Modules;
 
-internal class GitlabJobArtifactsModuleItem: ModuleItem
+namespace PlatformTools.Modules.Gitlab;
+
+internal class GitlabJobArtifactsModuleItem : ModuleItem
 {
     public GitlabJobArtifactsModuleItem(string id, string version) : base(id, version)
     {

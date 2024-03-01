@@ -1,7 +1,7 @@
 using System;
 using Nuke.Common.Tooling;
 
-namespace PlatformTools.Azure
+namespace PlatformTools.Modules.Azure
 {
     [Serializable]
     internal class AzureCliToolSettings : ToolSettings

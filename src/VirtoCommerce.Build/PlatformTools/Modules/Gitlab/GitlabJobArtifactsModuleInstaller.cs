@@ -3,10 +3,10 @@ using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
 using Nuke.Common.IO;
-using VirtoCommerce.Build.PlatformTools;
+using PlatformTools.Modules;
 using VirtoCommerce.Platform.Core.Modularity;
 
-namespace PlatformTools.Gitlab;
+namespace PlatformTools.Modules.Gitlab;
 
 internal class GitlabJobArtifactsModuleInstaller : ModulesInstallerBase
 {
@@ -21,7 +21,7 @@ internal class GitlabJobArtifactsModuleInstaller : ModulesInstallerBase
 
     protected override async Task InnerInstall(ModuleSource source, IProgress<ProgressMessage> progress)
     {
-        var gitlabJobArtifacts = (GitlabJobArtifacts) source;
+        var gitlabJobArtifacts = (GitlabJobArtifacts)source;
         foreach (var module in gitlabJobArtifacts.Modules)
         {
             var moduleDestination = AbsolutePath.Create(Path.Join(_discoveryPath, module.Id));

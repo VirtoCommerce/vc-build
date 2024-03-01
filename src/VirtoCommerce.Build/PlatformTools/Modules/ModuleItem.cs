@@ -1,4 +1,4 @@
-namespace PlatformTools
+namespace PlatformTools.Modules
 {
     public class ModuleItem
     {
