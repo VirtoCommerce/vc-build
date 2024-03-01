@@ -138,7 +138,7 @@ internal partial class Build
     private async Task PrepareDockerContextMethod()
     {
         var dockerBuildContext = ArtifactsDirectory / "docker";
-        var platformDirectory = dockerBuildContext / "platform";
+        var platformDirectory = dockerBuildContext / "publish";
         var modulesPath = platformDirectory / "modules";
         var dockerfilePath = dockerBuildContext / "Dockerfile";
         var waitScriptPath = dockerBuildContext / "wait-for-it.sh";
