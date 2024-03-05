@@ -7,7 +7,7 @@ namespace PlatformTools.Extensions
 {
     public static class LocalModuleCatalogExtensions
     {
-        public static bool IsModuleFromSourceCode(this ILocalModuleCatalog moduleCatalog, string moduleId)
+        public static bool IsModuleSymlinked(this ILocalModuleCatalog moduleCatalog, string moduleId)
         {
             var moduleInfo = moduleCatalog.Modules.OfType<ManifestModuleInfo>().FirstOrDefault(m => m.ModuleName == moduleId);
             if(moduleInfo == null)

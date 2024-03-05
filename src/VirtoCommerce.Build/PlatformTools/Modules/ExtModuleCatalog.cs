@@ -44,7 +44,7 @@ namespace PlatformTools.Modules
         {
             var options = new ExternalModuleCatalogOptions
             {
-                ModulesManifestUrl = new Uri(manifestUrls.First()),
+                ModulesManifestUrl = new Uri(manifestUrls[0]),
                 AuthorizationToken = authToken,
                 IncludePrerelease = false,
                 AutoInstallModuleBundles = Array.Empty<string>(),
