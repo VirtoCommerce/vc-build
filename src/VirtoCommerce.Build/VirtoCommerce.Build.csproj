@@ -41,7 +41,7 @@
       <ExcludeAssets>all</ExcludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Build.Locator" Version="1.4.1" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.1" />
   </ItemGroup>
 
   <ItemGroup>

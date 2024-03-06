@@ -131,7 +131,7 @@ internal partial class Build
         return false;
     }
     public Target PrepareDockerContext => _ => _
-        .Before(DockerLogin, BuildImage, PushImage)
+        .Before(DockerLogin, BuildImage, PushImage, CloudInit)
         .Triggers(InitPlatform)
         .Executes(async () => await PrepareDockerContextMethod());
 
