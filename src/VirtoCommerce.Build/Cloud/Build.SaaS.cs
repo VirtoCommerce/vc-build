@@ -131,7 +131,7 @@ internal partial class Build
         return false;
     }
     public Target PrepareDockerContext => _ => _
-        .Before(InitPlatform, DockerLogin, BuildImage, PushImage, BuildAndPush)
+        .Before(DockerLogin, BuildImage, PushImage)
         .Triggers(InitPlatform)
         .Executes(async () => await PrepareDockerContextMethod());
 
@@ -160,7 +160,7 @@ internal partial class Build
 
         if (string.IsNullOrWhiteSpace(DockerImageName))
         {
-            DockerImageName = $"{DockerUsername}/{EnvironmentName}";
+            DockerImageName = $"{DockerUsername}/{EnvironmentName.ToLowerInvariant()}";
         }
 
         DockerImageTag ??= DateTime.Now.ToString("MMddyyHHmmss");
@@ -347,7 +347,7 @@ internal partial class Build
         });
 
     public Target CloudInit => _ => _
-        .Before(PrepareDockerContext, BuildAndPush, CloudDeploy)
+        .After(PrepareDockerContext, DockerLogin, BuildImage, PushImage, BuildAndPush)
         .Requires(() => EnvironmentName)
         .Executes(async () =>
         {
@@ -358,9 +358,20 @@ internal partial class Build
                 ServicePlan = ServicePlan,
                 Cluster = ClusterName,
                 DbProvider = DbProvider,
-                DbName = DbName
+                DbName = DbName,
+                Helm = new HelmObject(new Dictionary<string, string> ())
             };
-            
+
+            if(!string.IsNullOrEmpty(DockerImageName))
+            {
+                model.Helm.Parameters["platform.image.repository"] = DockerImageName;
+            }
+
+            if(!string.IsNullOrEmpty(DockerImageTag))
+            {
+                model.Helm.Parameters["platform.image.tag"] = DockerImageTag;
+            }
+
             var cloudClient = CreateVirtocloudClient(CloudUrl, await GetCloudTokenAsync());
             await cloudClient.EnvironmentsCreateAsync(model);
         });
@@ -376,7 +387,7 @@ internal partial class Build
         });
 
     public Target CloudUp => _ => _
-        .DependsOn(CloudInit, CloudDeploy);
+        .DependsOn(PrepareDockerContext, BuildAndPush, CloudInit);
 
     private static ISaaSDeploymentApi CreateVirtocloudClient(string url, string token)
     {

@@ -69,6 +69,7 @@ namespace VirtoCommerce.Build
         });
 
         public Target BuildAndPush => _ => _
+        .Before(CloudInit)
         .DependsOn(DockerLogin, BuildImage, PushImage);
     }
 }
