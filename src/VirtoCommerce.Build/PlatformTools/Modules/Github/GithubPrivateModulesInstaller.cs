@@ -41,12 +41,14 @@ namespace PlatformTools.Modules.Github
                     progress.ReportError($"{module.Id}:{module.Version} is not found");
                     continue;
                 }
-                var asset = release.Assets.FirstOrDefault();
-                if (asset == null)
+
+                if (release.Assets.Count == 0)
                 {
                     progress.ReportError($"{module.Id}:{module.Version} has no assets");
                     continue;
                 }
+                var asset = release.Assets[0];
+
                 progress.ReportInfo($"Downloading {module.Id}");
                 await HttpTasks.HttpDownloadFileAsync(asset.Url, zipDestination, clientConfigurator: c =>
                 {

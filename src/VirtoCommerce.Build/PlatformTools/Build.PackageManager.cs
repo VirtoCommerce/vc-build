@@ -610,7 +610,7 @@ namespace VirtoCommerce.Build
             else if (!File.Exists(packageManifestPath) && File.Exists(platformWebDllPath))
             {
                 var discoveryAbsolutePath = Path.GetFullPath(GetDiscoveryPath());
-                return CreateManifestFromEnvironment(RootDirectory, discoveryAbsolutePath.ToAbsolutePath());
+                return await CreateManifestFromEnvironment(RootDirectory, discoveryAbsolutePath.ToAbsolutePath());
             }
             else if (!File.Exists(packageManifestPath))
             {
@@ -644,7 +644,7 @@ namespace VirtoCommerce.Build
             await HttpTasks.HttpDownloadFileAsync(manifestUrl, outFile.ToAbsolutePath());
         }
 
-        private static ManifestBase CreateManifestFromEnvironment(AbsolutePath platformPath, AbsolutePath discoveryPath)
+        private async static Task<ManifestBase> CreateManifestFromEnvironment(AbsolutePath platformPath, AbsolutePath discoveryPath)
         {
             var platformWebDllPath = platformPath / "VirtoCommerce.Platform.Web.dll";
             if (!File.Exists(platformWebDllPath))
@@ -657,7 +657,7 @@ namespace VirtoCommerce.Build
             var githubModules = PackageManager.GetGithubModules(packageManifest);
             var githubModulesSource = PackageManager.GetGithubModulesSource(packageManifest);
             var localModuleCatalog = (LocalCatalog)LocalModuleCatalog.GetCatalog(GetDiscoveryPath(), ProbingPath);
-            var externalModuleCatalog = ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubModulesSource.ModuleSources).GetAwaiter().GetResult();
+            var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubModulesSource.ModuleSources);
             var modulesInCatalog = externalModuleCatalog.Modules.Where(m => !m.Ref.StartsWith("file://")).Select(m => m.ModuleName).ToList();
             var manifests = discoveryPath.GlobFiles("*/module.manifest");
             manifests.ForEach(m =>

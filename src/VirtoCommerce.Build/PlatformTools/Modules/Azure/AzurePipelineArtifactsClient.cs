@@ -34,7 +34,7 @@ namespace PlatformTools.Modules.Azure
             }
             finally
             {
-                client?.Dispose();
+                client.Dispose();
             }
         }
     }

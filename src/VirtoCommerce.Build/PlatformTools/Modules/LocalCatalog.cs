@@ -136,7 +136,7 @@ namespace PlatformTools.Modules
             return builder.Uri.ToString();
         }
 
-        private IDictionary<string, ModuleManifest> GetModuleManifests()
+        private Dictionary<string, ModuleManifest> GetModuleManifests()
         {
             var result = new Dictionary<string, ModuleManifest>();
 
