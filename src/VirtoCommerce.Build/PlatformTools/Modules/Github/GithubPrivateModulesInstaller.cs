@@ -6,10 +6,10 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Nuke.Common.IO;
 using Octokit;
-using VirtoCommerce.Build.PlatformTools;
+using PlatformTools.Modules;
 using VirtoCommerce.Platform.Core.Modularity;
 
-namespace PlatformTools.Github
+namespace PlatformTools.Modules.Github
 {
     internal class GithubPrivateModulesInstaller : ModulesInstallerBase
     {
@@ -27,7 +27,7 @@ namespace PlatformTools.Github
 
         protected override async Task InnerInstall(ModuleSource source, IProgress<ProgressMessage> progress)
         {
-            var githubPrivateRepos = (GithubPrivateRepos) source;
+            var githubPrivateRepos = (GithubPrivateRepos)source;
             foreach (var module in githubPrivateRepos.Modules)
             {
                 var moduleDestination = AbsolutePath.Create(Path.Join(_discoveryPath, module.Id));
@@ -41,12 +41,14 @@ namespace PlatformTools.Github
                     progress.ReportError($"{module.Id}:{module.Version} is not found");
                     continue;
                 }
-                var asset = release.Assets.FirstOrDefault();
-                if (asset == null)
+
+                if (release.Assets.Count == 0)
                 {
                     progress.ReportError($"{module.Id}:{module.Version} has no assets");
                     continue;
                 }
+                var asset = release.Assets[0];
+
                 progress.ReportInfo($"Downloading {module.Id}");
                 await HttpTasks.HttpDownloadFileAsync(asset.Url, zipDestination, clientConfigurator: c =>
                 {

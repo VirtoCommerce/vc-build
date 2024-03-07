@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace VirtoCommerce.Build.PlatformTools
+namespace PlatformTools.Modules
 {
     [Serializable]
     public class ModuleInstallationException : Exception

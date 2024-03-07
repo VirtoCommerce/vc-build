@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using VirtoCommerce.Build.PlatformTools;
+using PlatformTools.Modules;
 
-namespace PlatformTools.Azure
+namespace PlatformTools.Modules.Azure
 {
     internal class AzureBlob : ModuleSource
     {

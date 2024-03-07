@@ -1,4 +1,6 @@
-namespace PlatformTools.Github
+using PlatformTools.Modules;
+
+namespace PlatformTools.Modules.Github
 {
     internal class GithubPrivateModuleItem : ModuleItem
     {

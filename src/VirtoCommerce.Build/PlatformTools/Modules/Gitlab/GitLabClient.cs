@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Nuke.Common;
 
-namespace PlatformTools.Gitlab;
+namespace PlatformTools.Modules.Gitlab;
 
 public class GitLabClient
 {
@@ -28,7 +28,7 @@ public class GitLabClient
         var jobResponse = await _client.GetAsync(jobUrl);
         var jobJson = await jobResponse.Content.ReadAsStringAsync();
         var jobData = JObject.Parse(jobJson);
-        
+
 
         // Get artifact file name and URL
         var artifactFileName = (string)jobData["artifacts_file"]?["filename"];

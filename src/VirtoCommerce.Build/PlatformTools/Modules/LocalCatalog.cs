@@ -11,7 +11,7 @@ using VirtoCommerce.Platform.Core.Modularity;
 using VirtoCommerce.Platform.DistributedLock;
 using VirtoCommerce.Platform.Modules;
 
-namespace PlatformTools
+namespace PlatformTools.Modules
 {
     public class LocalCatalog : LocalStorageModuleCatalog
     {
@@ -19,7 +19,7 @@ namespace PlatformTools
         private readonly ILogger<LocalStorageModuleCatalog> _logger;
         private readonly IInternalDistributedLockService _distributedLockProvider;
         private readonly string _discoveryPath;
-        public LocalCatalog(IOptions<LocalStorageModuleCatalogOptions> options, IInternalDistributedLockService distributedLockProvider, ILogger<LocalStorageModuleCatalog> logger):
+        public LocalCatalog(IOptions<LocalStorageModuleCatalogOptions> options, IInternalDistributedLockService distributedLockProvider, ILogger<LocalStorageModuleCatalog> logger) :
             base(options, distributedLockProvider, logger)
         {
             _options = options.Value;
@@ -136,7 +136,7 @@ namespace PlatformTools
             return builder.Uri.ToString();
         }
 
-        private IDictionary<string, ModuleManifest> GetModuleManifests()
+        private Dictionary<string, ModuleManifest> GetModuleManifests()
         {
             var result = new Dictionary<string, ModuleManifest>();
 
@@ -201,7 +201,7 @@ namespace PlatformTools
                 targetVersion = new Version(targetFileVersionInfo.FileMajorPart, targetFileVersionInfo.FileMinorPart, targetFileVersionInfo.FileBuildPart, targetFileVersionInfo.FilePrivatePart);
             }
 
-            var versionsAreSameButLaterDate = (sourceVersion == targetVersion && targetFileInfo.Exists && sourceFileInfo.Exists && targetFileInfo.LastWriteTimeUtc < sourceFileInfo.LastWriteTimeUtc);
+            var versionsAreSameButLaterDate = sourceVersion == targetVersion && targetFileInfo.Exists && sourceFileInfo.Exists && targetFileInfo.LastWriteTimeUtc < sourceFileInfo.LastWriteTimeUtc;
             if (!targetFileInfo.Exists || sourceVersion > targetVersion || versionsAreSameButLaterDate)
             {
                 var targetDirectoryPath = Path.GetDirectoryName(targetFilePath);

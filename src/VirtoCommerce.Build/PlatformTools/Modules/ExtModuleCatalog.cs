@@ -9,7 +9,7 @@ using VirtoCommerce.Platform.Core.Modularity;
 using VirtoCommerce.Platform.Modules;
 using VirtoCommerce.Platform.Modules.External;
 
-namespace PlatformTools
+namespace PlatformTools.Modules
 {
     internal static class ExtModuleCatalog
     {
@@ -44,7 +44,7 @@ namespace PlatformTools
         {
             var options = new ExternalModuleCatalogOptions
             {
-                ModulesManifestUrl = new Uri(manifestUrls.First()),
+                ModulesManifestUrl = new Uri(manifestUrls[0]),
                 AuthorizationToken = authToken,
                 IncludePrerelease = false,
                 AutoInstallModuleBundles = Array.Empty<string>(),

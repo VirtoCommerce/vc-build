@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using PlatformTools.Modules;
 using VirtoCommerce.Build.PlatformTools;
 
 namespace PlatformTools

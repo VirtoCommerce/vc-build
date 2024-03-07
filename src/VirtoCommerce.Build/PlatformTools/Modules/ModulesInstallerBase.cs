@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using VirtoCommerce.Platform.Core.Modularity;
 
-namespace VirtoCommerce.Build.PlatformTools
+namespace PlatformTools.Modules
 {
     public abstract class ModulesInstallerBase
     {

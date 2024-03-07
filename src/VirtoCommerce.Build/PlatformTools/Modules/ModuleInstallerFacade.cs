@@ -6,7 +6,7 @@ using VirtoCommerce.Platform.Data.ZipFile;
 using VirtoCommerce.Platform.Modules;
 using VirtoCommerce.Platform.Modules.External;
 
-namespace PlatformTools
+namespace PlatformTools.Modules
 {
     internal static class ModuleInstallerFacade
     {

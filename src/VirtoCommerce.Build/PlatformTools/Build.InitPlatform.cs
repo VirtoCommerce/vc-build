@@ -1,6 +1,7 @@
 using Nuke.Common;
 using Nuke.Common.IO;
 using PlatformTools;
+using PlatformTools.Modules;
 using VirtoCommerce.Platform.Core.Common;
 
 namespace VirtoCommerce.Build
