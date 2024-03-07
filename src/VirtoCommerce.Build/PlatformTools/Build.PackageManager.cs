@@ -314,7 +314,6 @@ namespace VirtoCommerce.Build
             return result;
         }
 
-
         public Target InstallModules => _ => _
              .After(InstallPlatform)
              .OnlyWhenDynamic(() => !PlatformParameter)
