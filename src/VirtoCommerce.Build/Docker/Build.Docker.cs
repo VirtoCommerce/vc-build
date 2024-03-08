@@ -18,9 +18,10 @@ namespace VirtoCommerce.Build
 
         private static string DockerImageFullName => string.IsNullOrEmpty(DockerImageTag) ? DockerImageName : DockerImageName.Append($":{DockerImageTag}");
 
+        public bool DockerCredentialsPassed => !string.IsNullOrEmpty(DockerUsername) && !string.IsNullOrEmpty(DockerPassword);
         Target DockerLogin => _ => _
         .Before(BuildImage, PushImage)
-        .OnlyWhenDynamic(() => !string.IsNullOrEmpty(DockerUsername) && !string.IsNullOrEmpty(DockerPassword))
+        .OnlyWhenDynamic(() => DockerCredentialsPassed)
         .Executes(() =>
         {
             DockerTasks.DockerLogger = (_, m) => Log.Debug(m);
