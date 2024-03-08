@@ -363,11 +363,12 @@ namespace VirtoCommerce.Build
                  {
                      if (m.Level == ProgressMessageLevel.Error)
                      {
-                         Assert.Fail(m.Message);
+                        ExitCode = -1;
+                        Assert.Fail(m.Message);
                      }
                      else
                      {
-                         Log.Information(m.Message);
+                        Log.Information(m.Message);
                      }
                  });
 
