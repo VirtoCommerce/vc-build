@@ -180,7 +180,7 @@ namespace VirtoCommerce.Build
             }
         }
 
-        private bool IsModulesInstallation => !PlatformParameter && (!Module?.IsEmpty() ?? false);
+        private static bool IsModulesInstallation => !PlatformParameter && (!Module?.IsEmpty() ?? false);
 
         private static bool PlatformVersionChanged
         {
@@ -191,8 +191,8 @@ namespace VirtoCommerce.Build
             }
         }
 
-        public bool IsNotServerBuild => !IsServerBuild;
-        public bool ThereAreFilesToBackup => Directory.EnumerateFileSystemEntries(RootDirectory).Any(p => !p.Contains(".nuke"));
+        private static bool IsNotServerBuild => !IsServerBuild;
+        private static bool ThereAreFilesToBackup => Directory.EnumerateFileSystemEntries(RootDirectory).Any(p => !p.Contains(".nuke"));
 
         public Target Backup => _ => _
             .Triggers(Rollback, RemoveBackup)
