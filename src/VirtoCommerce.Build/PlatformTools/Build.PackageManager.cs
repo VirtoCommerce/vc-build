@@ -180,21 +180,24 @@ namespace VirtoCommerce.Build
             }
         }
 
-        private static bool IsModulesInstallation()
+        private static bool IsModulesInstallation => !PlatformParameter && (!Module?.IsEmpty() ?? false);
+
+        private static bool PlatformVersionChanged
         {
-            return !PlatformParameter && (!Module?.IsEmpty() ?? false);
+            get
+            {
+                var manifest = PackageManager.FromFile(PackageManifestPath);
+                return IsPlatformInstallationNeeded(manifest.PlatformVersion);
+            }
         }
 
-        private static bool PlatformVersionChanged()
-        {
-            var manifest = PackageManager.FromFile(PackageManifestPath);
-            return IsPlatformInstallationNeeded(manifest.PlatformVersion);
-        }
+        private static bool IsNotServerBuild => !IsServerBuild;
+        private static bool ThereAreFilesToBackup => Directory.EnumerateFileSystemEntries(RootDirectory).Any(p => !p.Contains(".nuke"));
 
         public Target Backup => _ => _
             .Triggers(Rollback, RemoveBackup)
             .Before(Install, Update, InstallPlatform, InstallModules)
-            .OnlyWhenDynamic(() => !IsServerBuild && Directory.EnumerateFileSystemEntries(RootDirectory).Any())
+            .OnlyWhenDynamic(() => IsNotServerBuild && ThereAreFilesToBackup)
             .ProceedAfterFailure()
             .Executes(() =>
             {
@@ -208,23 +211,25 @@ namespace VirtoCommerce.Build
                 CompressionExtensions.TarGZipTo(RootDirectory, BackupFile, filter: f => !f.ToFileInfo().FullName.StartsWith(RootDirectory / ".nuke") && !symlinks.Exists(s => f.ToFileInfo().FullName.StartsWith(s)));
             });
 
+        public bool ThereAreFailedTargets => FailedTargets.Count > 0 && SucceededTargets.Contains(Backup);
         public Target Rollback => _ => _
             .DependsOn(Backup)
             .After(Backup, Install, Update, InstallPlatform, InstallModules)
-            .OnlyWhenDynamic(() => FailedTargets.Count > 0 && SucceededTargets.Contains(Backup))
+            .OnlyWhenDynamic(() => ThereAreFailedTargets)
             .AssuredAfterFailure()
             .Executes(() => CompressionExtensions.UnTarGZipTo(BackupFile, RootDirectory));
 
+        public bool WorkIsDone => FinishedTargets.Contains(Backup) && File.Exists(BackupFile);
         public Target RemoveBackup => _ => _
             .After(Backup, Rollback)
-            .OnlyWhenDynamic(() => FinishedTargets.Contains(Backup) && File.Exists(BackupFile))
+            .OnlyWhenDynamic(() => WorkIsDone)
             .AssuredAfterFailure()
             .Unlisted()
             .DependsOn(Backup)
             .Executes(() => BackupFile.DeleteFile());
 
         public Target InstallPlatform => _ => _
-             .OnlyWhenDynamic(() => PlatformVersionChanged() && !IsModulesInstallation())
+             .OnlyWhenDynamic(() => PlatformVersionChanged && !IsModulesInstallation)
              .Executes(async () =>
              {
                  var packageManifest = PackageManager.FromFile(PackageManifestPath);
@@ -367,7 +372,7 @@ namespace VirtoCommerce.Build
                  {
                      if (m.Level == ProgressMessageLevel.Error)
                      {
-                         Assert.Fail(m.Message);
+                        Assert.Fail(m.Message);
                      }
                      else
                      {
@@ -666,7 +671,7 @@ namespace VirtoCommerce.Build
                 if (!modulesInCatalog.Contains(manifest.Id))
                 {
                     Log.Warning("There is no module {0}:{1} in external catalog. You should add it in manifest manually.", manifest.Id, manifest.Version);
-                    
+
                 }
                 else
                 {
