@@ -385,7 +385,7 @@ namespace VirtoCommerce.Build
                  modulesToInstall.ForEach(module => module.DependsOn.Clear());
                  moduleInstaller.Install(modulesToInstall, progress);
 
-                 if(ExitCode != 0 || ExitCode !=null)
+                 if(ExitCode != 0 && ExitCode !=null)
                  {
                     Assert.Fail("Errors occurred while installing modules.");
                  }
