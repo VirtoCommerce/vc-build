@@ -22,6 +22,11 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <NukeTelemetryVersion>1</NukeTelemetryVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Copyright>Copyright © VirtoCommerce 2011-2024</Copyright>
+    <PackageProjectUrl>https://github.com/VirtoCommerce/vc-build</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageIcon>logo.png</PackageIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -70,6 +75,18 @@
     <NukeExternalFiles Remove="Properties\**" />
     <NukeSpecificationFiles Remove="artifacts\**" />
     <NukeSpecificationFiles Remove="Properties\**" />
+    <None Include="..\..\LICENSE.txt">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\..\logo.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
 
     <!-- Common build related files -->
 
