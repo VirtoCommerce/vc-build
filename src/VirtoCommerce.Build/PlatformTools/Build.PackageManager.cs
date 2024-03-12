@@ -62,6 +62,22 @@ namespace VirtoCommerce.Build
 
         [Parameter("Backup file path")] public static AbsolutePath BackupFile { get; set; } = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
+        [Parameter("Modules discovery path")]
+        public static string DiscoveryPath { get; set; }
+
+        [Parameter("Probing path")]
+        public static AbsolutePath ProbingPath { get; set; } = RootDirectory / "app_data" / "modules";
+
+        [Parameter("appsettings.json path")]
+        public static AbsolutePath AppsettingsPath { get; set; } = RootDirectory / "appsettings.json";
+
+        public Target InitPlatform => _ => _
+             .Executes(() =>
+             {
+                 var configuration = AppSettings.GetConfiguration(RootDirectory, AppsettingsPath);
+                 LocalModuleCatalog.GetCatalog(DiscoveryPath.EmptyToNull() ?? configuration.GetModulesDiscoveryPath(), ProbingPath);
+             });
+
         public Target Init => _ => _
              .Executes(async () =>
              {

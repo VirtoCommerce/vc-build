@@ -65,9 +65,6 @@ internal partial class Build
 
     [Parameter("Organization name", Name = "Organization")] public string SaaSOrganizationName { get; set; }
 
-    public Target WaitForStatus => _ => _
-        .Executes(() => Log.Warning("Target WaitForStatus is obsolete. Use CloudEnvStatus."))
-        .Triggers(CloudEnvStatus);
     public Target CloudEnvStatus => _ => _
         .Executes(async () =>
         {
@@ -91,9 +88,6 @@ internal partial class Build
             Assert.True(isSuccess, $"Statuses {HealthStatus} {SyncStatus} were not obtained for the number of attempts: {AttemptsNumber}");
         });
 
-    public Target SetEnvParameter => _ => _
-        .Executes(() => Log.Warning("Target SetEnvParameter is obsolete. Use CloudEnvSetParameter."))
-        .Triggers(CloudEnvSetParameter);
 
     public Target CloudEnvSetParameter => _ => _
         .Executes(async () =>
@@ -109,9 +103,6 @@ internal partial class Build
 
             await cloudClient.UpdateEnvironmentAsync(env);
         });
-    public Target UpdateCloudEnvironment => _ => _
-        .Executes(() => Log.Warning("Target UpdateCloudEnvironment is obsolete. Use CloudEnvUpdate."))
-        .Triggers(CloudEnvUpdate);
 
     public Target CloudEnvUpdate => _ => _
         .Executes(async () =>
@@ -360,7 +351,7 @@ internal partial class Build
                 DbProvider = DbProvider,
                 DbName = DbName
             };
-            
+
             var cloudClient = CreateVirtocloudClient(CloudUrl, await GetCloudTokenAsync());
             await cloudClient.EnvironmentsCreateAsync(model);
         });
