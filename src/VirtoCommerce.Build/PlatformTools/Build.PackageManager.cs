@@ -16,6 +16,7 @@ using PlatformTools.Modules;
 using PlatformTools.Modules.Azure;
 using PlatformTools.Modules.Github;
 using PlatformTools.Modules.Gitlab;
+using PlatformTools.Modules.LocalModules;
 using Serilog;
 using VirtoCommerce.Build.PlatformTools;
 using VirtoCommerce.Platform.Core.Common;
@@ -474,13 +475,14 @@ namespace VirtoCommerce.Build
             return moduleInfo;
         }
 
-        private static ModulesInstallerBase GetModuleInstaller(ModuleSource moduleSource) => moduleSource switch
+        private static ModuleInstallerBase GetModuleInstaller(ModuleSource moduleSource) => moduleSource switch
         {
             AzurePipelineArtifacts => new AzurePipelineArtifactsModuleInstaller(AzureToken, GetDiscoveryPath()),
             AzureUniversalPackages => new AzureUniversalPackagesModuleInstaller(AzureToken, GetDiscoveryPath()),
             GithubPrivateRepos => new GithubPrivateModulesInstaller(GitHubToken, GetDiscoveryPath()),
             AzureBlob _ => new AzureBlobModuleInstaller(AzureToken, GetDiscoveryPath()),
             GitlabJobArtifacts _ => new GitlabJobArtifactsModuleInstaller(GitLabServer, GitLabToken, GetDiscoveryPath()),
+            Local _ => new LocalModuleInstaller(GetDiscoveryPath()),
             _ => throw new NotImplementedException("Unknown module source"),
         };
 
@@ -687,7 +689,6 @@ namespace VirtoCommerce.Build
                 if (!modulesInCatalog.Contains(manifest.Id))
                 {
                     Log.Warning("There is no module {0}:{1} in external catalog. You should add it in manifest manually.", manifest.Id, manifest.Version);
-
                 }
                 else
                 {
