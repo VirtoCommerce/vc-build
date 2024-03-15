@@ -81,6 +81,18 @@ This command downloads and installs the platform or modules into the relevant fo
           "Id": "42920184"
         }
       ]
+    },
+    {
+      "Name": "Local",
+      "Modules": [
+        {
+          "Path": "C:/projects/vc/vc-module-saas/artifacts/VirtoCommerce.SaaS_3.214.0.zip",
+          "Id": "OptionalForThisSource"
+        },
+        {
+          "Path": "C:\\projects\\vc\\vc-module-catalog\\artifacts\\VirtoCommerce.Catalog"
+        }
+      ]
     }
   ],
   "ManifestVersion": "2.0",
