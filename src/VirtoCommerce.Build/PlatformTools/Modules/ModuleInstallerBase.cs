@@ -4,7 +4,7 @@ using VirtoCommerce.Platform.Core.Modularity;
 
 namespace PlatformTools.Modules
 {
-    public abstract class ModulesInstallerBase
+    public abstract class ModuleInstallerBase
     {
         public virtual Task Install(ModuleSource source, IProgress<ProgressMessage> progress)
         {

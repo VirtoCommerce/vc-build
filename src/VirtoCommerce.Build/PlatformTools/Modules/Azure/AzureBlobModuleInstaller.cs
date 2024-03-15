@@ -9,7 +9,7 @@ using AzureBlobs = Azure.Storage.Blobs;
 
 namespace PlatformTools.Modules.Azure
 {
-    internal class AzureBlobModuleInstaller : ModulesInstallerBase
+    internal class AzureBlobModuleInstaller : ModuleInstallerBase
     {
         private readonly string _token;
         private readonly string _destination;

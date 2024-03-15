@@ -5,6 +5,7 @@ using Newtonsoft.Json.Serialization;
 using PlatformTools.Modules.Azure;
 using PlatformTools.Modules.Github;
 using PlatformTools.Modules.Gitlab;
+using PlatformTools.Modules.LocalModules;
 using VirtoCommerce.Build.PlatformTools;
 
 namespace PlatformTools.Modules
@@ -40,6 +41,8 @@ namespace PlatformTools.Modules
                 case nameof(GitlabJobArtifacts):
                     return JsonConvert.DeserializeObject<GitlabJobArtifacts>(jo.ToString(),
                         SpecifiedSubclassConversion);
+                case nameof(Local):
+                    return JsonConvert.DeserializeObject<Local>(jo.ToString(), SpecifiedSubclassConversion);
                 default:
                     throw new TypeLoadException($"Unknown module source: {sourceName}");
             }

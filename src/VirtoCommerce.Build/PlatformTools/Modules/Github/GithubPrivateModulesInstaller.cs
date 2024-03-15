@@ -11,7 +11,7 @@ using VirtoCommerce.Platform.Core.Modularity;
 
 namespace PlatformTools.Modules.Github
 {
-    internal class GithubPrivateModulesInstaller : ModulesInstallerBase
+    internal class GithubPrivateModulesInstaller : ModuleInstallerBase
     {
 
         private readonly string _token;

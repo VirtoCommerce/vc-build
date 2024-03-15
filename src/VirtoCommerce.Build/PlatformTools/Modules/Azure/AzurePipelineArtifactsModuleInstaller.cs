@@ -8,7 +8,7 @@ using VirtoCommerce.Platform.Core.Modularity;
 
 namespace PlatformTools.Modules.Azure
 {
-    internal class AzurePipelineArtifactsModuleInstaller : ModulesInstallerBase
+    internal class AzurePipelineArtifactsModuleInstaller : ModuleInstallerBase
     {
         private readonly string _token;
         private readonly string _discoveryPath;

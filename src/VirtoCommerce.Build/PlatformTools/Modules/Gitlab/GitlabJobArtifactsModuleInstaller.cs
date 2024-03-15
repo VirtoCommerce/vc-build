@@ -8,7 +8,7 @@ using VirtoCommerce.Platform.Core.Modularity;
 
 namespace PlatformTools.Modules.Gitlab;
 
-internal class GitlabJobArtifactsModuleInstaller : ModulesInstallerBase
+internal class GitlabJobArtifactsModuleInstaller : ModuleInstallerBase
 {
     private readonly GitLabClient _client;
     private readonly string _discoveryPath;

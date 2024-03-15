@@ -11,7 +11,7 @@ using VirtoCommerce.Platform.Core.Modularity;
 
 namespace PlatformTools.Modules.Azure
 {
-    internal class AzureUniversalPackagesModuleInstaller : ModulesInstallerBase
+    internal class AzureUniversalPackagesModuleInstaller : ModuleInstallerBase
     {
         readonly string token;
         readonly string discoveryPath;
