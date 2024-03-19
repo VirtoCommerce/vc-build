@@ -237,7 +237,7 @@ internal partial class Build : NukeBuild
 
     private static readonly string[] cleanSearchPattern = new[] { "**/bin", "**/obj" };
 
-    private static string AIConnectionString = "InstrumentationKey=efd0f15e-de63-4367-a64c-95d1db50ac12;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/";
+    private static string AIConnectionString = "InstrumentationKey=935c72ed-d8a9-4ef6-a4d1-b3ebfdfddfef;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/";
     private static TelemetryClient _telemetryClient;
     protected static TelemetryClient TelemetryClient
     {
