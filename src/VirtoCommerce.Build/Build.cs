@@ -262,7 +262,7 @@ internal partial class Build : NukeBuild
         nameof(SonarAuthToken),
         nameof(DockerPassword)
         };
-    private string GetSafeCmdArguments()
+    private static string GetSafeCmdArguments()
     {
         var safeArgs = EnvironmentInfo.CommandLineArguments.Join(" ");
         foreach(var arg in EnvironmentInfo.CommandLineArguments.Where(a => TokenArguments.Contains(a.Replace("-", ""), StringComparer.InvariantCultureIgnoreCase)))
