@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Xml;
 using Extensions;
+using Microsoft.ApplicationInsights;
 using Microsoft.Build.Locator;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -235,6 +236,60 @@ internal partial class Build : NukeBuild
     protected static bool IsModule => ModuleManifestFile.FileExists();
 
     private static readonly string[] cleanSearchPattern = new[] { "**/bin", "**/obj" };
+
+    private static string AIConnectionString = "InstrumentationKey=935c72ed-d8a9-4ef6-a4d1-b3ebfdfddfef;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/";
+    private static TelemetryClient _telemetryClient;
+    protected static TelemetryClient TelemetryClient
+    {
+        get
+        {
+            if (_telemetryClient == null)
+            {
+                var telemetryConfig = new Microsoft.ApplicationInsights.Extensibility.TelemetryConfiguration();
+                telemetryConfig.ConnectionString = AIConnectionString;
+                _telemetryClient = new TelemetryClient(telemetryConfig);
+            }
+            return _telemetryClient;
+        }
+    }
+
+    private static readonly string[] TokenArguments = new[]{
+        nameof(GitLabToken),
+        nameof(GitHubToken),
+        nameof(AzureToken),
+        nameof(CloudToken),
+        nameof(ArgoToken),
+        nameof(SonarAuthToken),
+        nameof(DockerPassword)
+        };
+    private static string GetSafeCmdArguments()
+    {
+        var safeArgs = EnvironmentInfo.CommandLineArguments.Join(" ");
+        foreach(var arg in EnvironmentInfo.CommandLineArguments.Where(a => TokenArguments.Contains(a.Replace("-", ""), StringComparer.InvariantCultureIgnoreCase)))
+        {
+            var argValue = EnvironmentInfo.GetNamedArgument<string>(arg);
+            safeArgs = safeArgs.Replace(argValue, "***");
+        }
+        return safeArgs;
+    }
+
+    protected override void OnTargetRunning(string target)
+    {
+        var args = GetSafeCmdArguments();
+        TelemetryClient.TrackEvent(target, new Dictionary<string, string>
+            {
+                { "args", args }
+            });
+        TelemetryClient.Flush();
+        base.OnTargetRunning(target);
+    }
+
+    protected override void OnTargetFailed(string target)
+    {
+        TelemetryClient.TrackException(new Exception($"{target} failed with arguments: {GetSafeCmdArguments()}"));
+        TelemetryClient.Flush();
+        base.OnTargetFailed(target);
+    }
 
     public Target Clean => _ => _
         .Before(Restore)
@@ -478,7 +533,10 @@ internal partial class Build : NukeBuild
     }
 
     public Target WebPackBuild => _ => _
-        .Executes(() => WebPackBuildMethod(WebProject));
+        .Executes(() =>
+        {
+            WebPackBuildMethod(WebProject);
+        });
 
     private static void WebPackBuildMethod(Project webProject)
     {
