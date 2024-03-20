@@ -225,8 +225,14 @@ namespace VirtoCommerce.Build
                     modulesDirs = Directory.EnumerateDirectories(discoveryPath).ToList();
                 }
                 var symlinks = modulesDirs.Where(m => new DirectoryInfo(m).LinkTarget != null).ToList();
-                CompressionExtensions.TarGZipTo(RootDirectory, BackupFile, filter: f => !f.ToFileInfo().FullName.StartsWith(RootDirectory / ".nuke") && !symlinks.Exists(s => f.ToFileInfo().FullName.StartsWith(s)));
+                CompressionExtensions.TarGZipTo(RootDirectory, BackupFile, filter: f => !SkipFile(f.ToFileInfo()) && !symlinks.Exists(s => f.ToFileInfo().FullName.StartsWith(s)));
             });
+
+        private static bool SkipFile(FileInfo fileInfo)
+        {
+            const string nodeModules = "node_modules";
+            return fileInfo.FullName.StartsWith(RootDirectory / ".nuke") || fileInfo.FullName.Contains(nodeModules);
+        }
 
         public bool ThereAreFailedTargets => FailedTargets.Count > 0 && SucceededTargets.Contains(Backup);
         public Target Rollback => _ => _
