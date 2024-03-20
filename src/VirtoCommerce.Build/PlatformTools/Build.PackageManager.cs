@@ -228,7 +228,7 @@ namespace VirtoCommerce.Build
                 CompressionExtensions.TarGZipTo(RootDirectory, BackupFile, filter: f => !SkipFile(f.ToFileInfo()) && !symlinks.Exists(s => f.ToFileInfo().FullName.StartsWith(s)));
             });
 
-        private bool SkipFile(FileInfo fileInfo)
+        private static bool SkipFile(FileInfo fileInfo)
         {
             const string nodeModules = "node_modules";
             return fileInfo.FullName.StartsWith(RootDirectory / ".nuke") || fileInfo.FullName.Contains(nodeModules);
