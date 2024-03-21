@@ -308,7 +308,7 @@ namespace VirtoCommerce.Build
 
                 if (Force)
                 {
-                    Log.Information($"The old appsettings.json was saved as {bakFileName}");
+                    Log.Warning("The old appsettings.json was saved as {0}", bakFileName);
                 }
                 else
                 {
