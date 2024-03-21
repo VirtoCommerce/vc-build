@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -248,6 +249,8 @@ internal partial class Build : NukeBuild
                 var telemetryConfig = new Microsoft.ApplicationInsights.Extensibility.TelemetryConfiguration();
                 telemetryConfig.ConnectionString = AIConnectionString;
                 _telemetryClient = new TelemetryClient(telemetryConfig);
+                _telemetryClient.Context.Device.OperatingSystem = Environment.OSVersion.ToString();
+                _telemetryClient.Context.Component.Version = Assembly.GetEntryAssembly().GetName().Version.ToString();
             }
             return _telemetryClient;
         }
