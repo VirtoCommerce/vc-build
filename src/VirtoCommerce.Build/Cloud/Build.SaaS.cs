@@ -64,10 +64,6 @@ internal partial class Build
     [Parameter("Url to Wake-script which will use to build the docker image in the CloudDeploy/CloudUp Target")]
     public static string WaitScriptUrl { get; set; } = "https://raw.githubusercontent.com/VirtoCommerce/vc-docker/feat/net8/linux/platform/wait-for-it.sh";
 
-    public Target WaitForStatus => _ => _
-        .Executes(() => Log.Warning("Target WaitForStatus is obsolete. Use CloudEnvStatus."))
-        .Triggers(CloudEnvStatus);
-
     public Target CloudEnvStatus => _ => _
         .Executes(async () =>
         {
