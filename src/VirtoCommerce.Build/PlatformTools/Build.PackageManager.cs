@@ -362,7 +362,7 @@ namespace VirtoCommerce.Build
                  {
                      if (m.Level == ProgressMessageLevel.Error)
                      {
-                        ExitCode = -1;
+                        ExitCode = 1;
                         Log.Error(m.Message);
                      }
                      else
@@ -385,7 +385,7 @@ namespace VirtoCommerce.Build
                  modulesToInstall.ForEach(module => module.DependsOn.Clear());
                  moduleInstaller.Install(modulesToInstall, progress);
 
-                 if(ExitCode != 0 && ExitCode !=null)
+                 if (ExitCode > 0)
                  {
                     Assert.Fail("Errors occurred while installing modules.");
                  }
