@@ -345,7 +345,6 @@ namespace VirtoCommerce.Build
         public Target InstallModules => _ => _
              .After(InstallPlatform)
              .OnlyWhenDynamic(() => !PlatformParameter)
-             .ProceedAfterFailure()
              .Executes(async () =>
              {
                  if (!RunningTargets.Contains(Install))
@@ -395,11 +394,13 @@ namespace VirtoCommerce.Build
                  {
                      if (m.Level == ProgressMessageLevel.Error)
                      {
-                        Assert.Fail(m.Message);
+                        ExitCode = 1;
+                        Log.Error(m.Message);
+
                      }
                      else
                      {
-                         Log.Information(m.Message);
+                        Log.Information(m.Message);
                      }
                  });
 
@@ -415,12 +416,11 @@ namespace VirtoCommerce.Build
                      modulesToInstall.AddRange(missingModules);
                  }
                  modulesToInstall.ForEach(module => module.DependsOn.Clear());
-                 try
+                 moduleInstaller.Install(modulesToInstall, progress);
+
+                 if (ExitCode > 0)
                  {
-                    moduleInstaller.Install(modulesToInstall, progress);
-                 } catch (Exception ex)
-                 {
-                     Assert.Fail(ex.Message);
+                    Assert.Fail("Errors occurred while installing modules.");
                  }
 
                  foreach (var moduleSource in moduleSources)

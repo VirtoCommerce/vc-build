@@ -883,9 +883,10 @@ internal partial class Build : NukeBuild
 
         CreateNukeDirectory();
 
+        var exitCode = Execute<Build>(x => x.Compile);
+
         ClearTempOnExit();
 
-        var exitCode = Execute<Build>(x => x.Compile);
         return _exitCode ?? exitCode;
     }
 

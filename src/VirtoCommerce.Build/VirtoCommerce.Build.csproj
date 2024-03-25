@@ -102,7 +102,7 @@
     <None Include="..\appveyor.yml" LinkBase="ci" Condition="Exists('..\appveyor.yml')" />
     <None Include="..\.travis.yml" LinkBase="ci" Condition="Exists('..\.travis.yml')" />
     <None Remove="Microsoft.TeamFoundationServer.Client" />
-    
+
     <None Remove="YamlDotNet" />
     <None Remove="Cloud\Models\" />
     <None Remove="Utils\" />

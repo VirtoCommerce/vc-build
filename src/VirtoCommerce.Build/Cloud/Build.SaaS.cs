@@ -1,15 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Security.Policy;
-using System.Text.Json.Nodes;
-using System.Text;
+using System.Net;
 using System.Threading.Tasks;
 using Cloud.Client;
 using Cloud.Models;
-using Microsoft.TeamFoundation.Build.WebApi;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
@@ -19,10 +16,6 @@ using Nuke.Common.Tools.DotNet;
 using Serilog;
 using VirtoCloud.Client.Api;
 using VirtoCloud.Client.Model;
-using System.Net;
-using System.Diagnostics;
-using Microsoft.AspNetCore.Identity;
-using System.Runtime.InteropServices;
 
 namespace VirtoCommerce.Build;
 
@@ -64,6 +57,16 @@ internal partial class Build
 
 
     [Parameter("Organization name", Name = "Organization")] public string SaaSOrganizationName { get; set; }
+
+
+    [Parameter("Url to Dockerfile which will use to build the docker image in the CloudDeploy/CloudUp Target")]
+    public static string DockerfileUrl { get; set; } = "https://raw.githubusercontent.com/VirtoCommerce/vc-docker/feat/net8/linux/platform/Dockerfile";
+    [Parameter("Url to Wake-script which will use to build the docker image in the CloudDeploy/CloudUp Target")]
+    public static string WaitScriptUrl { get; set; } = "https://raw.githubusercontent.com/VirtoCommerce/vc-docker/feat/net8/linux/platform/wait-for-it.sh";
+
+    public Target WaitForStatus => _ => _
+        .Executes(() => Log.Warning("Target WaitForStatus is obsolete. Use CloudEnvStatus."))
+        .Triggers(CloudEnvStatus);
 
     public Target CloudEnvStatus => _ => _
         .Executes(async () =>
@@ -121,23 +124,23 @@ internal partial class Build
 
         return false;
     }
-
-    public static string DockerfileUrl { get; set; } = "https://raw.githubusercontent.com/krankenbro/vc-ci-test/master/Dockerfile";
     public Target PrepareDockerContext => _ => _
-        .Before(InitPlatform, DockerLogin, BuildImage, PushImage, BuildAndPush)
+        .Before(DockerLogin, BuildImage, PushImage, CloudInit)
         .Triggers(InitPlatform)
         .Executes(async () => await PrepareDockerContextMethod());
 
     private async Task PrepareDockerContextMethod()
     {
         var dockerBuildContext = ArtifactsDirectory / "docker";
-        var platformDirectory = dockerBuildContext / "platform";
+        var platformDirectory = dockerBuildContext / "publish";
         var modulesPath = platformDirectory / "modules";
         var dockerfilePath = dockerBuildContext / "Dockerfile";
+        var waitScriptPath = dockerBuildContext / "wait-for-it.sh";
 
         dockerBuildContext.CreateOrCleanDirectory();
 
         await HttpTasks.HttpDownloadFileAsync(DockerfileUrl, dockerfilePath);
+        await HttpTasks.HttpDownloadFileAsync(WaitScriptUrl, waitScriptPath);
 
         var modulesSourcePath = Solution?.Path != null
             ? WebProject.Directory / "modules"
@@ -151,7 +154,7 @@ internal partial class Build
 
         if (string.IsNullOrWhiteSpace(DockerImageName))
         {
-            DockerImageName = $"{DockerUsername}/{EnvironmentName}";
+            DockerImageName = $"{DockerUsername}/{EnvironmentName.ToLowerInvariant()}";
         }
 
         DockerImageTag ??= DateTime.Now.ToString("MMddyyHHmmss");
@@ -338,7 +341,7 @@ internal partial class Build
         });
 
     public Target CloudInit => _ => _
-        .Before(PrepareDockerContext, BuildAndPush, CloudDeploy)
+        .After(PrepareDockerContext, DockerLogin, BuildImage, PushImage, BuildAndPush)
         .Requires(() => EnvironmentName)
         .Executes(async () =>
         {
@@ -349,8 +352,20 @@ internal partial class Build
                 ServicePlan = ServicePlan,
                 Cluster = ClusterName,
                 DbProvider = DbProvider,
-                DbName = DbName
+                DbName = DbName,
+                Helm = new HelmObject(new Dictionary<string, string> ())
             };
+
+            if(!string.IsNullOrEmpty(DockerImageName))
+            {
+                model.Helm.Parameters["platform.image.repository"] = DockerImageName;
+            }
+
+            if(!string.IsNullOrEmpty(DockerImageTag))
+            {
+                model.Helm.Parameters["platform.image.tag"] = DockerImageTag;
+            }
+
 
             var cloudClient = CreateVirtocloudClient(CloudUrl, await GetCloudTokenAsync());
             await cloudClient.EnvironmentsCreateAsync(model);
@@ -367,7 +382,7 @@ internal partial class Build
         });
 
     public Target CloudUp => _ => _
-        .DependsOn(CloudInit, CloudDeploy);
+        .DependsOn(PrepareDockerContext, BuildAndPush, CloudInit);
 
     private static SaaSDeploymentApi CreateVirtocloudClient(string url, string token)
     {
