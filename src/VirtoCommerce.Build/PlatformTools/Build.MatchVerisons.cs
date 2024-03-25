@@ -13,13 +13,14 @@ namespace VirtoCommerce.Build
 {
     internal partial class Build
     {
-        private Regex _moduleNameRegEx = new Regex(@"(VirtoCommerce.+)Module", RegexOptions.Compiled);
+        [GeneratedRegex(@"(VirtoCommerce.+)Module", RegexOptions.Compiled)]
+        private static partial Regex ModuleNameRegEx();
 
         public Target MatchVersions => _ => _
              .Executes(() =>
              {
                  var allPackages = new List<PackageItem>();
-                 var allProjects = Solution.GetProjects("*");
+                 var allProjects = Solution.GetAllProjects("*");
 
                  foreach (var project in allProjects)
                  {
@@ -38,7 +39,7 @@ namespace VirtoCommerce.Build
                  var missedDependenciesErrors = ValidateForMissedDependencies(allPackages);
                  errors.AddRange(missedDependenciesErrors);
 
-                 if (errors.Any())
+                 if (errors.Count > 0)
                  {
                      Assert.Fail(errors.Join(Environment.NewLine));
                  }
@@ -47,14 +48,14 @@ namespace VirtoCommerce.Build
         /// <summary>
         /// Get list of VirtoCommerce packages (platform and module)
         /// </summary>
-        private IEnumerable<PackageItem> GetProjectPackages(Project project)
+        private static IEnumerable<PackageItem> GetProjectPackages(Project project)
         {
             var msBuildProject = project.GetMSBuildProject();
 
             // find all VirtoCommerce references
             return msBuildProject.Items
                 .Where(x => x.ItemType == "PackageReference"
-                    && (x.EvaluatedInclude.StartsWith("VirtoCommerce.Platform.") || _moduleNameRegEx.IsMatch(x.EvaluatedInclude)))
+                    && (x.EvaluatedInclude.StartsWith("VirtoCommerce.Platform.") || ModuleNameRegEx().IsMatch(x.EvaluatedInclude)))
                 .Select(x =>
                 {
                     var versionMetadata = x.Metadata.FirstOrDefault(x => x.Name == "Version");
@@ -79,18 +80,19 @@ namespace VirtoCommerce.Build
         /// <summary>
         /// Check match between manifest platform version and platform packages
         /// </summary>
-        private IEnumerable<string> ValdatePlatformVersion(IEnumerable<PackageItem> packages)
+        private static List<string> ValdatePlatformVersion(IEnumerable<PackageItem> packages)
         {
             return packages
                 .Where(package => package.IsPlatformPackage && SemanticVersion.Parse(package.Version) != SemanticVersion.Parse(ModuleManifest.PlatformVersion))
                 .Select(x =>
-                        $"Mismatched platform dependency version found. Platform version: {ModuleManifest.PlatformVersion}, Platform package name: {x.Name}, platform package version: {x.Version}, project name: {x.ProjectName}");
+                        $"Mismatched platform dependency version found. Platform version: {ModuleManifest.PlatformVersion}, Platform package name: {x.Name}, platform package version: {x.Version}, project name: {x.ProjectName}")
+                .ToList();
         }
 
         /// <summary>
         /// Check dependencies for module packages versions mismatch
         /// </summary>
-        private IEnumerable<string> ValidateModuleDependenciesVersions(IEnumerable<PackageItem> packages)
+        private static List<string> ValidateModuleDependenciesVersions(IEnumerable<PackageItem> packages)
         {
             var result = new List<string>();
 
@@ -117,7 +119,7 @@ namespace VirtoCommerce.Build
         /// <summary>
         /// Check project packages for missed dependency in manifest
         /// </summary>
-        private IEnumerable<string> ValidateForMissedDependencies(IEnumerable<PackageItem> packages)
+        private static List<string> ValidateForMissedDependencies(IEnumerable<PackageItem> packages)
         {
             var result = new List<string>();
 
@@ -126,20 +128,20 @@ namespace VirtoCommerce.Build
                 return result;
             }
 
-            foreach (var packageGroup in packages.Where(x => !x.IsPlatformPackage).GroupBy(x => x.Name))
+            foreach (var packageGroupKey in packages.Where(x => !x.IsPlatformPackage).GroupBy(x => x.Name).Select(packageGroup => packageGroup.Key))
             {
-                if (!ModuleManifest.Dependencies.Any(dependency => HasNameMatch(packageGroup.Key, dependency.Id)))
+                if (!ModuleManifest.Dependencies.Any(dependency => HasNameMatch(packageGroupKey, dependency.Id)))
                 {
-                    result.Add($"Dependency in module.manifest is missing. Package name: {packageGroup.Key}");
+                    result.Add($"Dependency in module.manifest is missing. Package name: {packageGroupKey}");
                 }
             }
 
             return result;
         }
 
-        private bool HasNameMatch(string packageName, string dependencyName)
+        private static bool HasNameMatch(string packageName, string dependencyName)
         {
-            var match = _moduleNameRegEx.Match(packageName);
+            var match = ModuleNameRegEx().Match(packageName);
             return match.Groups.Values.Any(x => x.Value == dependencyName);
         }
     }

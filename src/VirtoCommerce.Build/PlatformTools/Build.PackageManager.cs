@@ -5,13 +5,18 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Extensions;
 using Nuke.Common;
 using Nuke.Common.IO;
+using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
 using PlatformTools;
-using PlatformTools.Azure;
-using PlatformTools.Github;
-using PlatformTools.Gitlab;
+using PlatformTools.Extensions;
+using PlatformTools.Modules;
+using PlatformTools.Modules.Azure;
+using PlatformTools.Modules.Github;
+using PlatformTools.Modules.Gitlab;
+using PlatformTools.Modules.LocalModules;
 using Serilog;
 using VirtoCommerce.Build.PlatformTools;
 using VirtoCommerce.Platform.Core.Common;
@@ -56,7 +61,23 @@ namespace VirtoCommerce.Build
         [Parameter("Url to Bundles file")]
         public static string BundlesUrl { get; set; } = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/bundles/stable.json";
 
-        [Parameter("Backup file path")] public static string BackupFile { get; set; } = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        [Parameter("Backup file path")] public static AbsolutePath BackupFile { get; set; } = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+
+        [Parameter("Modules discovery path")]
+        public static string DiscoveryPath { get; set; }
+
+        [Parameter("Probing path")]
+        public static AbsolutePath ProbingPath { get; set; } = RootDirectory / "app_data" / "modules";
+
+        [Parameter("appsettings.json path")]
+        public static AbsolutePath AppsettingsPath { get; set; } = RootDirectory / "appsettings.json";
+
+        public Target InitPlatform => _ => _
+             .Executes(() =>
+             {
+                 var configuration = AppSettings.GetConfiguration(RootDirectory, AppsettingsPath);
+                 LocalModuleCatalog.GetCatalog(DiscoveryPath.EmptyToNull() ?? configuration.GetModulesDiscoveryPath(), ProbingPath);
+             });
 
         public Target Init => _ => _
              .Executes(async () =>
@@ -71,7 +92,7 @@ namespace VirtoCommerce.Build
              .DependsOn(Backup)
              .Executes(async () =>
              {
-                 var packageManifest = await OpenOrCreateManifest(PackageManifestPath, Edge);
+                 var packageManifest = await OpenOrCreateManifest(PackageManifestPath.ToAbsolutePath(), Edge);
                  var githubModuleSources = PackageManager.GetGithubModuleManifests(packageManifest);
                  var modules = PackageManager.GetGithubModules(packageManifest);
 
@@ -82,7 +103,7 @@ namespace VirtoCommerce.Build
                  {
                      UpdateModules(Module, externalModuleCatalog, modules);
                  }
-                 else if (!PlatformParameter && !modules.Any() && !FileSystemTasks.FileExists((AbsolutePath)Path.GetFullPath(PackageManifestPath)))
+                 else if (!PlatformParameter && modules.IsEmpty() && !File.Exists(Path.GetFullPath(PackageManifestPath)))
                  {
                      AddCommerceModules(externalModuleCatalog, modules);
                  }
@@ -160,7 +181,7 @@ namespace VirtoCommerce.Build
                 if (parts.Length > 1)
                 {
                     moduleId = parts[0];
-                    moduleVersion = parts.Last();
+                    moduleVersion = parts[parts.Length - 1];
                 }
                 else if (moduleStrings.Length == 1 && !string.IsNullOrEmpty(VersionToInstall))
                 {
@@ -176,21 +197,24 @@ namespace VirtoCommerce.Build
             }
         }
 
-        private static bool IsModulesInstallation()
+        private static bool IsModulesInstallation => !PlatformParameter && (!Module?.IsEmpty() ?? false);
+
+        private static bool PlatformVersionChanged
         {
-            return !PlatformParameter && (!Module?.IsEmpty() ?? false);
+            get
+            {
+                var manifest = PackageManager.FromFile(PackageManifestPath);
+                return IsPlatformInstallationNeeded(manifest.PlatformVersion);
+            }
         }
 
-        private static bool PlatformVersionChanged()
-        {
-            var manifest = PackageManager.FromFile(PackageManifestPath);
-            return IsPlatformInstallationNeeded(manifest.PlatformVersion);
-        }
+        private static bool IsNotServerBuild => !IsServerBuild;
+        private static bool ThereAreFilesToBackup => Directory.EnumerateFileSystemEntries(RootDirectory).Any(p => !p.Contains(".nuke"));
 
         public Target Backup => _ => _
             .Triggers(Rollback, RemoveBackup)
             .Before(Install, Update, InstallPlatform, InstallModules)
-            .OnlyWhenDynamic(() => !IsServerBuild && Directory.EnumerateFileSystemEntries(RootDirectory).Any())
+            .OnlyWhenDynamic(() => IsNotServerBuild && ThereAreFilesToBackup)
             .ProceedAfterFailure()
             .Executes(() =>
             {
@@ -201,31 +225,38 @@ namespace VirtoCommerce.Build
                     modulesDirs = Directory.EnumerateDirectories(discoveryPath).ToList();
                 }
                 var symlinks = modulesDirs.Where(m => new DirectoryInfo(m).LinkTarget != null).ToList();
-                CompressionTasks.CompressTarGZip(RootDirectory, BackupFile, filter: f => !f.FullName.StartsWith(RootDirectory / ".nuke") && !symlinks.Any(s => f.FullName.StartsWith(s)));
-
+                CompressionExtensions.TarGZipTo(RootDirectory, BackupFile, filter: f => !SkipFile(f.ToFileInfo()) && !symlinks.Exists(s => f.ToFileInfo().FullName.StartsWith(s)));
             });
 
+        private static bool SkipFile(FileInfo fileInfo)
+        {
+            const string nodeModules = "node_modules";
+            return fileInfo.FullName.StartsWith(RootDirectory / ".nuke") || fileInfo.FullName.Contains(nodeModules);
+        }
+
+        public bool ThereAreFailedTargets => FailedTargets.Count > 0 && SucceededTargets.Contains(Backup);
         public Target Rollback => _ => _
             .DependsOn(Backup)
             .After(Backup, Install, Update, InstallPlatform, InstallModules)
-            .OnlyWhenDynamic(() => FailedTargets.Any() && SucceededTargets.Contains(Backup))
+            .OnlyWhenDynamic(() => ThereAreFailedTargets)
             .AssuredAfterFailure()
-            .Executes(() => CompressionTasks.UncompressTarGZip(BackupFile, RootDirectory));
+            .Executes(() => CompressionExtensions.UnTarGZipTo(BackupFile, RootDirectory));
 
+        public bool WorkIsDone => FinishedTargets.Contains(Backup) && File.Exists(BackupFile);
         public Target RemoveBackup => _ => _
             .After(Backup, Rollback)
-            .OnlyWhenDynamic(() => FinishedTargets.Contains(Backup) && File.Exists(BackupFile))
+            .OnlyWhenDynamic(() => WorkIsDone)
             .AssuredAfterFailure()
             .Unlisted()
             .DependsOn(Backup)
-            .Executes(() => FileSystemTasks.DeleteFile(BackupFile));
+            .Executes(() => BackupFile.DeleteFile());
 
         public Target InstallPlatform => _ => _
-             .OnlyWhenDynamic(() => PlatformVersionChanged() && !IsModulesInstallation())
+             .OnlyWhenDynamic(() => PlatformVersionChanged && !IsModulesInstallation)
              .Executes(async () =>
              {
                  var packageManifest = PackageManager.FromFile(PackageManifestPath);
-                 var mixedManifest = SerializationTasks.JsonDeserializeFromFile<MixedPackageManifest>(PackageManifestPath);
+                 var mixedManifest = PackageManifestPath.ToAbsolutePath().ReadJson<MixedPackageManifest>();
                  var platformAssetUrlFromManifest = mixedManifest.PlatformAssetUrl;
                  var platformAssetUrl = string.IsNullOrWhiteSpace(PlatformAssetUrl)
                      ? platformAssetUrlFromManifest
@@ -263,8 +294,8 @@ namespace VirtoCommerce.Build
                 FileSystemTasks.MoveFile(AppsettingsPath, tempFile, FileExistsPolicy.Overwrite);
             }
 
-            CompressionTasks.Uncompress(platformZip, RootDirectory);
-            FileSystemTasks.DeleteFile(platformZip);
+            platformZip.UncompressTo(RootDirectory);
+            platformZip.DeleteFile();
 
             // return appsettings.json back
             if (!string.IsNullOrEmpty(tempFile))
@@ -272,12 +303,12 @@ namespace VirtoCommerce.Build
                 var bakFileName = new StringBuilder("appsettings.")
                     .Append(DateTime.Now.ToString("MMddyyHHmmss"))
                     .Append(".bak");
-                var destinationSettingsPath = !Force ? AppsettingsPath : Path.Join(Path.GetDirectoryName(AppsettingsPath), bakFileName.ToString());
+                AbsolutePath destinationSettingsPath = !Force ? AppsettingsPath : Path.Join(Path.GetDirectoryName(AppsettingsPath), bakFileName.ToString());
                 FileSystemTasks.MoveFile(tempFile, destinationSettingsPath, FileExistsPolicy.Overwrite);
 
                 if (Force)
                 {
-                    Log.Information($"The old appsettings.json was saved as {bakFileName}");
+                    Log.Warning("The old appsettings.json was saved as {0}", bakFileName);
                 }
                 else
                 {
@@ -320,6 +351,7 @@ namespace VirtoCommerce.Build
                  {
                      SkipDependencySolving = true;
                  }
+
                  var packageManifest = PackageManager.FromFile(PackageManifestPath);
                  var moduleSources = PackageManager.GetModuleSources(packageManifest).Where(s => s is not GithubReleases).ToList();
                  var githubReleases = PackageManager.GetGithubModulesSource(packageManifest);
@@ -341,7 +373,7 @@ namespace VirtoCommerce.Build
                          return;
                      }
 
-                     if (alreadyInstalledModules.Any(installedModule => installedModule.ModuleName == module.Id && installedModule.Version.ToString() == module.Version))
+                     if (alreadyInstalledModules.Exists(installedModule => installedModule.ModuleName == module.Id && installedModule.Version.ToString() == module.Version) || localModuleCatalog.IsModuleSymlinked(module.Id))
                      {
                          continue;
                      }
@@ -364,6 +396,7 @@ namespace VirtoCommerce.Build
                      {
                         ExitCode = 1;
                         Log.Error(m.Message);
+
                      }
                      else
                      {
@@ -396,9 +429,9 @@ namespace VirtoCommerce.Build
 
                      await installer.Install(moduleSource, progress);
                  }
-                 var absoluteDiscoveryPath = (AbsolutePath)Path.GetFullPath(discoveryPath);
+                 AbsolutePath absoluteDiscoveryPath = Path.GetFullPath(discoveryPath);
                  var zipFiles = absoluteDiscoveryPath.GlobFiles("*/*.zip");
-                 zipFiles.ForEach(f => FileSystemTasks.DeleteFile(f));
+                 zipFiles.ForEach(f => f.DeleteFile());
                  localModuleCatalog.Reload();
              });
 
@@ -448,13 +481,14 @@ namespace VirtoCommerce.Build
             return moduleInfo;
         }
 
-        private static ModulesInstallerBase GetModuleInstaller(ModuleSource moduleSource) => moduleSource switch
+        private static ModuleInstallerBase GetModuleInstaller(ModuleSource moduleSource) => moduleSource switch
         {
             AzurePipelineArtifacts => new AzurePipelineArtifactsModuleInstaller(AzureToken, GetDiscoveryPath()),
             AzureUniversalPackages => new AzureUniversalPackagesModuleInstaller(AzureToken, GetDiscoveryPath()),
             GithubPrivateRepos => new GithubPrivateModulesInstaller(GitHubToken, GetDiscoveryPath()),
             AzureBlob _ => new AzureBlobModuleInstaller(AzureToken, GetDiscoveryPath()),
             GitlabJobArtifacts _ => new GitlabJobArtifactsModuleInstaller(GitLabServer, GitLabToken, GetDiscoveryPath()),
+            Local _ => new LocalModuleInstaller(GetDiscoveryPath()),
             _ => throw new NotImplementedException("Unknown module source"),
         };
 
@@ -465,8 +499,8 @@ namespace VirtoCommerce.Build
                  var packageManifest = PackageManager.FromFile(PackageManifestPath);
                  var localModulesCatalog = LocalModuleCatalog.GetCatalog(discoveryPath, ProbingPath);
                  var githubModules = PackageManager.GetGithubModules(packageManifest);
-                 FileSystemTasks.DeleteDirectory(ProbingPath);
-                 Module.ForEach(m => FileSystemTasks.DeleteDirectory(Path.Combine(discoveryPath, m)));
+                 ProbingPath.DeleteDirectory();
+                 Module.ForEach(m => AbsolutePath.Create(Path.Combine(discoveryPath, m)).DeleteDirectory());
                  githubModules.RemoveAll(m => Module.Contains(m.Id));
                  PackageManager.ToFile(packageManifest, PackageManifestPath);
                  if (PlatformVersion.CurrentVersion == null)
@@ -483,7 +517,7 @@ namespace VirtoCommerce.Build
              .Executes(async () =>
              {
                  SkipDependencySolving = true;
-                 var manifest = PackageManager.FromFile(PackageManifestPath);
+                 var manifest = await OpenOrCreateManifest(PackageManifestPath, Edge);
 
                  if (Edge)
                  {
@@ -605,7 +639,7 @@ namespace VirtoCommerce.Build
             else if (!File.Exists(packageManifestPath) && File.Exists(platformWebDllPath))
             {
                 var discoveryAbsolutePath = Path.GetFullPath(GetDiscoveryPath());
-                return CreateManifestFromEnvironment(RootDirectory, (AbsolutePath)discoveryAbsolutePath);
+                return await CreateManifestFromEnvironment(RootDirectory, discoveryAbsolutePath.ToAbsolutePath());
             }
             else if (!File.Exists(packageManifestPath))
             {
@@ -624,7 +658,7 @@ namespace VirtoCommerce.Build
         private static async Task DownloadBundleManifest(string bundleName, string outFile)
         {
             var rawBundlesFile = await HttpTasks.HttpDownloadStringAsync(BundlesUrl);
-            var bundlesDictionary = SerializationTasks.JsonDeserialize<Dictionary<string, string>>(rawBundlesFile);
+            var bundlesDictionary = JsonExtensions.GetJson<Dictionary<string, string>>(rawBundlesFile);
             KeyValuePair<string, string> bundle;
             if (string.IsNullOrEmpty(bundleName))
             {
@@ -636,13 +670,13 @@ namespace VirtoCommerce.Build
             }
 
             var manifestUrl = bundle.Value;
-            await HttpTasks.HttpDownloadFileAsync(manifestUrl, outFile);
+            await HttpTasks.HttpDownloadFileAsync(manifestUrl, outFile.ToAbsolutePath());
         }
 
-        private static ManifestBase CreateManifestFromEnvironment(AbsolutePath platformPath, AbsolutePath discoveryPath)
+        private async static Task<ManifestBase> CreateManifestFromEnvironment(AbsolutePath platformPath, AbsolutePath discoveryPath)
         {
             var platformWebDllPath = platformPath / "VirtoCommerce.Platform.Web.dll";
-            if (!FileSystemTasks.FileExists(platformWebDllPath))
+            if (!File.Exists(platformWebDllPath))
             {
                 Assert.Fail($"{platformWebDllPath} can't be found!");
             }
@@ -650,13 +684,24 @@ namespace VirtoCommerce.Build
             var platformVersion = platformWebDllFileInfo.ProductVersion;
             var packageManifest = PackageManager.CreatePackageManifest(platformVersion);
             var githubModules = PackageManager.GetGithubModules(packageManifest);
-
+            var githubModulesSource = PackageManager.GetGithubModulesSource(packageManifest);
+            var localModuleCatalog = (LocalCatalog)LocalModuleCatalog.GetCatalog(GetDiscoveryPath(), ProbingPath);
+            var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubModulesSource.ModuleSources);
+            var modulesInCatalog = externalModuleCatalog.Modules.Where(m => !m.Ref.StartsWith("file://")).Select(m => m.ModuleName).ToList();
             var manifests = discoveryPath.GlobFiles("*/module.manifest");
             manifests.ForEach(m =>
             {
                 var manifest = ManifestReader.Read(m);
-                githubModules.Add(new ModuleItem(manifest.Id, manifest.Version));
+                if (!modulesInCatalog.Contains(manifest.Id))
+                {
+                    Log.Warning("There is no module {0}:{1} in external catalog. You should add it in manifest manually.", manifest.Id, manifest.Version);
+                }
+                else
+                {
+                    githubModules.Add(new ModuleItem(manifest.Id, manifest.Version));
+                }
             });
+
             return packageManifest;
         }
     }

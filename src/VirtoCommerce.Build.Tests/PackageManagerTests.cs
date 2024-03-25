@@ -1,4 +1,6 @@
+using Extensions;
 using PlatformTools;
+using PlatformTools.Modules;
 using VirtoCommerce.Build.PlatformTools;
 
 namespace VirtoCommerce.Build.Tests
@@ -76,7 +78,7 @@ namespace VirtoCommerce.Build.Tests
             var path = "./test-vc-package.json";
 
             // Act
-            PackageManager.ToFile(manifest, path);
+            PackageManager.ToFile(manifest, path.ToAbsolutePath());
 
             // Assert
             Assert.True(File.Exists(path));
@@ -91,7 +93,7 @@ namespace VirtoCommerce.Build.Tests
             // Arrange
             var manifest = PackageManager.CreatePackageManifest("1.0.0");
             var path = "./test-vc-package.json";
-            PackageManager.ToFile(manifest, path);
+            PackageManager.ToFile(manifest, path.ToAbsolutePath());
 
             // Act
             var loadedManifest = PackageManager.FromFile(path);

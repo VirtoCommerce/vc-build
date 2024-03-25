@@ -1,5 +1,5 @@
 using Nuke.Common;
-using Nuke.Common.IO;
+using Nuke.Common.Utilities;
 using PlatformTools.Validation;
 
 namespace VirtoCommerce.Build
@@ -52,11 +52,11 @@ namespace VirtoCommerce.Build
 
         private static void UpdateContentConnectionString(string provider, string value)
         {
-            var appsettingsObject = SerializationTasks.JsonDeserializeFromFile(AppsettingsPath);
+            var appsettingsObject = AppsettingsPath.ReadJson();
             var contentSection = appsettingsObject["Content"];
             var providerObject = contentSection[provider];
             providerObject["ConnectionString"] = value;
-            SerializationTasks.JsonSerializeToFile(appsettingsObject, AppsettingsPath);
+            AppsettingsPath.WriteJson(appsettingsObject);
         }
 
         private static void UpdateRedisConnectionString(string value)
@@ -71,10 +71,10 @@ namespace VirtoCommerce.Build
 
         private static void UpdateConnectionString(string name, string value)
         {
-            var appsettingsObject = SerializationTasks.JsonDeserializeFromFile(AppsettingsPath);
+            var appsettingsObject = AppsettingsPath.ReadJson();
             var connStrings = appsettingsObject["ConnectionStrings"];
             connStrings[name] = value;
-            SerializationTasks.JsonSerializeToFile(appsettingsObject, AppsettingsPath);
+            AppsettingsPath.WriteJson(appsettingsObject);
         }
     }
 }

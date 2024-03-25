@@ -1,14 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Nuke.Common.IO;
+using Extensions;
+using Nuke.Common.Utilities;
+using PlatformTools.Modules;
 using VirtoCommerce.Build.PlatformTools;
 
 namespace PlatformTools
 {
     public static class PackageManager
     {
-        private static readonly string _defaultModuleManifest = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/modules_v3.json";
+        private const string _defaultModuleManifest = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/modules_v3.json";
 
         public static ManifestBase CreatePackageManifest(string platformVersion, string platformAssetUrl)
         {
@@ -45,20 +47,21 @@ namespace PlatformTools
 
         public static void ToFile(ManifestBase manifest, string path = "./vc-package.json")
         {
-            SerializationTasks.JsonSerializeToFile(manifest, path);
+            path.ToAbsolutePath().WriteJson(manifest);
         }
 
         public static ManifestBase FromFile(string path = "./vc-package.json")
         {
-            var baseManifest = SerializationTasks.JsonDeserializeFromFile<ManifestBase>(path);
+            var absolutePath = path.ToAbsolutePath();
+            var baseManifest = absolutePath.ReadJson<ManifestBase>();
             ManifestBase result;
             if (string.IsNullOrEmpty(baseManifest.ManifestVersion) || new Version(baseManifest.ManifestVersion) < new Version("2.0"))
             {
-                result = SerializationTasks.JsonDeserializeFromFile<PackageManifest>(path);
+                result = absolutePath.ReadJson<PackageManifest>();
             }
             else
             {
-                result = SerializationTasks.JsonDeserializeFromFile<MixedPackageManifest>(path);
+                result = absolutePath.ReadJson<MixedPackageManifest>();
             }
 
             return result;
