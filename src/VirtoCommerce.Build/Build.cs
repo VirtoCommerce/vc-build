@@ -5,10 +5,13 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Xml;
+using Extensions;
+using Microsoft.ApplicationInsights;
 using Microsoft.Build.Locator;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -45,9 +48,9 @@ internal partial class Build : NukeBuild
     /// - JetBrains Rider            https://nuke.build/rider
     /// - Microsoft VisualStudio     https://nuke.build/visualstudio
     /// - Microsoft VSCode           https://nuke.build/vscode
-    private static readonly string[] _moduleContentFolders = { "dist", "Localizations", "Scripts", "Content" };
+    private static readonly string[] _moduleContentFolders = ["dist", "Localizations", "Scripts", "Content"];
 
-    private static readonly string[] _sonarLongLiveBranches = { "master", "develop", "dev", "main" };
+    private static readonly string[] _sonarLongLiveBranches = ["master", "develop", "dev", "main"];
     private static readonly HttpClient _httpClient = new();
     private static int? _exitCode;
 
@@ -67,9 +70,9 @@ internal partial class Build : NukeBuild
         get
         {
             var solutions = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.sln", SearchOption.TopDirectoryOnly);
-            if (solutions.Any())
+            if (solutions.Length > 0)
             {
-                return ProjectModelTasks.ParseSolution(solutions[0]);
+                return SolutionModelTasks.ParseSolution(solutions[0]);
             }
 
             Log.Warning("No solution files found in the current directory");
@@ -180,7 +183,7 @@ internal partial class Build : NukeBuild
     [Parameter("Main branch")] public static string MainBranch { get; set; } = "master";
 
     [Parameter("Http tasks timeout in seconds")]
-    public static int HttpTimeout { get; set; } = 15;
+    public static int HttpTimeout { get; set; } = 180;
 
     protected static GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
 
@@ -233,12 +236,69 @@ internal partial class Build : NukeBuild
 
     protected static bool IsModule => ModuleManifestFile.FileExists();
 
+    private static readonly string[] cleanSearchPattern = new[] { "**/bin", "**/obj" };
+
+    private static string AIConnectionString = "InstrumentationKey=935c72ed-d8a9-4ef6-a4d1-b3ebfdfddfef;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/";
+    private static TelemetryClient _telemetryClient;
+    protected static TelemetryClient TelemetryClient
+    {
+        get
+        {
+            if (_telemetryClient == null)
+            {
+                var telemetryConfig = new Microsoft.ApplicationInsights.Extensibility.TelemetryConfiguration();
+                telemetryConfig.ConnectionString = AIConnectionString;
+                _telemetryClient = new TelemetryClient(telemetryConfig);
+                _telemetryClient.Context.Device.OperatingSystem = Environment.OSVersion.ToString();
+                _telemetryClient.Context.Component.Version = Assembly.GetEntryAssembly().GetName().Version.ToString();
+            }
+            return _telemetryClient;
+        }
+    }
+
+    private static readonly string[] TokenArguments = new[]{
+        nameof(GitLabToken),
+        nameof(GitHubToken),
+        nameof(AzureToken),
+        nameof(CloudToken),
+        nameof(ArgoToken),
+        nameof(SonarAuthToken),
+        nameof(DockerPassword)
+        };
+    private static string GetSafeCmdArguments()
+    {
+        var safeArgs = EnvironmentInfo.CommandLineArguments.Join(" ");
+        foreach(var arg in EnvironmentInfo.CommandLineArguments.Where(a => TokenArguments.Contains(a.Replace("-", ""), StringComparer.InvariantCultureIgnoreCase)))
+        {
+            var argValue = EnvironmentInfo.GetNamedArgument<string>(arg);
+            safeArgs = safeArgs.Replace(argValue, "***");
+        }
+        return safeArgs;
+    }
+
+    protected override void OnTargetRunning(string target)
+    {
+        var args = GetSafeCmdArguments();
+        TelemetryClient.TrackEvent(target, new Dictionary<string, string>
+            {
+                { "args", args }
+            });
+        TelemetryClient.Flush();
+        base.OnTargetRunning(target);
+    }
+
+    protected override void OnTargetFailed(string target)
+    {
+        TelemetryClient.TrackException(new Exception($"{target} failed with arguments: {GetSafeCmdArguments()}"));
+        TelemetryClient.Flush();
+        base.OnTargetFailed(target);
+    }
+
     public Target Clean => _ => _
         .Before(Restore)
         .Executes(() =>
         {
-            var searchPattern = new[] { "**/bin", "**/obj" };
-            CleanSolution(searchPattern);
+            CleanSolution(cleanSearchPattern);
         });
 
     public Target Restore => _ => _
@@ -271,7 +331,7 @@ internal partial class Build : NukeBuild
         .DependsOn(Compile)
         .Executes(() =>
         {
-            var testProjects = Solution.GetProjects("*.Test|*.Tests|*.Testing");
+            var testProjects = Solution.GetAllProjects("*.Test|*.Tests|*.Testing");
             var outPath = RootDirectory / ".tmp";
 
             foreach (var testProjectPath in testProjects.Select(p=> p.Path).ToArray())
@@ -294,7 +354,7 @@ internal partial class Build : NukeBuild
 
             if (coberturaReports.Count > 0)
             {
-                var reportGenerator = ToolResolver.GetPackageTool("dotnet-reportgenerator-globaltool",
+                var reportGenerator = ToolResolver.GetNuGetTool("dotnet-reportgenerator-globaltool",
                     "ReportGenerator.dll", "4.8.8", "netcoreapp3.0");
                 reportGenerator.Invoke(
                     $"-reports:{outPath / "**/coverage.cobertura.xml"} -targetdir:{outPath} -reporttypes:SonarQube");
@@ -476,7 +536,10 @@ internal partial class Build : NukeBuild
     }
 
     public Target WebPackBuild => _ => _
-        .Executes(() => WebPackBuildMethod(WebProject));
+        .Executes(() =>
+        {
+            WebPackBuildMethod(WebProject);
+        });
 
     private static void WebPackBuildMethod(Project webProject)
     {
@@ -532,7 +595,7 @@ internal partial class Build : NukeBuild
 
             var modulesJsonFilePath = ModulesLocalDirectory / ModulesJsonName;
             var externalManifests =
-                JsonConvert.DeserializeObject<List<ExternalModuleManifest>>(TextTasks.ReadAllText(modulesJsonFilePath));
+                JsonConvert.DeserializeObject<List<ExternalModuleManifest>>(modulesJsonFilePath.ReadAllText());
             var externalManifest = externalManifests?.Find(x => x.Id == manifest.Id);
 
             if (externalManifest != null)
@@ -582,8 +645,7 @@ internal partial class Build : NukeBuild
                 externalManifests?.Add(ExternalModuleManifest.FromManifest(manifest));
             }
 
-            TextTasks.WriteAllText(modulesJsonFilePath,
-                JsonConvert.SerializeObject(externalManifests, Formatting.Indented));
+            modulesJsonFilePath.WriteAllText(JsonConvert.SerializeObject(externalManifests, Formatting.Indented));
         });
 
     public Target PublishManifestGit => _ => _
@@ -603,7 +665,7 @@ internal partial class Build : NukeBuild
         .Requires(() => !IsModule)
         .Executes(async () =>
         {
-            var swashbuckle = ToolResolver.GetPackageTool("Swashbuckle.AspNetCore.Cli", "dotnet-swagger.dll",
+            var swashbuckle = ToolResolver.GetNuGetTool("Swashbuckle.AspNetCore.Cli", "dotnet-swagger.dll",
                 framework: "netcoreapp3.0");
             var projectPublishPath = ArtifactsDirectory / "publish" / $"{WebProject.Name}.dll";
             var swaggerJsonPath = ArtifactsDirectory / "swagger.json";
@@ -715,14 +777,14 @@ internal partial class Build : NukeBuild
             if (OperatingSystem.IsLinux())
             {
                 const string sonarScript = "sonar-scanner";
-                var sonarScannerShPath = ToolPathResolver.GetPackageExecutable("dotnet-sonarscanner",
+                var sonarScannerShPath = NuGetToolPathResolver.GetPackageExecutable("dotnet-sonarscanner",
                         sonarScript, framework: framework)
                     .Replace("netcoreapp2.0", "net5.0")
                     .Replace("netcoreapp3.0", "net5.0");
                 var sonarScannerShRightPath = Directory.GetParent(sonarScannerShPath)?.Parent?.FullName ?? string.Empty;
                 var tmpFile = TemporaryDirectory / sonarScript;
                 FileSystemTasks.MoveFile(sonarScannerShPath, tmpFile);
-                FileSystemTasks.DeleteDirectory(sonarScannerShRightPath);
+                sonarScannerShRightPath.ToAbsolutePath().DeleteDirectory();
                 var sonarScriptDestinationPath = Path.Combine(sonarScannerShRightPath, sonarScript);
                 FileSystemTasks.MoveFile(tmpFile, sonarScriptDestinationPath);
                 Log.Information($"{sonarScript} path: {sonarScriptDestinationPath}");
@@ -748,7 +810,7 @@ internal partial class Build : NukeBuild
                 foreach (var moduleDirectory in Directory.GetDirectories(ModulesFolderPath))
                 {
                     var isGitRepository =
-                        FileSystemTasks.FindParentDirectory(moduleDirectory, x => x.GetDirectories(".git").Any()) !=
+                        moduleDirectory.ToAbsolutePath().FindParentOrSelf(x => x.GetDirectories(".git").Any()) !=
                         null;
 
                     if (isGitRepository)
@@ -832,7 +894,7 @@ internal partial class Build : NukeBuild
     {
         if (ClearTempBeforeExit)
         {
-            FileSystemTasks.DeleteDirectory(TemporaryDirectory);
+            TemporaryDirectory.DeleteDirectory();
         }
     }
 
@@ -842,7 +904,7 @@ internal partial class Build : NukeBuild
 
         var nukeFiles = Directory.GetFiles(currentDirectory, ".nuke");
 
-        if (!nukeFiles.Any() && !Directory.Exists(Path.Join(currentDirectory, ".nuke")))
+        if (nukeFiles.Length == 0 && !Directory.Exists(Path.Join(currentDirectory, ".nuke")))
         {
             Console.WriteLine("No .nuke file found!");
             var solutions = Directory.GetFiles(currentDirectory, "*.sln");
@@ -858,7 +920,7 @@ internal partial class Build : NukeBuild
                 CreateDotNuke(currentDirectory);
             }
         }
-        else if (nukeFiles.Any())
+        else if (nukeFiles.Length > 0)
         {
             var nukeFile = nukeFiles[0];
             ConvertDotNukeFile(nukeFile);
@@ -894,11 +956,11 @@ internal partial class Build : NukeBuild
         }
     }
 
-    private static void ConvertDotNukeFile(string path)
+    private static void ConvertDotNukeFile(AbsolutePath path)
     {
         var directory = Path.GetDirectoryName(path);
         var solutionPath = File.ReadLines(path).FirstOrDefault();
-        FileSystemTasks.DeleteFile(path);
+        path.DeleteFile();
         CreateDotNuke(directory, solutionPath);
     }
 
@@ -906,9 +968,9 @@ internal partial class Build : NukeBuild
     {
         var dotnukeDir = Path.Join(path, ".nuke");
         var paramsFilePath = Path.Join(dotnukeDir, "parameters.json");
-        FileSystemTasks.EnsureExistingDirectory(dotnukeDir);
+        dotnukeDir.ToAbsolutePath().CreateDirectory();
         var parameters = new NukeParameters { Solution = solutionPath };
-        SerializationTasks.JsonSerializeToFile(parameters, paramsFilePath);
+        JsonExtensions.WriteJson(paramsFilePath, parameters);
     }
 
     public static void CustomDotnetLogger(OutputType type, string text)
@@ -926,9 +988,9 @@ internal partial class Build : NukeBuild
         //theme
         if (IsTheme)
         {
-            var jObject = SerializationTasks.JsonDeserializeFromFile<JObject>(PackageJsonPath);
+            var jObject = JsonExtensions.ReadJson<JObject>(PackageJsonPath);
             jObject["version"] = versionPrefix;
-            SerializationTasks.JsonSerializeToFile(jObject, Path.GetFullPath(PackageJsonPath));
+            JsonExtensions.WriteJson(Path.GetFullPath(PackageJsonPath), jObject);
             return;
         }
 
@@ -1173,7 +1235,7 @@ internal partial class Build : NukeBuild
 
             if (ModuleIgnoreFile.FileExists())
             {
-                ignoredFiles = ignoredFiles.Concat(TextTasks.ReadAllLines(ModuleIgnoreFile)).ToArray();
+                ignoredFiles = ignoredFiles.Concat(ModuleIgnoreFile.ReadAllLines()).ToArray();
             }
 
             ignoredFiles = ignoredFiles.Select(x => x.Trim()).Distinct().ToArray();
@@ -1181,7 +1243,7 @@ internal partial class Build : NukeBuild
             var keepFiles = Array.Empty<string>();
             if (ModuleKeepFile.FileExists())
             {
-                keepFiles = TextTasks.ReadAllLines(ModuleKeepFile).ToArray();
+                keepFiles = ModuleKeepFile.ReadAllLines().ToArray();
             }
 
             ArtifactPacker.CompressModule(options => options.WithSourceDirectory(ModuleOutputDirectory)
@@ -1203,33 +1265,33 @@ internal partial class Build : NukeBuild
     {
         if (SourceDirectory.DirectoryExists())
         {
-            if (ignorePaths?.Any() == true)
+            if (ignorePaths?.Length > 0)
             {
                 SourceDirectory
                     .GlobDirectories(searchPattern)
                     .Where(directory => !ignorePaths.Any(p => p.Contains(directory)))
-                    .ForEach(FileSystemTasks.DeleteDirectory);
+                    .ForEach(p => p.DeleteDirectory());
             }
             else
             {
-                SourceDirectory.GlobDirectories(searchPattern).ForEach(FileSystemTasks.DeleteDirectory);
+                SourceDirectory.GlobDirectories(searchPattern).ForEach(p => p.DeleteDirectory());
             }
 
             if (TestsDirectory.DirectoryExists())
             {
-                TestsDirectory.GlobDirectories(searchPattern).ForEach(FileSystemTasks.DeleteDirectory);
+                TestsDirectory.GlobDirectories(searchPattern).ForEach(p => p.DeleteDirectory());
             }
 
             if (SamplesDirectory.DirectoryExists())
             {
-                SamplesDirectory.GlobDirectories(searchPattern).ForEach(FileSystemTasks.DeleteDirectory);
+                SamplesDirectory.GlobDirectories(searchPattern).ForEach(p => p.DeleteDirectory());
             }
         }
         else
         {
-            RootDirectory.GlobDirectories(searchPattern).ForEach(FileSystemTasks.DeleteDirectory);
+            RootDirectory.GlobDirectories(searchPattern).ForEach(p => p.DeleteDirectory());
         }
 
-        FileSystemTasks.EnsureCleanDirectory(ArtifactsDirectory);
+        ArtifactsDirectory.CreateOrCleanDirectory();
     }
 }

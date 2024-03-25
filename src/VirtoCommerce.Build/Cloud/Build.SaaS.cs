@@ -59,7 +59,6 @@ internal partial class Build
     [Parameter("Organization name", Name = "Organization")] public string SaaSOrganizationName { get; set; }
 
 
-
     [Parameter("Url to Dockerfile which will use to build the docker image in the CloudDeploy/CloudUp Target")]
     public static string DockerfileUrl { get; set; } = "https://raw.githubusercontent.com/VirtoCommerce/vc-docker/feat/net8/linux/platform/Dockerfile";
     [Parameter("Url to Wake-script which will use to build the docker image in the CloudDeploy/CloudUp Target")]
@@ -68,6 +67,7 @@ internal partial class Build
     public Target WaitForStatus => _ => _
         .Executes(() => Log.Warning("Target WaitForStatus is obsolete. Use CloudEnvStatus."))
         .Triggers(CloudEnvStatus);
+
     public Target CloudEnvStatus => _ => _
         .Executes(async () =>
         {
@@ -91,9 +91,6 @@ internal partial class Build
             Assert.True(isSuccess, $"Statuses {HealthStatus} {SyncStatus} were not obtained for the number of attempts: {AttemptsNumber}");
         });
 
-    public Target SetEnvParameter => _ => _
-        .Executes(() => Log.Warning("Target SetEnvParameter is obsolete. Use CloudEnvSetParameter."))
-        .Triggers(CloudEnvSetParameter);
 
     public Target CloudEnvSetParameter => _ => _
         .Executes(async () =>
@@ -109,9 +106,6 @@ internal partial class Build
 
             await cloudClient.UpdateEnvironmentAsync(env);
         });
-    public Target UpdateCloudEnvironment => _ => _
-        .Executes(() => Log.Warning("Target UpdateCloudEnvironment is obsolete. Use CloudEnvUpdate."))
-        .Triggers(CloudEnvUpdate);
 
     public Target CloudEnvUpdate => _ => _
         .Executes(async () =>
@@ -143,7 +137,7 @@ internal partial class Build
         var dockerfilePath = dockerBuildContext / "Dockerfile";
         var waitScriptPath = dockerBuildContext / "wait-for-it.sh";
 
-        FileSystemTasks.EnsureCleanDirectory(dockerBuildContext);
+        dockerBuildContext.CreateOrCleanDirectory();
 
         await HttpTasks.HttpDownloadFileAsync(DockerfileUrl, dockerfilePath);
         await HttpTasks.HttpDownloadFileAsync(WaitScriptUrl, waitScriptPath);
@@ -196,7 +190,7 @@ internal partial class Build
                 var solutions = Directory.EnumerateFiles(solutionDir, "*.sln");
                 Assert.True(solutions.Count() == 1, $"Solutions found: {solutions.Count()}");
                 var solutionPath = solutions.FirstOrDefault();
-                var solution = ProjectModelTasks.ParseSolution(solutionPath);
+                var solution = SolutionModelTasks.ParseSolution(solutionPath);
                 var webProject = solution.AllProjects.First(p => p.Name.EndsWith(".Web"));
 
                 WebPackBuildMethod(webProject);
@@ -271,7 +265,6 @@ internal partial class Build
             };
             listener.Start();
 
-
             Log.Information("Openning browser window");
             var authUrl = $"{CloudUrl}/externalsignin?authenticationType={CloudAuthProvider}&returnUrl=/api/saas/token/{port}";
             Process.Start(new ProcessStartInfo(authUrl) { UseShellExecute = true });
@@ -303,7 +296,8 @@ internal partial class Build
 
     private void SaveCloudToken(string token)
     {
-        FileSystemTasks.EnsureExistingDirectory(Path.GetDirectoryName(CloudTokenFile));
+        AbsolutePath cloudTokenDir = Path.GetDirectoryName(CloudTokenFile);
+        cloudTokenDir.CreateDirectory();
         File.WriteAllText(CloudTokenFile, token);
     }
 
@@ -372,6 +366,7 @@ internal partial class Build
                 model.Helm.Parameters["platform.image.tag"] = DockerImageTag;
             }
 
+
             var cloudClient = CreateVirtocloudClient(CloudUrl, await GetCloudTokenAsync());
             await cloudClient.EnvironmentsCreateAsync(model);
         });
@@ -389,7 +384,7 @@ internal partial class Build
     public Target CloudUp => _ => _
         .DependsOn(PrepareDockerContext, BuildAndPush, CloudInit);
 
-    private static ISaaSDeploymentApi CreateVirtocloudClient(string url, string token)
+    private static SaaSDeploymentApi CreateVirtocloudClient(string url, string token)
     {
         var config = new VirtoCloud.Client.Client.Configuration();
         config.BasePath = url;

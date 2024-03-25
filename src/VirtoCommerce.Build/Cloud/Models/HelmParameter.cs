@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Globalization;
 using Newtonsoft.Json;
-using Nuke.Common.IO;
+using Nuke.Common.Utilities;
 
 namespace Cloud.Models
 {
@@ -17,7 +17,7 @@ namespace Cloud.Models
         public override string ToString()
         {
             var parameter = new V1alpha1HelmParameter(null, Name, Value);
-            return SerializationTasks.JsonSerialize(parameter);
+            return parameter.ToJson();
         }
 
         public class HelmJsonConverter : JsonConverter
