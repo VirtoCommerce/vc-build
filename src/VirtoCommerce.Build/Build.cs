@@ -463,8 +463,8 @@ internal partial class Build : NukeBuild
             }
             else
             {
-                var manifestPath = IsModule ? RootDirectory.GetRelativePathTo(ModuleManifestFile) : "";
-                filesToAdd = $"Directory.Build.props {manifestPath}";
+                var manifestPath = IsModule ? $"\"{RootDirectory.GetRelativePathTo(ModuleManifestFile)}\"" : "";
+                filesToAdd = $"\"Directory.Build.props\" {manifestPath}";
             }
 
             GitTasks.Git($"add {filesToAdd}");
