@@ -27,6 +27,8 @@ internal partial class Build
     [Parameter("Config file for Argo Application Service")]
     public string ArgoConfigFile { get; set; }
 
+    [Parameter("Path to the manifest of environment")] public string Manifest { get; set; }
+
     [Parameter("Array of Helm parameters")]
     public HelmParameter[] HelmParameters { get; set; }
 
@@ -123,7 +125,7 @@ internal partial class Build
         .Executes(async () =>
         {
             var cloudClient = new VirtoCloudClient(CloudUrl, await GetCloudTokenAsync());
-            var rawYaml = await File.ReadAllTextAsync(ArgoConfigFile);
+            var rawYaml = await File.ReadAllTextAsync(string.IsNullOrWhiteSpace(Manifest) ? ArgoConfigFile : Manifest);
             await cloudClient.UpdateEnvironmentAsync(rawYaml, AppProject);
         });
 
