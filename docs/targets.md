@@ -80,6 +80,7 @@ vc-build clean
 Executes dotnet restore
 ```console
 vc-build restore
+vc-build restore -NugetConfig <path to nuget config>
 ```
 :::
 :::
@@ -140,6 +141,8 @@ vc-build WebPackBuild
 Compresses an artifact to the archive and filters excess files
 ```console
 vc-build compress
+vc-build compress -configuration Release
+vc-build Compress -NugetConfig <path to nuget config>
 ```
 :::
 :::
@@ -213,14 +216,6 @@ vc-build BuildAndPush -DockerRegistryUrl https://myregistry.com -DockerUsername 
 ```
 :::
 :::
-## ArgoUpdateApplication
-Updates Applications in ArgoCD
-Gets parameters: ArgoServer, ArgoToken(or as an alternative - ARGO_TOKEN environment variable), ArgoConfigFile
-```console
-vc-build ArgoUpdateApplication -ArgoConfigFile ./environments.yml -ArgoServer https://argoserver.com
-```
-:::
-:::
 ## Configure
 Validates and updates a connection string in the appsettings.json
 Gets parameters: Sql, Redis, AzureBlob, AppsettingsPath (./appsettings.json by default)
@@ -229,26 +224,93 @@ vc-build Configure -Sql "MsSql connection string"  -Redis "Redis connection stri
 ```
 :::
 :::
-## UpdateCloudEnvironment
+## CloudEnvUpdate
 Updates Applications in Cloud
-Gets parameters: CloudToken, ArgoConfigFile
+Gets parameters: CloudToken, Manifest
 ```console
-vc-build UpdateCloudEnvironment -CloudToken <your token> -ArgoConfigFile <path to application manifest>
+vc-build CloudEnvUpdate -CloudToken <your token> -Manifest <path to application manifest>
 ```
 :::
 :::
-## SetEnvParameter
+## CloudEnvSetParameter 
 Updates parameters of cloud environment
 Gets parameters: CloudToken, EnvironmentName, HelmParameters (Array), Organization (optional)
 ```console
-vc-build SetEnvParameter -CloudToken <your token> -EnvironmentName <environment name> -HelmParameters platform.config.paramname=somevalue123
+vc-build CloudEnvSetParameter  -CloudToken <your token> -EnvironmentName <environment name> -HelmParameters platform.config.paramname=somevalue123
 ```
 :::
 :::
-## WaitForStatus
+## CloudEnvStatus 
 Waits for health and/or sync statuses of the Environment
-Gets parameters: CloudToken, EnvironmentName, HelmParameters (Array)
+Gets parameters: CloudToken, EnvironmentName, HealthStatus, SyncStatus
 ```console
-vc-build WaitForStatus -CloudToken <your token> -EnvironmentName <environment name> -HealthStatus Healthy
+vc-build CloudEnvStatus  -CloudToken <your token> -EnvironmentName <environment name> -HealthStatus Healthy -SyncStatus Progressing
+```
+:::
+:::
+## CloudAuth 
+This target saves a token for accessing the VirtoCloud portal, eliminating the need to use the CloudToken parameter with every call to targets in the Cloud group.
+Gets parameters: AzureAD (optional)
+```console
+vc-build CloudAuth
+vc-build CloudAuth -AzureAD
+```
+:::
+:::
+## CloudInit 
+This target creates a new environment. It additionally accepts the ServicePlan parameter to specify the service plan (default value is F1).
+```console
+vc-build CloudInit -EnvironmentName <EnvName>
+vc-build CloudInit -EnvironmentName <EnvName> -ServicePlan F1
+```
+:::
+:::
+## CloudEnvList 
+List Environments with Statuses
+```console
+vc-build CloudEnvList
+```
+:::
+:::
+## CloudEnvRestart 
+Restart Environment
+```console
+vc-build CloudEnvRestart -EnvironmentName <EnvName>
+```
+:::
+:::
+## CloudEnvStatus 
+Waits for health and/or sync statuses of the Environment
+Gets parameters: CloudToken, EnvironmentName, HealthStatus, SyncStatus
+```console
+vc-build CloudEnvStatus  -CloudToken <your token> -EnvironmentName <environment name> -HealthStatus Healthy -SyncStatus Progressing
+```
+:::
+:::
+## CloudEnvLogs 
+Show Environment’s Logs
+```console
+vc-build CloudEnvLogs -EnvironmentName <EnvName>
+```
+:::
+:::
+## CloudDown 
+Delete Environment
+```console
+vc-build CloudDown -EnvironmentName <EnvName>
+```
+:::
+:::
+## CloudDeploy 
+Deploy Custom Image to the Existing Environment
+```console
+vc-build CloudDeploy -EnvironmentName <EnvName> -DockerUsername <username of docker hub>
+```
+:::
+:::
+## CloudUp 
+Deploy Custom Image to the New Environment
+```console
+vc-build CloudUp -EnvironmentName <EnvName> -DockerUsername <username of docker hub>
 ```
 :::
