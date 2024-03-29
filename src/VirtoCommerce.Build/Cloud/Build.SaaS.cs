@@ -47,7 +47,23 @@ internal partial class Build
     [Parameter("SaaS Portal")] public string CloudUrl { get; set; } = "https://portal.virtocommerce.cloud";
     [Parameter("SaaS Token")] public string CloudToken { get; set; }
     [Parameter("Path for the file with SaaS Token")] public string CloudTokenFile { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "vc-build", "cloud");
-    [Parameter("SaaS Auth Provider")] public string CloudAuthProvider { get; set; } = "GitHub";
+    [Parameter("SaaS Auth Provider")]
+    public string CloudAuthProvider
+    {
+        get
+        {
+            if (AzureAD)
+            {
+                return nameof(AzureAD);
+            }
+
+            return cloudAuthProvider;
+        }
+        set { cloudAuthProvider = value; }
+    }
+    [Parameter("Use Azure AD as SaaS Auth Provider")] public bool AzureAD = false;
+    private string cloudAuthProvider = "GitHub";
+
     [Parameter("App Project Name")] public string AppProject { get; set; }
     [Parameter("Cloud Environment Name")] public string EnvironmentName { get; set; }
     [Parameter("Cloud Environment Service Plan")] public string ServicePlan { get; set; } = "F1";
