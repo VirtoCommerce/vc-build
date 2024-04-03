@@ -988,9 +988,10 @@ internal partial class Build : NukeBuild
         //theme
         if (IsTheme)
         {
-            var jObject = JsonExtensions.ReadJson<JObject>(PackageJsonPath);
+            var packageJsonAbsolutePath = PackageJsonPath.ToAbsolutePath();
+            var jObject = packageJsonAbsolutePath.ReadJson<JObject>();
             jObject["version"] = versionPrefix;
-            JsonExtensions.WriteJson(Path.GetFullPath(PackageJsonPath), jObject);
+            packageJsonAbsolutePath.WriteJson(jObject);
             return;
         }
 
