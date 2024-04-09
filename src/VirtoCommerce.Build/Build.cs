@@ -455,19 +455,21 @@ internal partial class Build : NukeBuild
             GitTasks.Git($"merge {currentBranch}");
             IncrementVersionMinor();
             ChangeProjectVersion(CustomVersionPrefix);
-            string filesToAdd;
 
             if (IsTheme)
             {
-                filesToAdd = $"{PackageJsonPath}";
+                GitTasks.Git($"add {PackageJsonPath}");
             }
             else
             {
-                var manifestPath = IsModule ? $"\"{RootDirectory.GetRelativePathTo(ModuleManifestFile)}\"" : "";
-                filesToAdd = $"\"Directory.Build.props\" {manifestPath}";
+                if (IsModule)
+                {
+                    GitTasks.Git($"add {RootDirectory.GetRelativePathTo(ModuleManifestFile)}");
+                }
+
+                GitTasks.Git("add Directory.Build.props");
             }
 
-            GitTasks.Git($"add {filesToAdd}");
             GitTasks.Git($"commit -m \"{CustomVersionPrefix}\"");
             GitTasks.Git("push origin dev");
             //remove release branch
