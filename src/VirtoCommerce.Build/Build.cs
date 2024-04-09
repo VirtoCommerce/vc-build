@@ -113,6 +113,9 @@ internal partial class Build : NukeBuild
     [Parameter("True - prerelease, False - release")]
     public static bool PreRelease { get; set; }
 
+    [Parameter("True (default) - make the release latest, otherwise - False")]
+    public static bool MakeLatest { get; set; } = true;
+
     [Parameter("True - Pull Request")] public static bool PullRequest { get; set; }
 
     [Parameter("Path to folder with git clones of modules repositories")]
@@ -1160,6 +1163,7 @@ internal partial class Build : NukeBuild
             Prerelease = prerelease,
             Draft = false,
             Body = description,
+            MakeLatest = MakeLatest ? MakeLatestQualifier.True : MakeLatestQualifier.False,
             TargetCommitish = GitTasks.GitCurrentBranch()
         };
 
