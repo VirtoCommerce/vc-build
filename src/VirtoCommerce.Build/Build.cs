@@ -732,7 +732,6 @@ internal partial class Build : NukeBuild
             Log.Information($"BRANCH_NAME = {branchName}");
 
             SonarScannerTasks.SonarScannerBegin(c => c
-                .SetFramework("net5.0")
                 .SetName(RepoName)
                 .SetProjectKey($"{RepoOrg}_{RepoName}")
                 .SetVersion(ReleaseVersion)
