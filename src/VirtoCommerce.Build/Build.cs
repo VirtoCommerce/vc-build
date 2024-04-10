@@ -737,7 +737,7 @@ internal partial class Build : NukeBuild
                 .SetProjectKey($"{RepoOrg}_{RepoName}")
                 .SetVersion(ReleaseVersion)
                 .SetServer(SonarUrl)
-                .SetLogin(SonarAuthToken)
+                .SetToken(SonarAuthToken)
                 .SetOrganization(SonarOrg)
                 .SetGenericCoveragePaths(CoverageReportPath)
                 .When(PullRequest, cc => cc
@@ -799,7 +799,7 @@ internal partial class Build : NukeBuild
 
             SonarScannerTasks.SonarScannerEnd(c => c
                 .SetFramework(framework)
-                .SetLogin(SonarAuthToken));
+                .SetToken(SonarAuthToken));
         });
 
     public Target StartAnalyzer => _ => _
