@@ -4,6 +4,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
+using Extensions;
 using Nuke.Common.IO;
 using Octokit;
 using PlatformTools.Modules;
@@ -34,7 +35,7 @@ namespace PlatformTools.Modules.Github
                 progress.ReportInfo($"Installing {module.Id}");
                 moduleDestination.CreateOrCleanDirectory();
                 var zipName = $"{module.Id}.zip";
-                var zipDestination = Path.Join(moduleDestination, zipName);
+                var zipDestination = Path.Join(moduleDestination, zipName).ToAbsolutePath();
                 var release = await _client.Repository.Release.Get(githubPrivateRepos.Owner, module.Id, module.Version);
                 if (release == null)
                 {
