@@ -4,16 +4,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [3.800.0] - 2024-04-15
-- **Minor Fix:** Resolved a minor issue.
-- **Parameter Replacement:** Deprecated `sonar.login` parameter replaced.
-- **New Feature:** Added `MakeLatest` parameter.
-- **Enhancement:** Minor fixes for `CompleteRelease` target.
-- **Path Correction:** Fixed relative to absolute path conversion.
-- **Documentation Update:** Updated `targets.md`.
-- **Parameter Update:** Replaced `ArgoConfigFile` with `Manifest` parameter.
-- **Enhancement:** Added switch for user-friendly authentication provider selection.
-- **Bug Fix:** Corrected path escaping in `CompleteRelease` target.
-- **Target Removal:** Removed obsolete target.
+### Features
+- Updated to Net 8.
+
+### Added
+- Added Telemetry.
+- Added MakeLatest parameter.
+- Added versions of vc-build and os to the telemetry.
+- Increased default http timeout to 180 seconds.
+- Added switch for user-friendly choose auth provider.
+- Added local modules source.
+
+### Bug Fixes
+- Replaced deprecated sonar.login parameter.
+- Implemented minor fixes for CompleteRelease target.
+- Fixed relative to absolute path conversion.
+- Corrected path escaping in CompleteRelease target.
+- Implemented minor fix.
+- Fixed path escaping in CompleteRelease target.
+- Skipped node_modules in Backup target.
+- Adjusted message about appsettings backup warning level.
+- Removed obsolete target.
+- Checked if module is in symlink on update.
+
+### Other
+- Added license, readme, icon, and fixed copyright.
+- Removed obsolete targets.
+- Improved comments for skipped targets.
+- Updated targets.md.
+
 
 ## [3.16.0] - 2023-08-24
 ### Added
