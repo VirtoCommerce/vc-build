@@ -1,15 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Security.Policy;
-using System.Text.Json.Nodes;
-using System.Text;
+using System.Net;
 using System.Threading.Tasks;
 using Cloud.Client;
 using Cloud.Models;
-using Microsoft.TeamFoundation.Build.WebApi;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
@@ -19,10 +16,6 @@ using Nuke.Common.Tools.DotNet;
 using Serilog;
 using VirtoCloud.Client.Api;
 using VirtoCloud.Client.Model;
-using System.Net;
-using System.Diagnostics;
-using Microsoft.AspNetCore.Identity;
-using System.Runtime.InteropServices;
 
 namespace VirtoCommerce.Build;
 
@@ -33,6 +26,8 @@ internal partial class Build
 
     [Parameter("Config file for Argo Application Service")]
     public string ArgoConfigFile { get; set; }
+
+    [Parameter("Path to the manifest of environment")] public string Manifest { get; set; }
 
     [Parameter("Array of Helm parameters")]
     public HelmParameter[] HelmParameters { get; set; }
@@ -54,7 +49,23 @@ internal partial class Build
     [Parameter("SaaS Portal")] public string CloudUrl { get; set; } = "https://portal.virtocommerce.cloud";
     [Parameter("SaaS Token")] public string CloudToken { get; set; }
     [Parameter("Path for the file with SaaS Token")] public string CloudTokenFile { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "vc-build", "cloud");
-    [Parameter("SaaS Auth Provider")] public string CloudAuthProvider { get; set; } = "GitHub";
+    [Parameter("SaaS Auth Provider")]
+    public string CloudAuthProvider
+    {
+        get
+        {
+            if (AzureAD)
+            {
+                return nameof(AzureAD);
+            }
+
+            return cloudAuthProvider;
+        }
+        set { cloudAuthProvider = value; }
+    }
+    [Parameter("Use Azure AD as SaaS Auth Provider")] public bool AzureAD = false;
+    private string cloudAuthProvider = "GitHub";
+
     [Parameter("App Project Name")] public string AppProject { get; set; }
     [Parameter("Cloud Environment Name")] public string EnvironmentName { get; set; }
     [Parameter("Cloud Environment Service Plan")] public string ServicePlan { get; set; } = "F1";
@@ -65,9 +76,12 @@ internal partial class Build
 
     [Parameter("Organization name", Name = "Organization")] public string SaaSOrganizationName { get; set; }
 
-    public Target WaitForStatus => _ => _
-        .Executes(() => Log.Warning("Target WaitForStatus is obsolete. Use CloudEnvStatus."))
-        .Triggers(CloudEnvStatus);
+
+    [Parameter("Url to Dockerfile which will use to build the docker image in the CloudDeploy/CloudUp Target")]
+    public static string DockerfileUrl { get; set; } = "https://raw.githubusercontent.com/VirtoCommerce/vc-docker/feat/net8/linux/platform/Dockerfile";
+    [Parameter("Url to Wake-script which will use to build the docker image in the CloudDeploy/CloudUp Target")]
+    public static string WaitScriptUrl { get; set; } = "https://raw.githubusercontent.com/VirtoCommerce/vc-docker/feat/net8/linux/platform/wait-for-it.sh";
+
     public Target CloudEnvStatus => _ => _
         .Executes(async () =>
         {
@@ -91,9 +105,6 @@ internal partial class Build
             Assert.True(isSuccess, $"Statuses {HealthStatus} {SyncStatus} were not obtained for the number of attempts: {AttemptsNumber}");
         });
 
-    public Target SetEnvParameter => _ => _
-        .Executes(() => Log.Warning("Target SetEnvParameter is obsolete. Use CloudEnvSetParameter."))
-        .Triggers(CloudEnvSetParameter);
 
     public Target CloudEnvSetParameter => _ => _
         .Executes(async () =>
@@ -109,15 +120,12 @@ internal partial class Build
 
             await cloudClient.UpdateEnvironmentAsync(env);
         });
-    public Target UpdateCloudEnvironment => _ => _
-        .Executes(() => Log.Warning("Target UpdateCloudEnvironment is obsolete. Use CloudEnvUpdate."))
-        .Triggers(CloudEnvUpdate);
 
     public Target CloudEnvUpdate => _ => _
         .Executes(async () =>
         {
             var cloudClient = new VirtoCloudClient(CloudUrl, await GetCloudTokenAsync());
-            var rawYaml = await File.ReadAllTextAsync(ArgoConfigFile);
+            var rawYaml = await File.ReadAllTextAsync(string.IsNullOrWhiteSpace(Manifest) ? ArgoConfigFile : Manifest);
             await cloudClient.UpdateEnvironmentAsync(rawYaml, AppProject);
         });
 
@@ -130,23 +138,23 @@ internal partial class Build
 
         return false;
     }
-
-    public static string DockerfileUrl { get; set; } = "https://raw.githubusercontent.com/krankenbro/vc-ci-test/master/Dockerfile";
     public Target PrepareDockerContext => _ => _
-        .Before(InitPlatform, DockerLogin, BuildImage, PushImage, BuildAndPush)
+        .Before(DockerLogin, BuildImage, PushImage, CloudInit)
         .Triggers(InitPlatform)
         .Executes(async () => await PrepareDockerContextMethod());
 
     private async Task PrepareDockerContextMethod()
     {
         var dockerBuildContext = ArtifactsDirectory / "docker";
-        var platformDirectory = dockerBuildContext / "platform";
+        var platformDirectory = dockerBuildContext / "publish";
         var modulesPath = platformDirectory / "modules";
         var dockerfilePath = dockerBuildContext / "Dockerfile";
+        var waitScriptPath = dockerBuildContext / "wait-for-it.sh";
 
-        FileSystemTasks.EnsureCleanDirectory(dockerBuildContext);
+        dockerBuildContext.CreateOrCleanDirectory();
 
         await HttpTasks.HttpDownloadFileAsync(DockerfileUrl, dockerfilePath);
+        await HttpTasks.HttpDownloadFileAsync(WaitScriptUrl, waitScriptPath);
 
         var modulesSourcePath = Solution?.Path != null
             ? WebProject.Directory / "modules"
@@ -160,7 +168,7 @@ internal partial class Build
 
         if (string.IsNullOrWhiteSpace(DockerImageName))
         {
-            DockerImageName = $"{DockerUsername}/{EnvironmentName}";
+            DockerImageName = $"{DockerUsername}/{EnvironmentName.ToLowerInvariant()}";
         }
 
         DockerImageTag ??= DateTime.Now.ToString("MMddyyHHmmss");
@@ -196,7 +204,7 @@ internal partial class Build
                 var solutions = Directory.EnumerateFiles(solutionDir, "*.sln");
                 Assert.True(solutions.Count() == 1, $"Solutions found: {solutions.Count()}");
                 var solutionPath = solutions.FirstOrDefault();
-                var solution = ProjectModelTasks.ParseSolution(solutionPath);
+                var solution = SolutionModelTasks.ParseSolution(solutionPath);
                 var webProject = solution.AllProjects.First(p => p.Name.EndsWith(".Web"));
 
                 WebPackBuildMethod(webProject);
@@ -271,7 +279,6 @@ internal partial class Build
             };
             listener.Start();
 
-
             Log.Information("Openning browser window");
             var authUrl = $"{CloudUrl}/externalsignin?authenticationType={CloudAuthProvider}&returnUrl=/api/saas/token/{port}";
             Process.Start(new ProcessStartInfo(authUrl) { UseShellExecute = true });
@@ -303,7 +310,8 @@ internal partial class Build
 
     private void SaveCloudToken(string token)
     {
-        FileSystemTasks.EnsureExistingDirectory(Path.GetDirectoryName(CloudTokenFile));
+        AbsolutePath cloudTokenDir = Path.GetDirectoryName(CloudTokenFile);
+        cloudTokenDir.CreateDirectory();
         File.WriteAllText(CloudTokenFile, token);
     }
 
@@ -347,7 +355,7 @@ internal partial class Build
         });
 
     public Target CloudInit => _ => _
-        .Before(PrepareDockerContext, BuildAndPush, CloudDeploy)
+        .After(PrepareDockerContext, DockerLogin, BuildImage, PushImage, BuildAndPush)
         .Requires(() => EnvironmentName)
         .Executes(async () =>
         {
@@ -358,9 +366,21 @@ internal partial class Build
                 ServicePlan = ServicePlan,
                 Cluster = ClusterName,
                 DbProvider = DbProvider,
-                DbName = DbName
+                DbName = DbName,
+                Helm = new HelmObject(new Dictionary<string, string> ())
             };
-            
+
+            if(!string.IsNullOrEmpty(DockerImageName))
+            {
+                model.Helm.Parameters["platform.image.repository"] = DockerImageName;
+            }
+
+            if(!string.IsNullOrEmpty(DockerImageTag))
+            {
+                model.Helm.Parameters["platform.image.tag"] = DockerImageTag;
+            }
+
+
             var cloudClient = CreateVirtocloudClient(CloudUrl, await GetCloudTokenAsync());
             await cloudClient.EnvironmentsCreateAsync(model);
         });
@@ -376,9 +396,9 @@ internal partial class Build
         });
 
     public Target CloudUp => _ => _
-        .DependsOn(CloudInit, CloudDeploy);
+        .DependsOn(PrepareDockerContext, BuildAndPush, CloudInit);
 
-    private static ISaaSDeploymentApi CreateVirtocloudClient(string url, string token)
+    private static SaaSDeploymentApi CreateVirtocloudClient(string url, string token)
     {
         var config = new VirtoCloud.Client.Client.Configuration();
         config.BasePath = url;

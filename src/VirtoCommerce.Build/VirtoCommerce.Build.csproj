@@ -2,7 +2,7 @@
   <PropertyGroup>
     <PackageId>VirtoCommerce.GlobalTool</PackageId>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <RollForward>LatestMajor</RollForward>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <RootNamespace></RootNamespace>
@@ -22,6 +22,11 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <NukeTelemetryVersion>1</NukeTelemetryVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Copyright>Copyright © VirtoCommerce 2011-2024</Copyright>
+    <PackageProjectUrl>https://github.com/VirtoCommerce/vc-build</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageIcon>logo.png</PackageIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -30,18 +35,19 @@
   <ItemGroup>
     <PackageReference Include="Azure.Storage.Blobs" Version="12.11.0" />
     <PackageReference Include="Markdig" Version="0.24.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.14" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.22.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Octokit" Version="4.0.2" />
+    <PackageReference Include="Octokit" Version="9.1.2" />
     <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
-    <PackageReference Include="Nuke.Common" Version="6.3.0" />
+    <PackageReference Include="Nuke.Common" Version="8.0.0" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.170.0" />
-    <PackageReference Include="dotnet-sonarscanner" Version="5.8.0">
+    <PackageReference Include="dotnet-sonarscanner" Version="6.2.0">
       <ExcludeAssets>all</ExcludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Build.Locator" Version="1.4.1" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Build.Locator" Version="1.7.1" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -51,10 +57,10 @@
     <PackageReference Include="Swashbuckle.AspNetCore.Cli" Version="6.0.0">
       <ExcludeAssets>all</ExcludeAssets>
     </PackageReference>
-    <PackageReference Include="Virtocommerce.Platform.Core" Version="3.407.0" />
-    <PackageReference Include="VirtoCommerce.Platform.Data" Version="3.407.0" />
-    <PackageReference Include="VirtoCommerce.Platform.Modules" Version="3.407.0" />
-    <PackageReference Include="VirtoCommerce.Platform.DistributedLock" Version="3.407.0" />
+    <PackageReference Include="Virtocommerce.Platform.Core" Version="3.807.0" />
+    <PackageReference Include="VirtoCommerce.Platform.Data" Version="3.807.0" />
+    <PackageReference Include="VirtoCommerce.Platform.Modules" Version="3.807.0" />
+    <PackageReference Include="VirtoCommerce.Platform.DistributedLock" Version="3.807.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -70,6 +76,18 @@
     <NukeExternalFiles Remove="Properties\**" />
     <NukeSpecificationFiles Remove="artifacts\**" />
     <NukeSpecificationFiles Remove="Properties\**" />
+    <None Include="..\..\LICENSE.txt">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\..\logo.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
 
     <!-- Common build related files -->
 
@@ -84,7 +102,7 @@
     <None Include="..\appveyor.yml" LinkBase="ci" Condition="Exists('..\appveyor.yml')" />
     <None Include="..\.travis.yml" LinkBase="ci" Condition="Exists('..\.travis.yml')" />
     <None Remove="Microsoft.TeamFoundationServer.Client" />
-    
+
     <None Remove="YamlDotNet" />
     <None Remove="Cloud\Models\" />
     <None Remove="Utils\" />

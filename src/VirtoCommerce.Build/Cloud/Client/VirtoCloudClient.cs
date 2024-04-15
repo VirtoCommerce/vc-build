@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Cloud.Models;
 using Nuke.Common;
 using Nuke.Common.IO;
+using Nuke.Common.Utilities;
 
 namespace Cloud.Client;
 
@@ -42,7 +43,7 @@ public class VirtoCloudClient
 
     public async Task UpdateEnvironmentAsync(CloudEnvironment environment)
     {
-        var jsonString = SerializationTasks.JsonSerialize(environment);
+        var jsonString = JsonExtensions.ToJson(environment);
         var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
         var response = await _client.PutAsync(new Uri("api/saas/environments", UriKind.Relative), content);
         if (!response.IsSuccessStatusCode)
@@ -65,7 +66,7 @@ public class VirtoCloudClient
         }
 
         var responseContent = await response.Content.ReadAsStringAsync();
-        var env = SerializationTasks.JsonDeserialize<CloudEnvironment>(responseContent);
+        var env = JsonExtensions.GetJson<CloudEnvironment>(responseContent);
         return env;
     }
 }

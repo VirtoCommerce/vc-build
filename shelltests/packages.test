@@ -1,10 +1,10 @@
-# Install Bundle #4
-vc-build install -stable -v 4
+# Install Bundle #5
+vc-build install -stable -v 5
 >>>2
 >>>= 0
 
-# Update to Bundle #5
-vc-build update -v 5
+# Update to Bundle #6
+vc-build update -v 6
 >>>2
 >>>= 0
 

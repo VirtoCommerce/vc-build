@@ -8,7 +8,21 @@ namespace VirtoCommerce.Build
     internal partial class Build
     {
         [Parameter("Connection String")] public static string DockerConnectionString { get; set; }
-        [Parameter("Docker Username")] public static string DockerUsername { get; set; }
+
+        private static string _dockerUsername = string.Empty;
+        [Parameter("Docker Username")]
+        public static string DockerUsername
+        {
+            get
+            {
+                return _dockerUsername;
+            }
+            set
+            {
+                _dockerUsername = value?.ToLowerInvariant();
+            }
+        }
+
         [Parameter("Docker Password")] public static string DockerPassword { get; set; }
         [Parameter("Docker Registry Url")] public static string DockerRegistryUrl { get; set; }
         [Parameter("Docker Image Name")] public static string DockerImageName { get; set; }
@@ -18,9 +32,10 @@ namespace VirtoCommerce.Build
 
         private static string DockerImageFullName => string.IsNullOrEmpty(DockerImageTag) ? DockerImageName : DockerImageName.Append($":{DockerImageTag}");
 
+        public static bool DockerCredentialsPassed => !string.IsNullOrEmpty(DockerUsername) && !string.IsNullOrEmpty(DockerPassword);
         Target DockerLogin => _ => _
         .Before(BuildImage, PushImage)
-        .OnlyWhenDynamic(() => !string.IsNullOrEmpty(DockerUsername) && !string.IsNullOrEmpty(DockerPassword))
+        .OnlyWhenDynamic(() => DockerCredentialsPassed)
         .Executes(() =>
         {
             DockerTasks.DockerLogger = (_, m) => Log.Debug(m);
@@ -55,6 +70,7 @@ namespace VirtoCommerce.Build
         });
 
         public Target BuildAndPush => _ => _
+        .Before(CloudInit)
         .DependsOn(DockerLogin, BuildImage, PushImage);
     }
 }

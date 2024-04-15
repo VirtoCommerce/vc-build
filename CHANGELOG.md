@@ -3,6 +3,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [3.800.0] - 2024-04-15
+- **Minor Fix:** Resolved a minor issue.
+- **Parameter Replacement:** Deprecated `sonar.login` parameter replaced.
+- **New Feature:** Added `MakeLatest` parameter.
+- **Enhancement:** Minor fixes for `CompleteRelease` target.
+- **Path Correction:** Fixed relative to absolute path conversion.
+- **Documentation Update:** Updated `targets.md`.
+- **Parameter Update:** Replaced `ArgoConfigFile` with `Manifest` parameter.
+- **Enhancement:** Added switch for user-friendly authentication provider selection.
+- **Bug Fix:** Corrected path escaping in `CompleteRelease` target.
+- **Target Removal:** Removed obsolete target.
+
 ## [3.16.0] - 2023-08-24
 ### Added
 - Organization parameter for SetEnvParameter target
