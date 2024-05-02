@@ -239,7 +239,7 @@ internal partial class Build : NukeBuild
 
     protected static bool IsModule => ModuleManifestFile.FileExists();
 
-    private static readonly string[] cleanSearchPattern = new[] { "**/bin", "**/obj" };
+    private static readonly string[] cleanSearchPattern = ["**/bin", "**/obj"];
 
     private static string AIConnectionString = "InstrumentationKey=935c72ed-d8a9-4ef6-a4d1-b3ebfdfddfef;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/";
     private static TelemetryClient _telemetryClient;
@@ -301,7 +301,13 @@ internal partial class Build : NukeBuild
         .Before(Restore)
         .Executes(() =>
         {
-            CleanSolution(cleanSearchPattern);
+            AbsolutePath[] ignorePaths = null;
+            if (ThereAreCustomApps)
+            {
+                ignorePaths = [WebProject.Directory / "App"];
+            }
+
+            CleanSolution(cleanSearchPattern, ignorePaths);
         });
 
     public Target Restore => _ => _
@@ -541,6 +547,7 @@ internal partial class Build : NukeBuild
     }
 
     public Target WebPackBuild => _ => _
+        .After(Clean)
         .Executes(() =>
         {
             WebPackBuildMethod(WebProject);
@@ -571,7 +578,7 @@ internal partial class Build : NukeBuild
         });
 
     public Target Compress => _ => _
-        .DependsOn(Clean, WebPackBuild, Test, Publish)
+        .DependsOn(Clean, WebPackBuild, BuildCustomApp, Test, Publish)
         .Executes(CompressExecuteMethod);
 
     public Target GetManifestGit => _ => _
