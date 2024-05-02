@@ -37,7 +37,6 @@ namespace VirtoCommerce.Build
         {
             get
             {
-                //return string.IsNullOrEmpty(DockerImageTag) ? DockerImageName : DockerImageName.Append($":{DockerImageTag}");
                 if (DockerImageTag.IsNullOrEmpty())
                 {
                     return new string[] { DockerImageName };
