@@ -8,7 +8,7 @@ namespace VirtoCommerce.Build
 {
     internal partial class Build
     {
-        public bool ThereAreCustomApps => IsModule && ModuleManifest?.Apps?.Length > 0;
+        public static bool ThereAreCustomApps => IsModule && ModuleManifest?.Apps?.Length > 0;
 
         public Target CompressWithCustomApp => _ => _
             .DependsOn(Clean, WebPackBuild, BuildCustomApp, Test, Publish)
