@@ -641,7 +641,7 @@ namespace VirtoCommerce.Build
                 var discoveryAbsolutePath = Path.GetFullPath(GetDiscoveryPath());
                 return await CreateManifestFromEnvironment(RootDirectory, discoveryAbsolutePath.ToAbsolutePath());
             }
-            else if (!File.Exists(packageManifestPath))
+            else if (!File.Exists(packageManifestPath)) 
             {
                 Log.Information("vc-package.json does not exist.");
                 Log.Information("Looking for the platform release");

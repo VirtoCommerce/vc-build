@@ -301,13 +301,13 @@ internal partial class Build : NukeBuild
         .Before(Restore)
         .Executes(() =>
         {
-            AbsolutePath[] ignorePaths = null;
+            List<AbsolutePath> ignorePaths = [WebProject.Directory / "modules"];
             if (ThereAreCustomApps)
             {
-                ignorePaths = [WebProject.Directory / "App"];
+                ignorePaths.Add(WebProject.Directory / "App");
             }
 
-            CleanSolution(cleanSearchPattern, ignorePaths);
+            CleanSolution(cleanSearchPattern, ignorePaths.ToArray());
         });
 
     public Target Restore => _ => _
