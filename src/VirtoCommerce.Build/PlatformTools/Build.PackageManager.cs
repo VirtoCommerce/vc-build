@@ -36,7 +36,7 @@ namespace VirtoCommerce.Build
         public static string[] Module { get; set; }
 
         [Parameter("Skip dependency solving")]
-        public static bool SkipDependencySolving { get; set; }
+        public static bool SkipDependencySolving { get; set; } = true;
 
         [Parameter("Install the platform", Name = "Platform")]
         public static bool PlatformParameter { get; set; }
@@ -67,10 +67,11 @@ namespace VirtoCommerce.Build
         public static string DiscoveryPath { get; set; }
 
         [Parameter("Probing path")]
-        public static AbsolutePath ProbingPath { get; set; } = RootDirectory / "app_data" / "modules";
+        public static AbsolutePath ProbingPath { get; set; } = PlatformRootDirectory / "app_data" / "modules";
 
         [Parameter("appsettings.json path")]
-        public static AbsolutePath AppsettingsPath { get; set; } = RootDirectory / "appsettings.json";
+        public static AbsolutePath AppsettingsPath { get; set; } = PlatformRootDirectory / "appsettings.json";
+        public static AbsolutePath PlatformRootDirectory => IsPlatformSource ? WebDirectory : RootDirectory;
 
         public Target InitPlatform => _ => _
              .Executes(() =>
@@ -252,7 +253,7 @@ namespace VirtoCommerce.Build
             .Executes(() => BackupFile.DeleteFile());
 
         public Target InstallPlatform => _ => _
-             .OnlyWhenDynamic(() => PlatformVersionChanged && !IsModulesInstallation)
+             .OnlyWhenDynamic(() => PlatformVersionChanged && !IsModulesInstallation && !IsPlatformSource)
              .Executes(async () =>
              {
                  var packageManifest = PackageManager.FromFile(PackageManifestPath);
@@ -319,7 +320,7 @@ namespace VirtoCommerce.Build
 
         private static string GetDiscoveryPath()
         {
-            var configuration = AppSettings.GetConfiguration(RootDirectory, AppsettingsPath);
+            var configuration = AppSettings.GetConfiguration(PlatformRootDirectory, AppsettingsPath);
             return DiscoveryPath.EmptyToNull() ?? configuration.GetModulesDiscoveryPath();
         }
 
@@ -517,7 +518,7 @@ namespace VirtoCommerce.Build
              .Executes(async () =>
              {
                  SkipDependencySolving = true;
-                 var manifest = await OpenOrCreateManifest(PackageManifestPath, Edge);
+                 var manifest = await OpenOrCreateManifest(PackageManifestPath.ToAbsolutePath(), Edge);
 
                  if (Edge)
                  {
@@ -533,7 +534,11 @@ namespace VirtoCommerce.Build
 
         private static async Task<ManifestBase> UpdateEdgeAsync(ManifestBase manifest, bool platformOnly)
         {
-            manifest = await UpdateEdgePlatformAsync(manifest);
+            if (!IsPlatformSource)
+            {
+                manifest = await UpdateEdgePlatformAsync(manifest);
+            }
+
             if(!platformOnly)
             {
                 manifest = await UpdateEdgeModulesAsync(manifest);
@@ -547,7 +552,11 @@ namespace VirtoCommerce.Build
             await DownloadBundleManifest(bundleName, bundleTmpFilePath);
 
             var bundle = PackageManager.FromFile(bundleTmpFilePath);
-            manifest = await UpdateStablePlatformAsync(manifest, bundle);
+            if (!IsPlatformSource)
+            {
+                manifest = await UpdateStablePlatformAsync(manifest, bundle);
+            }
+
             if (!platformOnly)
             {
                 manifest = await UpdateStableModulesAsync((MixedPackageManifest)manifest, (MixedPackageManifest)bundle);
@@ -626,33 +635,34 @@ namespace VirtoCommerce.Build
 
         private static async Task<ManifestBase> OpenOrCreateManifest(string packageManifestPath, bool isEdge)
         {
+            ManifestBase result;
             var platformWebDllPath = Path.Combine(Directory.GetParent(packageManifestPath).FullName, "VirtoCommerce.Platform.Web.dll");
-            if (!isEdge)
+            if(!File.Exists(packageManifestPath))
             {
-                SkipDependencySolving = true;
-                if (!File.Exists(packageManifestPath))
+                if (!isEdge) //Stable
                 {
                     await DownloadBundleManifest(BundleName, packageManifestPath);
+                    result = PackageManager.FromFile(packageManifestPath);
                 }
-                return PackageManager.FromFile(packageManifestPath);
-            }
-            else if (!File.Exists(packageManifestPath) && File.Exists(platformWebDllPath))
-            {
-                var discoveryAbsolutePath = Path.GetFullPath(GetDiscoveryPath());
-                return await CreateManifestFromEnvironment(RootDirectory, discoveryAbsolutePath.ToAbsolutePath());
-            }
-            else if (!File.Exists(packageManifestPath)) 
-            {
-                Log.Information("vc-package.json does not exist.");
-                Log.Information("Looking for the platform release");
-                var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
-                return PackageManager.CreatePackageManifest(platformRelease.TagName);
+                else if (File.Exists(platformWebDllPath)) // There is platform
+                {
+                    var discoveryAbsolutePath = Path.GetFullPath(GetDiscoveryPath());
+                    result = await CreateManifestFromEnvironment(PlatformRootDirectory, discoveryAbsolutePath.ToAbsolutePath());
+                }
+                else // Create new
+                {
+                    Log.Information("vc-package.json does not exist.");
+                    Log.Information("Looking for the platform release");
+                    var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
+                    result = PackageManager.CreatePackageManifest(platformRelease.TagName);
+                }
             }
             else
             {
-                SkipDependencySolving = true;
-                return PackageManager.FromFile(PackageManifestPath);
+                result = PackageManager.FromFile(packageManifestPath);
             }
+
+            return result;
         }
 
         private static async Task DownloadBundleManifest(string bundleName, string outFile)

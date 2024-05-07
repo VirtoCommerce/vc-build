@@ -191,6 +191,7 @@ internal partial class Build : NukeBuild
     protected static GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
 
     protected static AbsolutePath SourceDirectory => RootDirectory / "src";
+    protected static bool IsPlatformSource => SourceDirectory.Exists();
     protected static AbsolutePath TestsDirectory => RootDirectory / "tests";
     protected static AbsolutePath SamplesDirectory => RootDirectory / "samples";
 
