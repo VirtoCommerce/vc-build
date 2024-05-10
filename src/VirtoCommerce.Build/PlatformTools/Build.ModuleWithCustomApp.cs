@@ -8,12 +8,18 @@ namespace VirtoCommerce.Build
 {
     internal partial class Build
     {
+        public static bool ThereAreCustomApps => IsModule && ModuleManifest?.Apps?.Length > 0;
+
         public Target CompressWithCustomApp => _ => _
-            .DependsOn(CleanWithCustomApp, WebPackBuild, BuildCustomApp, Test, Publish)
-            .Executes(CompressExecuteMethod);
+            .DependsOn(Clean, WebPackBuild, BuildCustomApp, Test, Publish)
+            .Executes(() => {
+                Log.Warning("{target} is deprecated. Use {actualTarget} instead.", nameof(CompressWithCustomApp), nameof(Compress));
+                CompressExecuteMethod();
+            });
 
         public Target BuildCustomApp => _ => _
             .After(WebPackBuild)
+            .OnlyWhenDynamic(() => ThereAreCustomApps)
             .Executes(() =>
             {
                 if (WebProject != null && ModuleManifest.Apps.Any())
@@ -25,6 +31,7 @@ namespace VirtoCommerce.Build
                             continue;
                         }
 
+                        
                         var chmod = ToolResolver.GetPathTool("yarn");
                         chmod.Invoke("install", WebProject.Directory / "App");
                         chmod.Invoke("build", WebProject.Directory / "App");
@@ -38,15 +45,6 @@ namespace VirtoCommerce.Build
                 {
                     Log.Information("Nothing to build.");
                 }
-            });
-
-        public Target CleanWithCustomApp => _ => _
-            .Before(Restore)
-            .Executes(() =>
-            {
-                var ignorePaths = new[] { WebProject.Directory / "App" };
-                var searchPattern = new[] { "**/bin", "**/obj" };
-                CleanSolution(searchPattern, ignorePaths);
             });
     }
 }

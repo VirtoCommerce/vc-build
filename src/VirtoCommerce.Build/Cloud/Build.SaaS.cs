@@ -13,6 +13,7 @@ using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.Docker;
 using Nuke.Common.Tools.DotNet;
+using Nuke.Common.Utilities.Collections;
 using Serilog;
 using VirtoCloud.Client.Api;
 using VirtoCloud.Client.Model;
@@ -171,7 +172,7 @@ internal partial class Build
             DockerImageName = $"{DockerUsername}/{EnvironmentName.ToLowerInvariant()}";
         }
 
-        DockerImageTag ??= DateTime.Now.ToString("MMddyyHHmmss");
+        DockerImageTag ??= new string[] { DateTime.Now.ToString("MMddyyHHmmss") };
         DockerfilePath = dockerfilePath;
         DiscoveryPath = modulesPath;
         ProbingPath = Path.Combine(platformDirectory, "app_data", "modules");
@@ -263,7 +264,7 @@ internal partial class Build
             var envHelmParameters = env.Helm.Parameters;
 
             envHelmParameters["platform.image.repository"] = DockerImageName;
-            envHelmParameters["platform.image.tag"] = DockerImageTag;
+            envHelmParameters["platform.image.tag"] = DockerImageTag[0];
 
             await cloudClient.UpdateEnvironmentAsync(env);
         });
@@ -375,9 +376,9 @@ internal partial class Build
                 model.Helm.Parameters["platform.image.repository"] = DockerImageName;
             }
 
-            if(!string.IsNullOrEmpty(DockerImageTag))
+            if(!DockerImageTag.IsNullOrEmpty())
             {
-                model.Helm.Parameters["platform.image.tag"] = DockerImageTag;
+                model.Helm.Parameters["platform.image.tag"] = DockerImageTag[0];
             }
 
 
