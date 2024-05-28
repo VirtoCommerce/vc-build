@@ -191,7 +191,7 @@ internal partial class Build : NukeBuild
     protected static GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
 
     protected static AbsolutePath SourceDirectory => RootDirectory / "src";
-    protected static bool IsPlatformSource => SourceDirectory.Exists();
+    protected static bool IsPlatformSource => Directory.Exists(Path.Combine(SourceDirectory, "VirtoCommerce.Platform.Web"));
     protected static AbsolutePath TestsDirectory => RootDirectory / "tests";
     protected static AbsolutePath SamplesDirectory => RootDirectory / "samples";
 
@@ -272,7 +272,7 @@ internal partial class Build : NukeBuild
     private static string GetSafeCmdArguments()
     {
         var safeArgs = EnvironmentInfo.CommandLineArguments.Join(" ");
-        foreach(var arg in EnvironmentInfo.CommandLineArguments.Where(a => TokenArguments.Contains(a.Replace("-", ""), StringComparer.InvariantCultureIgnoreCase)))
+        foreach (var arg in EnvironmentInfo.CommandLineArguments.Where(a => TokenArguments.Contains(a.Replace("-", ""), StringComparer.InvariantCultureIgnoreCase)))
         {
             var argValue = EnvironmentInfo.GetNamedArgument<string>(arg);
             safeArgs = safeArgs.Replace(argValue, "***");
@@ -302,10 +302,14 @@ internal partial class Build : NukeBuild
         .Before(Restore)
         .Executes(() =>
         {
-            List<AbsolutePath> ignorePaths = [WebProject.Directory / "modules"];
-            if (ThereAreCustomApps)
+            var ignorePaths = new List<AbsolutePath>();
+            if (WebProject != null)
             {
-                ignorePaths.Add(WebProject.Directory / "App");
+                ignorePaths.Add(WebProject.Directory / "modules");
+                if (ThereAreCustomApps)
+                {
+                    ignorePaths.Add(WebProject.Directory / "App");
+                }
             }
 
             CleanSolution(cleanSearchPattern, ignorePaths.ToArray());
