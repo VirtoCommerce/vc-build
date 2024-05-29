@@ -48,10 +48,10 @@ namespace VirtoCommerce.Build
         public static string AzureToken { get; set; }
 
         [Parameter("Azure PAT for the Universal Packages")]
-        public static string AzureUniversalPackagesPAT { get; set; }
+        public static string AzureUniversalPackagesPat { get; set; }
 
         [Parameter("Azure Blob SAS Token")]
-        public static string AzureSASToken { get; set; }
+        public static string AzureSasToken { get; set; }
 
         [Parameter("GitLab Token")]
         public static string GitLabToken { get; set; }
@@ -502,9 +502,9 @@ namespace VirtoCommerce.Build
         private static ModuleInstallerBase GetModuleInstaller(ModuleSource moduleSource) => moduleSource switch
         {
             AzurePipelineArtifacts => new AzurePipelineArtifactsModuleInstaller(AzureToken, GetDiscoveryPath()),
-            AzureUniversalPackages => new AzureUniversalPackagesModuleInstaller(AzureUniversalPackagesPAT ?? AzureToken, GetDiscoveryPath()),
+            AzureUniversalPackages => new AzureUniversalPackagesModuleInstaller(AzureUniversalPackagesPat ?? AzureToken, GetDiscoveryPath()),
             GithubPrivateRepos => new GithubPrivateModulesInstaller(GitHubToken, GetDiscoveryPath()),
-            AzureBlob _ => new AzureBlobModuleInstaller(AzureSASToken ?? AzureToken, GetDiscoveryPath()),
+            AzureBlob _ => new AzureBlobModuleInstaller(AzureSasToken ?? AzureToken, GetDiscoveryPath()),
             GitlabJobArtifacts _ => new GitlabJobArtifactsModuleInstaller(GitLabServer, GitLabToken, GetDiscoveryPath()),
             Local _ => new LocalModuleInstaller(GetDiscoveryPath()),
             _ => throw new NotImplementedException("Unknown module source"),
