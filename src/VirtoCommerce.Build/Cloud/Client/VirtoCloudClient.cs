@@ -69,4 +69,20 @@ public class VirtoCloudClient
         var env = JsonExtensions.GetJson<CloudEnvironment>(responseContent);
         return env;
     }
+
+    public async Task<string> GetManifest(string environmentName, string orgName = null)
+    {
+        var relativeUri = string.IsNullOrWhiteSpace(orgName) ? $"api/saas/manifest/{environmentName}" : $"api/saas/manifest/{orgName}/{environmentName}";
+        var response = await _client.SendAsync(new HttpRequestMessage
+        {
+            Method = HttpMethod.Get,
+            RequestUri = new Uri(relativeUri, UriKind.Relative)
+        });
+        if (!response.IsSuccessStatusCode)
+        {
+            Assert.Fail($"{response.ReasonPhrase}: {await response.Content.ReadAsStringAsync()}");
+        }
+
+        return await response.Content.ReadAsStringAsync();
+    }
 }
