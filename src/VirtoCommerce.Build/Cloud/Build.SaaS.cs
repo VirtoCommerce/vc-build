@@ -118,7 +118,7 @@ internal partial class Build
                 return true;
             }
 
-            Task.Delay(TimeSpan.FromSeconds(delay)).Wait();
+            await Task.Delay(TimeSpan.FromSeconds(delay));
         }
 
         return false;
