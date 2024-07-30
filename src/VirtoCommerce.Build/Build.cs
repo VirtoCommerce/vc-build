@@ -15,6 +15,7 @@ using Microsoft.ApplicationInsights;
 using Microsoft.Build.Locator;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NuGet.Packaging;
 using Nuke.Common;
 using Nuke.Common.Execution;
 using Nuke.Common.Git;
@@ -90,8 +91,7 @@ internal partial class Build : NukeBuild
     [Parameter] public static string Source { get; set; } = "https://api.nuget.org/v3/index.json";
 
     [Parameter]
-    public static string GlobalModuleIgnoreFileUrl { get; set; } =
-        "https://raw.githubusercontent.com/VirtoCommerce/vc-platform/dev/module.ignore";
+    public static string GlobalModuleIgnoreFileUrl { get; set; }
 
     [Parameter] public static string SonarAuthToken { get; set; } = "";
 
@@ -1249,6 +1249,11 @@ internal partial class Build : NukeBuild
     {
         if (IsModule)
         {
+            const string moduleIgnoreUrlTemplate = "https://raw.githubusercontent.com/VirtoCommerce/vc-platform/{0}/module.ignore";
+            if(string.IsNullOrEmpty(GlobalModuleIgnoreFileUrl))
+            {
+                GlobalModuleIgnoreFileUrl = string.Format(moduleIgnoreUrlTemplate, ModuleManifest?.PlatformVersion ?? "dev");
+            }
             var ignoredFiles = HttpTasks.HttpDownloadString(GlobalModuleIgnoreFileUrl).SplitLineBreaks();
 
             if (ModuleIgnoreFile.FileExists())
