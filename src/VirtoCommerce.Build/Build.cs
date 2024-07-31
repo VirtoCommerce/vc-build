@@ -1252,9 +1252,22 @@ internal partial class Build : NukeBuild
             const string moduleIgnoreUrlTemplate = "https://raw.githubusercontent.com/VirtoCommerce/vc-platform/{0}/module.ignore";
             if(string.IsNullOrEmpty(GlobalModuleIgnoreFileUrl))
             {
-                GlobalModuleIgnoreFileUrl = string.Format(moduleIgnoreUrlTemplate, ModuleManifest?.PlatformVersion ?? "dev");
+                Version.TryParse(ModuleManifest.PlatformVersion, out var platformVersion);
+
+                const int MajorMinorPatch = 3;
+                GlobalModuleIgnoreFileUrl = string.Format(moduleIgnoreUrlTemplate, platformVersion?.ToString(MajorMinorPatch) ?? "dev");
             }
-            var ignoredFiles = HttpTasks.HttpDownloadString(GlobalModuleIgnoreFileUrl).SplitLineBreaks();
+
+            string[] ignoredFiles;
+            if (GlobalModuleIgnoreFileUrl.StartsWith("http"))
+            {
+                ignoredFiles = HttpTasks.HttpDownloadString(GlobalModuleIgnoreFileUrl).SplitLineBreaks();
+            }
+            else
+            {
+                ignoredFiles = File.ReadAllLines(GlobalModuleIgnoreFileUrl);
+            }
+
 
             if (ModuleIgnoreFile.FileExists())
             {
