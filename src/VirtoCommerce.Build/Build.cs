@@ -1254,7 +1254,7 @@ internal partial class Build : NukeBuild
             {
                 Version.TryParse(ModuleManifest.PlatformVersion, out var platformVersion);
                 
-                GlobalModuleIgnoreFileUrl = string.Format(moduleIgnoreUrlTemplate, platformVersion?.ToString() ?? "dev");
+                GlobalModuleIgnoreFileUrl = string.Format(moduleIgnoreUrlTemplate, platformVersion?.ToString(3) ?? "dev");
             }
 
             string[] ignoredFiles;
