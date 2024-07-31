@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using Cloud.Models;
 using Nuke.Common;
-using Nuke.Common.IO;
 using Nuke.Common.Utilities;
+using VirtoCloud.Client.Model;
 
 namespace Cloud.Client;
 
@@ -52,7 +51,7 @@ public class VirtoCloudClient
         }
     }
 
-    public async Task<CloudEnvironment> GetEnvironment(string environmentName, string orgName = null)
+    public async Task<CloudEnvironment> GetEnvironmentAsync(string environmentName, string orgName = null)
     {
         var relativeUri = string.IsNullOrWhiteSpace(orgName) ? $"api/saas/environments/{environmentName}" : $"api/saas/environments/{orgName}/{environmentName}";
         var response = await _client.SendAsync(new HttpRequestMessage
