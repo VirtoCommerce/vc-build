@@ -318,6 +318,14 @@ internal partial class Build
             SaveCloudToken(apiKey);
         });
 
+    public Target CloudDownloadManifest => _ => _
+        .Executes(async () =>
+        {
+            var cloudClient = new VirtoCloudClient(CloudUrl, await GetCloudTokenAsync());
+            var manifest = await cloudClient.GetManifest(EnvironmentName, SaaSOrganizationName);
+            File.WriteAllText(string.IsNullOrWhiteSpace(Manifest) ? Path.Combine(Directory.GetCurrentDirectory(), $"{EnvironmentName}.yml") : Manifest, manifest);
+        });
+
     private async Task<string> GetCloudTokenAsync()
     {
         if (!string.IsNullOrEmpty(CloudToken))
