@@ -72,7 +72,7 @@ public class VirtoCloudClient
 
     public async Task<string> GetManifest(string environmentName, string orgName = null)
     {
-        var relativeUri = string.IsNullOrWhiteSpace(orgName) ? $"api/saas/manifest/{environmentName}" : $"api/saas/manifest/{orgName}/{environmentName}";
+        var relativeUri = string.IsNullOrWhiteSpace(orgName) ? $"api/saas/environments/{environmentName}/manifest" : $"api/saas/environments/manifest/{orgName}/{environmentName}";
         var response = await _client.SendAsync(new HttpRequestMessage
         {
             Method = HttpMethod.Get,
