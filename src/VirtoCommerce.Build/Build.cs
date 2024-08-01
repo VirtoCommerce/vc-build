@@ -1261,7 +1261,12 @@ internal partial class Build : NukeBuild
             string[] ignoredFiles;
             if (GlobalModuleIgnoreFileUrl.StartsWith("http"))
             {
-                ignoredFiles = HttpTasks.HttpDownloadString(GlobalModuleIgnoreFileUrl).SplitLineBreaks();
+                var responseString = HttpTasks.HttpDownloadString(GlobalModuleIgnoreFileUrl);
+                if (responseString.StartsWith("404:"))
+                {
+                    responseString = HttpTasks.HttpDownloadString(string.Format(moduleIgnoreUrlTemplate, "dev"));
+                }
+                ignoredFiles = responseString.SplitLineBreaks();
             }
             else
             {
