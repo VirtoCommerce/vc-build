@@ -91,7 +91,7 @@ internal partial class Build
             for (var i = 0; i < AttemptsNumber; i++)
             {
                 Log.Information($"Attempt #{i + 1}");
-                var env = await cloudClient.GetEnvironment(EnvironmentName);
+                var env = await cloudClient.GetEnvironmentAsync(EnvironmentName);
                 Log.Information(
                     $"Actual Health Status is {env.Status} - expected is {HealthStatus ?? "Not expected"}\n Actual Sync Status is {env.SyncStatus} - expected is {SyncStatus ?? "Not expected"}");
                 if (CheckAppServiceStatus(HealthStatus, env.Status) &&
@@ -106,12 +106,37 @@ internal partial class Build
             Assert.True(isSuccess, $"Statuses {HealthStatus} {SyncStatus} were not obtained for the number of attempts: {AttemptsNumber}");
         });
 
+    private static async Task<bool> WaitForEnvironmentState(Func<Task<CloudEnvironment>> cloudEnvProvider, Func<CloudEnvironment, bool> condition, int delay, int attempts)
+    {
+        for (var i = 0; i < attempts; i++)
+        {
+            var env = await cloudEnvProvider();
+            Log.Information($"Attempt #{i + 1}");
+            Log.Information($"Health Status is {env.Status}\nSync Status is {env.SyncStatus}");
+            if (condition(env))
+            {
+                return true;
+            }
 
+            await Task.Delay(TimeSpan.FromSeconds(delay));
+        }
+
+        return false;
+    }
     public Target CloudEnvSetParameter => _ => _
         .Executes(async () =>
         {
             var cloudClient = new VirtoCloudClient(CloudUrl, await GetCloudTokenAsync());
-            var env = await cloudClient.GetEnvironment(EnvironmentName, SaaSOrganizationName);
+
+            var isProgressing = await WaitForEnvironmentState(async () => await cloudClient.GetEnvironmentAsync(EnvironmentName, SaaSOrganizationName),
+                env => env.Status != "Progressing", Delay, AttemptsNumber);
+
+            if (!isProgressing)
+            {
+                Assert.Fail("Environment is in 'Progressing' status for too long.");
+            }
+
+            var env = await cloudClient.GetEnvironmentAsync(EnvironmentName, SaaSOrganizationName);
 
             var envHelmParameters = env.Helm.Parameters;
             foreach (var parameter in HelmParameters)
@@ -259,7 +284,7 @@ internal partial class Build
         .Executes(async () =>
         {
             var cloudClient = new VirtoCloudClient(CloudUrl, await GetCloudTokenAsync());
-            var env = await cloudClient.GetEnvironment(EnvironmentName, SaaSOrganizationName);
+            var env = await cloudClient.GetEnvironmentAsync(EnvironmentName, SaaSOrganizationName);
 
             var envHelmParameters = env.Helm.Parameters;
 
@@ -291,6 +316,14 @@ internal partial class Build
             context.Response.Close();
 
             SaveCloudToken(apiKey);
+        });
+
+    public Target CloudDownloadManifest => _ => _
+        .Executes(async () =>
+        {
+            var cloudClient = new VirtoCloudClient(CloudUrl, await GetCloudTokenAsync());
+            var manifest = await cloudClient.GetManifest(EnvironmentName, SaaSOrganizationName);
+            File.WriteAllText(string.IsNullOrWhiteSpace(Manifest) ? Path.Combine(Directory.GetCurrentDirectory(), $"{EnvironmentName}.yml") : Manifest, manifest);
         });
 
     private async Task<string> GetCloudTokenAsync()

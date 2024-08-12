@@ -54,7 +54,6 @@ jobs:
         id: image
         with:
           projectType: "platform"
-          releaseBranch: "main"
 
       - name: Add version suffix
         if: ${{ github.ref != 'refs/heads/main' }}

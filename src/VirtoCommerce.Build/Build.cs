@@ -15,6 +15,7 @@ using Microsoft.ApplicationInsights;
 using Microsoft.Build.Locator;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NuGet.Packaging;
 using Nuke.Common;
 using Nuke.Common.Execution;
 using Nuke.Common.Git;
@@ -90,8 +91,7 @@ internal partial class Build : NukeBuild
     [Parameter] public static string Source { get; set; } = "https://api.nuget.org/v3/index.json";
 
     [Parameter]
-    public static string GlobalModuleIgnoreFileUrl { get; set; } =
-        "https://raw.githubusercontent.com/VirtoCommerce/vc-platform/dev/module.ignore";
+    public static string GlobalModuleIgnoreFileUrl { get; set; }
 
     [Parameter] public static string SonarAuthToken { get; set; } = "";
 
@@ -1249,7 +1249,30 @@ internal partial class Build : NukeBuild
     {
         if (IsModule)
         {
-            var ignoredFiles = HttpTasks.HttpDownloadString(GlobalModuleIgnoreFileUrl).SplitLineBreaks();
+            const string moduleIgnoreUrlTemplate = "https://raw.githubusercontent.com/VirtoCommerce/vc-platform/{0}/module.ignore";
+            if(string.IsNullOrEmpty(GlobalModuleIgnoreFileUrl))
+            {
+                Version.TryParse(ModuleManifest.PlatformVersion, out var platformVersion);
+
+                const int MajorMinorPatch = 3;
+                GlobalModuleIgnoreFileUrl = string.Format(moduleIgnoreUrlTemplate, platformVersion?.ToString(MajorMinorPatch) ?? "dev");
+            }
+
+            string[] ignoredFiles;
+            if (GlobalModuleIgnoreFileUrl.StartsWith("http"))
+            {
+                var responseString = HttpTasks.HttpDownloadString(GlobalModuleIgnoreFileUrl);
+                if (responseString.StartsWith("404:"))
+                {
+                    responseString = HttpTasks.HttpDownloadString(string.Format(moduleIgnoreUrlTemplate, "dev"));
+                }
+                ignoredFiles = responseString.SplitLineBreaks();
+            }
+            else
+            {
+                ignoredFiles = File.ReadAllLines(GlobalModuleIgnoreFileUrl);
+            }
+
 
             if (ModuleIgnoreFile.FileExists())
             {
