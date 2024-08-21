@@ -29,8 +29,22 @@ namespace VirtoCommerce.Build
         [Parameter("Platform or Module version to install", Name = "Version")]
         public static string VersionToInstall { get; set; }
 
+        private const string _packageManifestPathDefaultValue = "./vc-package.json";
+        private static string _packageManifestPath = _packageManifestPathDefaultValue;
+
         [Parameter("vc-package.json path")]
-        public static string PackageManifestPath { get; set; } = "./vc-package.json";
+        public static string PackageManifestPath
+        {
+            get {
+                if (_packageManifestPath != _packageManifestPathDefaultValue)
+                {
+                    Assert.FileExists(_packageManifestPath.ToAbsolutePath());
+                }
+                return _packageManifestPath;
+            }
+
+            set => _packageManifestPath = value;
+        }
 
         [Parameter("Install params (install -module VirtoCommerce.Core:1.2.3)")]
         public static string[] Module { get; set; }
