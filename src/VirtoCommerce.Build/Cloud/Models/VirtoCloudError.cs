@@ -14,7 +14,7 @@ namespace Cloud.Models
         public string GetErrorMessage()
         {
             var message = Message;
-            if (Errors != null && Errors.Any())
+            if (Errors?.Count > 0)
             {
                 message += Environment.NewLine + string.Join(Environment.NewLine, Errors);
             }
