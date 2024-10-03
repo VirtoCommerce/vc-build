@@ -232,7 +232,7 @@ vc-build CloudEnvUpdate -CloudToken <your token> -Manifest <path to application 
 ```
 :::
 :::
-## CloudEnvSetParameter 
+## CloudEnvSetParameter
 Updates parameters of cloud environment
 Gets parameters: CloudToken, EnvironmentName, HelmParameters (Array), Organization (optional)
 ```console
@@ -240,7 +240,7 @@ vc-build CloudEnvSetParameter  -CloudToken <your token> -EnvironmentName <enviro
 ```
 :::
 :::
-## CloudEnvStatus 
+## CloudEnvStatus
 Waits for health and/or sync statuses of the Environment
 Gets parameters: CloudToken, EnvironmentName, HealthStatus, SyncStatus
 ```console
@@ -248,7 +248,7 @@ vc-build CloudEnvStatus  -CloudToken <your token> -EnvironmentName <environment 
 ```
 :::
 :::
-## CloudAuth 
+## CloudAuth
 This target saves a token for accessing the VirtoCloud portal, eliminating the need to use the CloudToken parameter with every call to targets in the Cloud group.
 Gets parameters: AzureAD (optional)
 ```console
@@ -257,7 +257,7 @@ vc-build CloudAuth -AzureAD
 ```
 :::
 :::
-## CloudInit 
+## CloudInit
 This target creates a new environment. It additionally accepts the ServicePlan parameter to specify the service plan (default value is F1).
 ```console
 vc-build CloudInit -EnvironmentName <EnvName>
@@ -265,21 +265,21 @@ vc-build CloudInit -EnvironmentName <EnvName> -ServicePlan F1
 ```
 :::
 :::
-## CloudEnvList 
+## CloudEnvList
 List Environments with Statuses
 ```console
 vc-build CloudEnvList
 ```
 :::
 :::
-## CloudEnvRestart 
+## CloudEnvRestart
 Restart Environment
 ```console
 vc-build CloudEnvRestart -EnvironmentName <EnvName>
 ```
 :::
 :::
-## CloudEnvStatus 
+## CloudEnvStatus
 Waits for health and/or sync statuses of the Environment
 Gets parameters: CloudToken, EnvironmentName, HealthStatus, SyncStatus
 ```console
@@ -287,28 +287,30 @@ vc-build CloudEnvStatus  -CloudToken <your token> -EnvironmentName <environment 
 ```
 :::
 :::
-## CloudEnvLogs 
+## CloudEnvLogs
 Show Environment’s Logs
 ```console
 vc-build CloudEnvLogs -EnvironmentName <EnvName>
 ```
 :::
 :::
-## CloudDown 
+## CloudDown
 Delete Environment
+Parameters: Organization (optional), EnvironmentName (required)
 ```console
 vc-build CloudDown -EnvironmentName <EnvName>
+vc-build CloudDown -Organization <OrgName> -EnvironmentName <EnvName>
 ```
 :::
 :::
-## CloudDeploy 
+## CloudDeploy
 Deploy Custom Image to the Existing Environment
 ```console
 vc-build CloudDeploy -EnvironmentName <EnvName> -DockerUsername <username of docker hub>
 ```
 :::
 :::
-## CloudUp 
+## CloudUp
 Deploy Custom Image to the New Environment
 ```console
 vc-build CloudUp -EnvironmentName <EnvName> -DockerUsername <username of docker hub>
