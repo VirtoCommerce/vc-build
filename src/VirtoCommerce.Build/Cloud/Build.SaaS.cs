@@ -298,24 +298,32 @@ internal partial class Build
     public Target CloudAuth => _ => _
         .Executes(async () =>
         {
-            var port = "60123";
-            var listenerPrefix = $"http://localhost:{port}/";
-
-            var listener = new HttpListener()
+            string apiKey;
+            if (string.IsNullOrWhiteSpace(CloudToken))
             {
-                Prefixes = { listenerPrefix }
-            };
-            listener.Start();
+                var port = "60123";
+                var listenerPrefix = $"http://localhost:{port}/";
 
-            Log.Information("Openning browser window");
-            var authUrl = $"{CloudUrl}/externalsignin?authenticationType={CloudAuthProvider}&returnUrl=/api/saas/token/{port}";
-            Process.Start(new ProcessStartInfo(authUrl) { UseShellExecute = true });
+                var listener = new HttpListener()
+                {
+                    Prefixes = { listenerPrefix }
+                };
+                listener.Start();
 
-            var context = await listener.GetContextAsync();
-            context.Response.StatusCode = (int)HttpStatusCode.OK;
-            var apiKey = context.Request.QueryString["apiKey"];
-            context.Response.Redirect($"{CloudUrl}/vcbuild/login/success");
-            context.Response.Close();
+                Log.Information("Openning browser window");
+                var authUrl = $"{CloudUrl}/externalsignin?authenticationType={CloudAuthProvider}&returnUrl=/api/saas/token/{port}";
+                Process.Start(new ProcessStartInfo(authUrl) { UseShellExecute = true });
+
+                var context = await listener.GetContextAsync();
+                context.Response.StatusCode = (int)HttpStatusCode.OK;
+                apiKey = context.Request.QueryString["apiKey"];
+                context.Response.Redirect($"{CloudUrl}/vcbuild/login/success");
+                context.Response.Close();
+            }
+            else
+            {
+                apiKey = CloudToken;
+            }
 
             SaveCloudToken(apiKey);
         });

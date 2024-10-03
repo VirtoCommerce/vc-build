@@ -250,10 +250,11 @@ vc-build CloudEnvStatus  -CloudToken <your token> -EnvironmentName <environment 
 :::
 ## CloudAuth
 This target saves a token for accessing the VirtoCloud portal, eliminating the need to use the CloudToken parameter with every call to targets in the Cloud group.
-Gets parameters: AzureAD (optional)
+Gets parameters: AzureAD (optional), CloudToken (optional)
 ```console
 vc-build CloudAuth
 vc-build CloudAuth -AzureAD
+vc-build CloudAuth -CloudToken <token>
 ```
 :::
 :::
