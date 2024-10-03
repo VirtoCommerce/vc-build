@@ -75,8 +75,8 @@ internal partial class Build
     [Parameter("Cloud Environment Db Provider")] public string DbProvider { get; set; }
     [Parameter("Cloud Environment Db Name")] public string DbName { get; set; }
 
-
-    [Parameter("Organization name", Name = "Organization")] public string SaaSOrganizationName { get; set; }
+    private string _saasOrganizationName;
+    [Parameter("Organization name", Name = "Organization")] public string SaaSOrganizationName { get => _saasOrganizationName; set => _saasOrganizationName = value?.ToLowerInvariant(); }
 
 
     [Parameter("Url to Dockerfile which will use to build the docker image in the CloudDeploy/CloudUp Target")]
