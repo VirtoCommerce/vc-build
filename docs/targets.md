@@ -1,32 +1,28 @@
-:::
 ## Init
-Creates vc-package.json boilerplate with the latest version number of the platform.
-Version number can be specified by PlatformVersion parameter
+Creates `vc-package.json` boilerplate with the latest version number of the platform. The version number can be specified by the `PlatformVersion` parameter.
+
 For example:
 ```console
 vc-build Init
 vc-build Init -PlatformVersion 3.52.0
 ```
-:::
-:::
+---
 ## Install
-This command downloads and install into the current folder the platform or modules with versions that are passed as the command parameters or defined in vc-package.json.
+Downloads and installs the platform or modules into the current folder. Versions can be specified as command parameters or defined in `vc-package.json`.
 
-vc-package.json - file is used to maintain the list of installed modules with their versions. This allows vc-build to easily restore the platform with the modules when on a different machine, such as a build server, without all those packages.
+`vc-package.json` maintains the list of installed modules with their versions, allowing `vc-build` to restore the platform and modules on different machines.
 
-vc-build install (with no args)
-This target downloads and install into the current folder the platform and modules with versions described in vc-package.json. If vc-package.json is not found in the local folder, by default the command will download and install the latest platform and modules versions that are marked with the commerce group.
+### Parameters
+- `PackageManifestPath`, `DiscoveryPath`, `ProbingPath`: Override paths.
+- `SkipDependencySolving`: Skip dependency solving.
+- `GithubToken`, `AzureToken`, `GitLabToken`: Pass tokens for authorization.
+- `-Edge`: Install the latest available versions.
 
-By default, install target will install all modules listed as dependencies in vc-package.json.
-Path to vc-package.json, discovery and probing paths can be overridden with PackageManifestPath, DiscoveryPath, ProbingPath parameters. Also we can skip dependency solving with SkipDependencySolving parameter.
-Since version 2.0.0-beta0005 the -module parameter is case insensitive
+Since version 3.17.0, stable versions of modules are installed by default.
 
-When you are using one of the source which requires the authorization you can pass tokens using these parameters: GithubToken, AzureToken, GitLabToken.
-
-Since version 3.17.0 this target installs stable versions of modules by default. If you need the latest available versions you should use -Edge parameter
-Examples:
+### Usage
 ```console
-vc-build install (with no args)
+vc-build install
 vc-build install -GitLabToken $GITLAB_TOKEN
 vc-build install -platform -version <version>
 vc-build install -platform -PlatformAssetUrl https://github.com/VirtoCommerce/vc-platform/releases/download/3.216.13/VirtoCommerce.Platform.3.216.13.zip
@@ -34,286 +30,295 @@ vc-build install -module <module> -version <version>
 vc-build install -module <module>:<version>
 vc-build install -PackageManifestPath some_directory/vc-package.json -DiscoveryPath ../modules -ProbingPath platform_dir/app_data/modules -SkipDependencySolving
 ```
-:::
-:::
+---
 ## Update
-Updates platform and modules depending on parameters either to the latest versions or stable bundle.
-By default updates to the latest stable bundle. With an -v parameter you can specify the bundle version.
-With an -edge parameter updates to the latest available versions.
+Updates platform and modules to the latest stable bundle or specified versions.
+
+### Usage
 ```console
 vc-build Update
 vc-build Update -v 3
 vc-build Update -edge
 ```
-:::
-:::
+---
 ## InstallModules
-Installs modules according to vc-package.json and solves dependencies
+Installs modules according to `vc-package.json` and solves dependencies.
+
+### Usage
 ```console
 vc-build InstallModules
 vc-build InstallModules -DiscoveryPath ../modules
 ```
-:::
-:::
+---
 ## InstallPlatform
-Installs platform according to vc-package.json
+Installs the platform according to `vc-package.json`.
+
+### Usage
 ```console
 vc-build InstallPlatform
 ```
-:::
-:::
+---
 ## Uninstall
-Gets -Module parameter and removes specified modules
+Removes specified modules.
+
+### Usage
 ```console
 vc-build uninstall -Module VirtoCommerce.Cart VirtoCommerce.Catalog
 ```
-:::
-:::
+---
 ## Clean
-Cleans bin, obj and artifacts directories
+Cleans `bin`, `obj`, and `artifacts` directories.
+
+### Usage
 ```console
 vc-build clean
 ```
-:::
-:::
+---
 ## Restore
-Executes dotnet restore
+Executes `dotnet restore`.
+
+### Usage
 ```console
 vc-build restore
 vc-build restore -NugetConfig <path to nuget config>
 ```
-:::
-:::
+---
 ## Compile
-Executes dotnet build
+Executes `dotnet build`.
+
+### Usage
 ```console
 vc-build compile
 ```
-:::
-:::
+---
 ## Pack
-Creates nuget packages by executing dotnet pack
+Creates NuGet packages by executing `dotnet pack`.
+
+### Usage
 ```console
 vc-build pack
 ```
-:::
-:::
+---
 ## Test
-Executes unit tests and generates coverage report
-Can get -TestsFilter parameter to filter tests which should be run
+Executes unit tests and generates a coverage report. Can filter tests with `-TestsFilter`.
+
+### Usage
 ```console
 vc-build Test
 vc-build Test -TestsFilter "Category!=IntegrationTest"
 ```
-:::
-:::
+---
 ## PublishPackages
-Publishes nuget packages in ./artifacts directory with -Source and -ApiKey parameters.
--Source is "https://api.nuget.org/v3/index.json" by default
+Publishes NuGet packages in the `./artifacts` directory with `-Source` and `-ApiKey` parameters.
+
+### Usage
 ```console
 vc-build PublishPackages -ApiKey %SomeApiKey%
 ```
-:::
-:::
+---
 ## QuickRelease
-Creates a release branch from dev. Merges it into master. Increments version in dev branch and removes release/* branch.
+Creates a release branch from `dev`, merges it into `master`, increments the version in the `dev` branch, and removes the `release/*` branch.
+
+### Usage
 ```console
 vc-build QuickRelease
 vc-build QuickRelease -Force
 ```
-:::
-:::
+---
 ## Publish
-Executes dotnet publish
+Executes `dotnet publish`.
+
+### Usage
 ```console
 vc-build publish
 ```
-:::
-:::
+---
 ## WebPackBuild
-Executes "npm ci" and then "npm run webpack:build"
+Executes `npm ci` and then `npm run webpack:build`.
+
+### Usage
 ```console
 vc-build WebPackBuild
 ```
-:::
-:::
+---
 ## Compress
-Compresses an artifact to the archive and filters excess files
+Compresses an artifact to an archive and filters excess files.
+
+### Usage
 ```console
 vc-build compress
 vc-build compress -configuration Release
 vc-build Compress -NugetConfig <path to nuget config>
 ```
-:::
-:::
+---
 ## PublishModuleManifest
-Updates modules_v3.json with information from the current artifact's module.manifest
+Updates `modules_v3.json` with information from the current artifact's `module.manifest`.
+
+### Usage
 ```console
 vc-build PublishModuleManifest
 ```
-:::
-:::
+---
 ## SonarQubeStart
-Starts sonar scanner by executing "dotnet sonarscanner begin".
-Gets parameters: SonarBranchName, SonarPRBase, SonarPRBranch, SonarPRNumber, SonarGithubRepo, SonarPRProvider, SonarAuthToken
+Starts the Sonar scanner by executing `dotnet sonarscanner begin`. Accepts parameters like `SonarBranchName`, `SonarPRBase`, `SonarPRBranch`, `SonarPRNumber`, `SonarGithubRepo`, `SonarPRProvider`, `SonarAuthToken`.
+
+### Usage
 ```console
 vc-build SonarQubeStart -SonarBranchName dev -SonarAuthToken *** -RepoName vc-module-marketing
 ```
-:::
-:::
+---
 ## SonarQubeEnd
-Executes "dotnet sonarscanner end"
-Gets parameters: SonarAuthToken
+Executes `dotnet sonarscanner end`. Accepts `SonarAuthToken` parameter.
+
+### Usage
 ```console
 vc-build SonarQubeEnd -SonarAuthToken %SonarToken%
 ```
-:::
-:::
+---
 ## Release
-Creates the github release
-Gets parameters: GitHubUser, GitHubToken, ReleaseBranch
+Creates a GitHub release. Accepts parameters like `GitHubUser`, `GitHubToken`, `ReleaseBranch`.
+
+### Usage
 ```console
 vc-build release -GitHubUser VirtoCommerce -GitHubToken %token%
 ```
-:::
-:::
+---
 ## ClearTemp
-Removes .tmp directory
+Removes the `.tmp` directory.
+
+### Usage
 ```console
 vc-build ClearTemp
 ```
-:::
-:::
+---
 ## DockerLogin
-Executes "docker login"
-Gets parameters: DockerRegistryUrl, DockerUsername, DockerPassword
+Executes `docker login`. Accepts parameters like `DockerRegistryUrl`, `DockerUsername`, `DockerPassword`.
+
+### Usage
 ```console
 vc-build dockerlogin -DockerRegistryUrl https://myregistry.com -DockerUsername user -DockerPassword 12345
 ```
-:::
-:::
+---
 ## BuildImage
-Builds docker image
-Gets parameters: DockerfilePath, DockerImageFullName
+Builds a Docker image. Accepts parameters like `DockerfilePath`, `DockerImageFullName`.
+
+### Usage
 ```console
 vc-build buildimage -DockerfilePath ./dockerfile -DockerImageFullName myimage:dev
 ```
-:::
-:::
+---
 ## PushImage
-Pushes docker image to the remote registry
-Gets parameters: DockerImageFullName
+Pushes a Docker image to the remote registry. Accepts `DockerImageFullName` parameter.
+
+### Usage
 ```console
 vc-build PushImage -DockerImageFullName myimage:dev
 ```
-:::
-:::
+---
 ## BuildAndPush
-Builds and pushes docker image
-Gets parameters: DockerRegistryUrl, DockerUsername, DockerPassword, DockerfilePath, DockerImageFullName
+Builds and pushes a Docker image. Accepts parameters like `DockerRegistryUrl`, `DockerUsername`, `DockerPassword`, `DockerfilePath`, `DockerImageFullName`.
+
+### Usage
 ```console
 vc-build BuildAndPush -DockerRegistryUrl https://myregistry.com -DockerUsername user -DockerPassword 12345 -DockerfilePath ./dockerfile -DockerImageFullName myimage:dev
 ```
-:::
-:::
+---
 ## Configure
-Validates and updates a connection string in the appsettings.json
-Gets parameters: Sql, Redis, AzureBlob, AppsettingsPath (./appsettings.json by default)
+Validates and updates a connection string in `appsettings.json`. Accepts parameters like `Sql`, `Redis`, `AzureBlob`, `AppsettingsPath` (default is `./appsettings.json`).
+
+### Usage
 ```console
-vc-build Configure -Sql "MsSql connection string"  -Redis "Redis connection string" -AzureBlob "Container connection stirng"
+vc-build Configure -Sql "MsSql connection string" -Redis "Redis connection string" -AzureBlob "Container connection string"
 ```
-:::
-:::
+---
 ## CloudEnvUpdate
-Updates Applications in Cloud
-Gets parameters: CloudToken, Manifest
+Updates applications in the cloud. Accepts parameters like `CloudToken`, `Manifest`.
+
+### Usage
 ```console
 vc-build CloudEnvUpdate -CloudToken <your token> -Manifest <path to application manifest>
 ```
-:::
-:::
+---
 ## CloudEnvSetParameter
-Updates parameters of cloud environment
-Gets parameters: CloudToken, EnvironmentName, HelmParameters (Array), Organization (optional)
+Updates parameters of the cloud environment. Accepts parameters like `CloudToken`, `EnvironmentName`, `HelmParameters` (Array), `Organization` (optional).
+
+### Usage
 ```console
-vc-build CloudEnvSetParameter  -CloudToken <your token> -EnvironmentName <environment name> -HelmParameters platform.config.paramname=somevalue123
+vc-build CloudEnvSetParameter -CloudToken <your token> -EnvironmentName <environment name> -HelmParameters platform.config.paramname=somevalue123
 ```
-:::
-:::
+---
 ## CloudEnvStatus
-Waits for health and/or sync statuses of the Environment
-Gets parameters: CloudToken, EnvironmentName, HealthStatus, SyncStatus
+Waits for health and/or sync statuses of the environment. Accepts parameters like `CloudToken`, `EnvironmentName`, `HealthStatus`, `SyncStatus`.
+
+### Usage
 ```console
-vc-build CloudEnvStatus  -CloudToken <your token> -EnvironmentName <environment name> -HealthStatus Healthy -SyncStatus Progressing
+vc-build CloudEnvStatus -CloudToken <your token> -EnvironmentName <environment name> -HealthStatus Healthy -SyncStatus Progressing
 ```
-:::
-:::
+---
 ## CloudAuth
-This target saves a token for accessing the VirtoCloud portal, eliminating the need to use the CloudToken parameter with every call to targets in the Cloud group.
-Gets parameters: AzureAD (optional), CloudToken (optional)
+Saves a token for accessing the VirtoCloud portal, eliminating the need to use the `CloudToken` parameter with every call to targets in the Cloud group. Accepts parameters like `AzureAD` (optional), `CloudToken` (optional).
+
+### Usage
 ```console
 vc-build CloudAuth
 vc-build CloudAuth -AzureAD
 vc-build CloudAuth -CloudToken <token>
 ```
-:::
-:::
+---
 ## CloudInit
-This target creates a new environment. It additionally accepts the ServicePlan parameter to specify the service plan (default value is F1).
+Creates a new environment. Accepts the `ServicePlan` parameter to specify the service plan (default value is `F1`).
+
+### Usage
 ```console
 vc-build CloudInit -EnvironmentName <EnvName>
 vc-build CloudInit -EnvironmentName <EnvName> -ServicePlan F1
 ```
-:::
-:::
+---
 ## CloudEnvList
-List Environments with Statuses
+Lists environments with statuses.
+
+### Usage
 ```console
 vc-build CloudEnvList
 ```
-:::
-:::
+---
 ## CloudEnvRestart
-Restart Environment
+Restarts the environment.
+
+### Usage
 ```console
 vc-build CloudEnvRestart -EnvironmentName <EnvName>
 ```
-:::
-:::
-## CloudEnvStatus
-Waits for health and/or sync statuses of the Environment
-Gets parameters: CloudToken, EnvironmentName, HealthStatus, SyncStatus
-```console
-vc-build CloudEnvStatus  -CloudToken <your token> -EnvironmentName <environment name> -HealthStatus Healthy -SyncStatus Progressing
-```
-:::
-:::
+---
 ## CloudEnvLogs
-Show Environment’s Logs
+Shows environment logs.
+
+### Usage
 ```console
 vc-build CloudEnvLogs -EnvironmentName <EnvName>
 ```
-:::
-:::
+---
 ## CloudDown
-Delete Environment
-Parameters: Organization (optional), EnvironmentName (required)
+Deletes the environment. Accepts parameters like `Organization` (optional), `EnvironmentName` (required).
+
+### Usage
 ```console
 vc-build CloudDown -EnvironmentName <EnvName>
 vc-build CloudDown -Organization <OrgName> -EnvironmentName <EnvName>
 ```
-:::
-:::
+---
 ## CloudDeploy
-Deploy Custom Image to the Existing Environment
+Deploys a custom image to the existing environment.
+
+### Usage
 ```console
 vc-build CloudDeploy -EnvironmentName <EnvName> -DockerUsername <username of docker hub>
 ```
-:::
-:::
+---
 ## CloudUp
-Deploy Custom Image to the New Environment
+Deploys a custom image to a new environment.
+
+### Usage
 ```console
 vc-build CloudUp -EnvironmentName <EnvName> -DockerUsername <username of docker hub>
 ```
-:::
