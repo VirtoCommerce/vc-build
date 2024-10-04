@@ -949,7 +949,7 @@ internal partial class Build : NukeBuild
         {
             if (args.Length >= 2)
             {
-                var help = HelpProvider.HelpProvider.GetHelpForTarget(args[1]);
+                var help = HelpProvider.HelpProvider.GetTargetDescription(args[1]);
                 Console.WriteLine(help);
             }
             else if (args.Length <= 1)

@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Markdig;
-using Markdig.Extensions.CustomContainers;
 using Markdig.Helpers;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
@@ -14,13 +13,14 @@ namespace HelpProvider
 {
     public static class HelpProvider
     {
-        public static string GetHelpForTarget(string target)
+        public static string GetTargetDescription(string target)
         {
-            var containers = GetCustomContainers();
-
-            var container = containers.FirstOrDefault(c =>
+            var rawMd = GetRawMDContent();
+            var md = GetParsedHelpFile(rawMd);
+            var helpBlocks = SplitMarkdownDocumentBySeparators(md);
+            var targetHelpBlocks = helpBlocks.FirstOrDefault(c =>
             {
-                var heading = c.Descendants<HeadingBlock>().FirstOrDefault();
+                var heading = c.FirstOrDefault(b => b is HeadingBlock) as HeadingBlock;
 
                 if (heading == null)
                 {
@@ -30,44 +30,81 @@ namespace HelpProvider
                 return string.Compare(target, GetTextContent(heading), true) == 0;
             });
 
-            if (container == null)
+            if (targetHelpBlocks == null)
             {
                 Log.Error($"Help is not found for the target {target}");
                 return string.Empty;
             }
 
-            var descriptionBlock = container.Descendants<ParagraphBlock>().FirstOrDefault();
-            var exampleBlock = container.Descendants<FencedCodeBlock>().FirstOrDefault();
-            var description = GetTextContent(descriptionBlock);
-            var examples = GetFencedText(exampleBlock);
-            var result = $"{description}{Environment.NewLine}{examples}";
-            return result;
+            var descriptionBlocks = targetHelpBlocks.OfType<LeafBlock>().Select(b =>
+            {
+                var blockText = GetTextContent(b);
+                return string.Join(Environment.NewLine, blockText);
+            }).ToArray();
+
+            var description = string.Join(Environment.NewLine, descriptionBlocks);
+
+            var usageBlocks = targetHelpBlocks.OfType<FencedCodeBlock>().Select(b =>
+            {
+                var blockText = GetFencedText(b);
+                return string.Join(Environment.NewLine, blockText);
+            }).ToArray();
+            var usage = string.Join(Environment.NewLine, usageBlocks);
+            return string.Join(Environment.NewLine, description, usage);
         }
 
         public static IEnumerable<string> GetTargets()
         {
-            var containers = GetCustomContainers();
-            var result = new List<string>();
-            foreach (var container in containers)
+            var rawMd = GetRawMDContent();
+            var md = GetParsedHelpFile(rawMd);
+            var helpBlocks = SplitMarkdownDocumentBySeparators(md);
+            foreach(var targetHelpBlocks in helpBlocks)
             {
-                var heading = container.Descendants<HeadingBlock>().FirstOrDefault();
+                var heading = targetHelpBlocks.FirstOrDefault(b => b is HeadingBlock) as HeadingBlock;
 
                 if (heading == null)
                 {
                     continue;
                 }
-                result.Add(GetTextContent(heading));
+
+                yield return GetTextContent(heading);
+            }
+        }
+
+        private static List<List<Block>> SplitMarkdownDocumentBySeparators(MarkdownDocument document)
+        {
+            var result = new List<List<Block>>();
+            foreach (var block in document)
+            {
+                if (block is ThematicBreakBlock)
+                {
+                    result.Add(new List<Block>());
+                }
+                else
+                {
+                    if (result.Count == 0)
+                    {
+                        result.Add(new List<Block>());
+                    }
+                    result.Last().Add(block);
+                }
             }
             return result;
         }
 
-        private static IEnumerable<CustomContainer> GetCustomContainers()
+        private static string GetRawMDContent()
         {
-            var pipeline = new MarkdownPipelineBuilder().UseCustomContainers().Build();
+
             var rootDirectory = AppDomain.CurrentDomain.BaseDirectory;
             var helpFilePath = Path.Combine(rootDirectory, "targets.md");
-            var markdownDocument = Markdown.Parse(File.ReadAllText(helpFilePath), pipeline);
-            return markdownDocument.Descendants<CustomContainer>();
+            return File.ReadAllText(helpFilePath);
+        }
+
+        private static MarkdownDocument GetParsedHelpFile(string rawContent)
+        {
+            var pipeline = new MarkdownPipelineBuilder().UsePreciseSourceLocation().UseCustomContainers().Build();
+            var markdownDocument = Markdown.Parse(rawContent, pipeline);
+            return markdownDocument;
         }
 
         private static string GetTextContent(LeafBlock leaf)
@@ -90,8 +127,12 @@ namespace HelpProvider
                         result.Append(inlineContent.Text.AsSpan(inlineContent.Start, inlineContent.Length));
                         break;
 
+                    case CodeInline literal:
+                        result.Append(literal.Content);
+                        break;
+
                     case LineBreakInline:
-                        result.Append(Environment.NewLine);
+                        result.AppendLine();
                         break;
                 }
 
@@ -101,7 +142,6 @@ namespace HelpProvider
 
             return result.ToString();
         }
-
         private static string GetFencedText(FencedCodeBlock fencedCodeBlock)
         {
             if (fencedCodeBlock == null)
