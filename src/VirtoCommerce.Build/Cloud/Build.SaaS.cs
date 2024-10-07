@@ -66,16 +66,17 @@ internal partial class Build
     }
     [Parameter("Use Azure AD as SaaS Auth Provider")] public bool AzureAD = false;
     private string cloudAuthProvider = "GitHub";
+    private string environmentName;
 
-    [Parameter("App Project Name")] public string AppProject { get; set; }
-    [Parameter("Cloud Environment Name")] public string EnvironmentName { get; set; }
+    [Parameter("App Project Name")] public string AppProject { get => SaaSOrganizationName; set => SaaSOrganizationName = value?.ToLowerInvariant(); }
+    [Parameter("Cloud Environment Name")] public string EnvironmentName { get => environmentName; set => environmentName = value?.ToLowerInvariant(); }
     [Parameter("Cloud Environment Service Plan")] public string ServicePlan { get; set; } = "F1";
     [Parameter("Cloud Environment Cluster Name")] public string ClusterName { get; set; }
     [Parameter("Cloud Environment Db Provider")] public string DbProvider { get; set; }
     [Parameter("Cloud Environment Db Name")] public string DbName { get; set; }
 
-
-    [Parameter("Organization name", Name = "Organization")] public string SaaSOrganizationName { get; set; }
+    private string _saasOrganizationName;
+    [Parameter("Organization name", Name = "Organization")] public string SaaSOrganizationName { get => _saasOrganizationName; set => _saasOrganizationName = value?.ToLowerInvariant(); }
 
 
     [Parameter("Url to Dockerfile which will use to build the docker image in the CloudDeploy/CloudUp Target")]
@@ -297,23 +298,32 @@ internal partial class Build
     public Target CloudAuth => _ => _
         .Executes(async () =>
         {
-            var port = "60123";
-            var listenerPrefix = $"http://localhost:{port}/";
+            string apiKey;
+            if (string.IsNullOrWhiteSpace(CloudToken))
+            {
+                var port = "60123";
+                var listenerPrefix = $"http://localhost:{port}/";
 
-            var listener = new HttpListener() {
-                Prefixes = { listenerPrefix }
-            };
-            listener.Start();
+                var listener = new HttpListener()
+                {
+                    Prefixes = { listenerPrefix }
+                };
+                listener.Start();
 
-            Log.Information("Openning browser window");
-            var authUrl = $"{CloudUrl}/externalsignin?authenticationType={CloudAuthProvider}&returnUrl=/api/saas/token/{port}";
-            Process.Start(new ProcessStartInfo(authUrl) { UseShellExecute = true });
+                Log.Information("Openning browser window");
+                var authUrl = $"{CloudUrl}/externalsignin?authenticationType={CloudAuthProvider}&returnUrl=/api/saas/token/{port}";
+                Process.Start(new ProcessStartInfo(authUrl) { UseShellExecute = true });
 
-            var context = await listener.GetContextAsync();
-            context.Response.StatusCode = (int)HttpStatusCode.OK;
-            var apiKey = context.Request.QueryString["apiKey"];
-            context.Response.Redirect($"{CloudUrl}/vcbuild/login/success");
-            context.Response.Close();
+                var context = await listener.GetContextAsync();
+                context.Response.StatusCode = (int)HttpStatusCode.OK;
+                apiKey = context.Request.QueryString["apiKey"];
+                context.Response.Redirect($"{CloudUrl}/vcbuild/login/success");
+                context.Response.Close();
+            }
+            else
+            {
+                apiKey = CloudToken;
+            }
 
             SaveCloudToken(apiKey);
         });
@@ -368,7 +378,7 @@ internal partial class Build
             var cloudClient = CreateVirtocloudClient(CloudUrl, await GetCloudTokenAsync());
             var envList = await cloudClient.EnvironmentsListAsync();
             Log.Information("There are {0} environments.", envList.Count);
-            foreach ( var env in envList)
+            foreach (var env in envList)
             {
                 Log.Information("{0} - {1}", env.MetadataName, env.Status);
             }
@@ -401,15 +411,15 @@ internal partial class Build
                 Cluster = ClusterName,
                 DbProvider = DbProvider,
                 DbName = DbName,
-                Helm = new HelmObject(new Dictionary<string, string> ())
+                Helm = new HelmObject(new Dictionary<string, string>())
             };
 
-            if(!string.IsNullOrEmpty(DockerImageName))
+            if (!string.IsNullOrEmpty(DockerImageName))
             {
                 model.Helm.Parameters["platform.image.repository"] = DockerImageName;
             }
 
-            if(!DockerImageTag.IsNullOrEmpty())
+            if (!DockerImageTag.IsNullOrEmpty())
             {
                 model.Helm.Parameters["platform.image.tag"] = DockerImageTag[0];
             }
