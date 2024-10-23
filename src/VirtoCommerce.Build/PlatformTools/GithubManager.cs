@@ -42,7 +42,7 @@ namespace PlatformTools
                 
             });
 
-            var release = releases.Where(r => r.Prerelease == false).OrderByDescending(r => new Version(r.TagName.Trim())).FirstOrDefault();
+            var release = releases.Where(r => !r.Prerelease).OrderByDescending(r => new Version(r.TagName.Trim())).FirstOrDefault();
             return release;
         }
 
