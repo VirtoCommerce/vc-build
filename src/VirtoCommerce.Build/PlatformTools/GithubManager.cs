@@ -12,7 +12,7 @@ namespace PlatformTools
         private static readonly string _platformRepo = "vc-platform";
         private static readonly GitHubClient _client = new GitHubClient(new ProductHeaderValue("vc-build"));
 
-        public static Task<Release> GetPlatformRelease(string releaseTag)
+        public static Task<Release> GetPlatformRelease(string releaseTag = null)
         {
             return string.IsNullOrEmpty(releaseTag)
                 ? GetLatestReleaseAsync(_githubUser, _platformRepo)
@@ -37,11 +37,12 @@ namespace PlatformTools
         {
             var releases = await _client.Repository.Release.GetAll(repoUser, repoName, new ApiOptions
             {
-                PageSize = 5,
+                PageSize = 50,
                 PageCount = 1,
+                
             });
 
-            var release = releases.OrderByDescending(r => new Version(r.TagName.Trim())).FirstOrDefault();
+            var release = releases.Where(r => !r.Prerelease).OrderByDescending(r => new Version(r.TagName.Trim())).FirstOrDefault();
             return release;
         }
 
