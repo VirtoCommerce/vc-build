@@ -25,7 +25,7 @@ namespace PlatformTools.Modules
         {
             if (_catalog == null)
             {
-                var platformRelease = await GithubManager.GetPlatformRelease(null);
+                var platformRelease = await GithubManager.GetPlatformRelease();
                 PlatformVersion.CurrentVersion = SemanticVersion.Parse(platformRelease.TagName); // workaround to see all modules in the external catalog
                 var client = new ExternalModulesClient(options);
                 var logger = new LoggerFactory().CreateLogger<ExternalModuleCatalog>();

@@ -537,7 +537,7 @@ namespace VirtoCommerce.Build
                  PackageManager.ToFile(packageManifest, PackageManifestPath);
                  if (PlatformVersion.CurrentVersion == null)
                  {
-                     var platformRelease = await GithubManager.GetPlatformRelease(null);
+                     var platformRelease = await GithubManager.GetPlatformRelease();
                      PlatformVersion.CurrentVersion = SemanticVersion.Parse(platformRelease.TagName);
                  }
                  localModulesCatalog.Reload();
