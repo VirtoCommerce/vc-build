@@ -607,63 +607,67 @@ internal partial class Build : NukeBuild
         .After(GetManifestGit)
         .Executes(() =>
         {
-            var manifest = ModuleManifest;
-            manifest.PackageUrl = ModulePackageUrl;
+            UpdateManifestBody(ModuleManifest, ModulePackageUrl, ModulesLocalDirectory, ModulesJsonName, CustomVersionSuffix);
+        });
 
-            var modulesJsonFilePath = ModulesLocalDirectory / ModulesJsonName;
-            var externalManifests =
-                JsonConvert.DeserializeObject<List<ExternalModuleManifest>>(modulesJsonFilePath.ReadAllText());
-            var externalManifest = externalManifests?.Find(x => x.Id == manifest.Id);
+    private static void UpdateManifestBody(ModuleManifest manifest, string modulePackageUrl, AbsolutePath modulesLocalDirectory, string modulesJsonName, string customVersionSuffix)
+    {
+        manifest.PackageUrl = modulePackageUrl;
 
-            if (externalManifest != null)
+        var modulesJsonFilePath = modulesLocalDirectory / modulesJsonName;
+        var externalManifests =
+            JsonConvert.DeserializeObject<List<ExternalModuleManifest>>(modulesJsonFilePath.ReadAllText());
+        var externalManifest = externalManifests?.Find(x => x.Id == manifest.Id);
+
+        if (externalManifest != null)
+        {
+            if (!manifest.VersionTag.IsNullOrEmpty() || !customVersionSuffix.IsNullOrEmpty())
             {
-                if (!manifest.VersionTag.IsNullOrEmpty() || !CustomVersionSuffix.IsNullOrEmpty())
+                manifest.VersionTag = manifest.VersionTag.EmptyToNull() ?? CustomVersionSuffix;
+
+                var externalPrereleaseVersion =
+                    externalManifest.Versions.FirstOrDefault(v => !v.VersionTag.IsNullOrEmpty());
+
+                if (externalPrereleaseVersion != null)
                 {
-                    manifest.VersionTag = manifest.VersionTag.EmptyToNull() ?? CustomVersionSuffix;
-
-                    var externalPrereleaseVersion =
-                        externalManifest.Versions.FirstOrDefault(v => !v.VersionTag.IsNullOrEmpty());
-
-                    if (externalPrereleaseVersion != null)
-                    {
-                        externalPrereleaseVersion.Dependencies = manifest.Dependencies;
-                        externalPrereleaseVersion.Incompatibilities = manifest.Incompatibilities;
-                        externalPrereleaseVersion.PlatformVersion = manifest.PlatformVersion;
-                        externalPrereleaseVersion.ReleaseNotes = manifest.ReleaseNotes;
-                        externalPrereleaseVersion.Version = manifest.Version;
-                        externalPrereleaseVersion.VersionTag = manifest.VersionTag;
-                        externalPrereleaseVersion.PackageUrl = manifest.PackageUrl;
-                    }
-                    else
-                    {
-                        externalManifest.Versions.Add(ExternalModuleManifestVersion.FromManifest(manifest));
-                    }
+                    externalPrereleaseVersion.Dependencies = manifest.Dependencies;
+                    externalPrereleaseVersion.Incompatibilities = manifest.Incompatibilities;
+                    externalPrereleaseVersion.PlatformVersion = manifest.PlatformVersion;
+                    externalPrereleaseVersion.ReleaseNotes = manifest.ReleaseNotes;
+                    externalPrereleaseVersion.Version = manifest.Version;
+                    externalPrereleaseVersion.VersionTag = manifest.VersionTag;
+                    externalPrereleaseVersion.PackageUrl = manifest.PackageUrl;
                 }
                 else
                 {
-                    externalManifest.PublishNewVersion(manifest);
+                    externalManifest.Versions.Add(ExternalModuleManifestVersion.FromManifest(manifest));
                 }
-
-                externalManifest.Title = manifest.Title;
-                externalManifest.Description = manifest.Description;
-                externalManifest.Authors = manifest.Authors;
-                externalManifest.Copyright = manifest.Copyright;
-                externalManifest.Groups = manifest.Groups;
-                externalManifest.IconUrl = manifest.IconUrl;
-                externalManifest.Id = manifest.Id;
-                externalManifest.LicenseUrl = manifest.LicenseUrl;
-                externalManifest.Owners = manifest.Owners;
-                externalManifest.ProjectUrl = manifest.ProjectUrl;
-                externalManifest.RequireLicenseAcceptance = manifest.RequireLicenseAcceptance;
-                externalManifest.Tags = manifest.Tags;
             }
             else
             {
-                externalManifests?.Add(ExternalModuleManifest.FromManifest(manifest));
+                externalManifest.PublishNewVersion(manifest);
             }
 
-            modulesJsonFilePath.WriteAllText(JsonConvert.SerializeObject(externalManifests, Formatting.Indented));
-        });
+            externalManifest.Title = manifest.Title;
+            externalManifest.Description = manifest.Description;
+            externalManifest.Authors = manifest.Authors;
+            externalManifest.Copyright = manifest.Copyright;
+            externalManifest.Groups = manifest.Groups;
+            externalManifest.IconUrl = manifest.IconUrl;
+            externalManifest.Id = manifest.Id;
+            externalManifest.LicenseUrl = manifest.LicenseUrl;
+            externalManifest.Owners = manifest.Owners;
+            externalManifest.ProjectUrl = manifest.ProjectUrl;
+            externalManifest.RequireLicenseAcceptance = manifest.RequireLicenseAcceptance;
+            externalManifest.Tags = manifest.Tags;
+        }
+        else
+        {
+            externalManifests?.Add(ExternalModuleManifest.FromManifest(manifest));
+        }
+
+        modulesJsonFilePath.WriteAllText(JsonConvert.SerializeObject(externalManifests, Formatting.Indented));
+    }
 
     public Target PublishManifestGit => _ => _
         .After(UpdateManifest)
