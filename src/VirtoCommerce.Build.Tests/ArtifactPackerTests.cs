@@ -9,7 +9,7 @@ using Utils;
 
 namespace VirtoCommerce.Build.Tests
 {
-    public class ArtifactPackerTests
+    public partial class ArtifactPackerTests
     {
         [Fact]
         public void SkipFileByList_Returns_False_When_Not_In_IgnoreList()
@@ -36,7 +36,7 @@ namespace VirtoCommerce.Build.Tests
         [Fact]
         public void SkipFileByRegex_Returns_True_When_Matching()
         {
-            var regex = new Regex(@".+Module\..*", RegexOptions.IgnoreCase);
+            var regex = SkipFilesRegex();
             var fileName = "TestModule.dll";
 
             var result = ArtifactPacker.SkipFileByRegex(fileName, regex);
@@ -47,7 +47,7 @@ namespace VirtoCommerce.Build.Tests
         [Fact]
         public void SkipFileByRegex_Returns_False_When_Not_Matching()
         {
-            var ignoreRegex = new Regex(@".+Module\..*", RegexOptions.IgnoreCase);
+            var ignoreRegex = SkipFilesRegex();
             var fileName = "AnotherLibrary.dll";
 
             var result = ArtifactPacker.SkipFileByRegex(fileName, ignoreRegex);
@@ -80,7 +80,7 @@ namespace VirtoCommerce.Build.Tests
         [Fact]
         public void KeepFileByRegex_Returns_True_When_Matching()
         {
-            var regex = new Regex(@$".*SampleModule(Module)?\..*", RegexOptions.IgnoreCase);
+            var regex = KeepFilesRegex();
             var fileName = "SampleModule.dll";
 
             var result = ArtifactPacker.KeepFileByRegex(fileName, regex);
@@ -91,12 +91,18 @@ namespace VirtoCommerce.Build.Tests
         [Fact]
         public void KeepFileByRegex_Returns_False_When_Not_Matching()
         {
-            var regex = new Regex(@$".*SampleModule(Module)?\..*", RegexOptions.IgnoreCase);
+            var regex = KeepFilesRegex();
             var fileName = "NotSample.dll";
 
             var result = ArtifactPacker.KeepFileByRegex(fileName, regex);
 
             Assert.False(result);
         }
+
+        [GeneratedRegex(@".+Module\..*", RegexOptions.IgnoreCase, "en-GB")]
+        private static partial Regex SkipFilesRegex();
+
+        [GeneratedRegex(@".*SampleModule(Module)?\..*", RegexOptions.IgnoreCase, "en-GB")]
+        private static partial Regex KeepFilesRegex();
     }
 }
