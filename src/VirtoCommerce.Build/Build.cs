@@ -761,32 +761,47 @@ internal partial class Build : NukeBuild
                     .SetPullRequestKey(SonarPRNumber ?? Environment.GetEnvironmentVariable("CHANGE_ID"))
                     .SetProcessArgumentConfigurator(args =>
                     {
-                        if (!string.IsNullOrEmpty(SonarPRProvider))
-                        {
-                            args = args.Add($"/d:sonar.pullrequest.provider={SonarPRProvider}");
-                        }
-
-                        if (!string.IsNullOrEmpty(SonarGithubRepo))
-                        {
-                            args = args.Add("/d:sonar.pullrequest.github.repository={value}", SonarGithubRepo);
-                        }
+                        args = AddSonarPRProvider(args);
+                        args = AddSonarPRGithubRepo(args);
 
                         return args;
                     }))
                 .When(!PullRequest, cc => cc
                     .SetBranchName(branchName)
-                    .SetProcessArgumentConfigurator(args =>
-                    {
-                        if (!_sonarLongLiveBranches.Contains(branchName))
-                        {
-                            args = args.Add($"/d:\"sonar.branch.target={branchNameTarget}\"");
-                        }
-
-                        return args;
-                    })
+                    .SetProcessArgumentConfigurator(args => AddSonarBranchTarget(args, branchName, branchNameTarget))
                 )
             );
         });
+
+    private static Arguments AddSonarBranchTarget(Arguments args, string branchName, string branchNameTarget)
+    {
+        if (!_sonarLongLiveBranches.Contains(branchName))
+        {
+            args = args.Add($"/d:\"sonar.branch.target={branchNameTarget}\"");
+        }
+
+        return args;
+    }
+
+    private static Arguments AddSonarPRGithubRepo(Arguments args)
+    {
+        if (!string.IsNullOrEmpty(SonarGithubRepo))
+        {
+            args = args.Add("/d:sonar.pullrequest.github.repository={value}", SonarGithubRepo);
+        }
+
+        return args;
+    }
+
+    private static Arguments AddSonarPRProvider(Arguments args)
+    {
+        if (!string.IsNullOrEmpty(SonarPRProvider))
+        {
+            args = args.Add($"/d:sonar.pullrequest.provider={SonarPRProvider}");
+        }
+
+        return args;
+    }
 
     public Target SonarQubeEnd => _ => _
         .After(SonarQubeStart)
@@ -858,34 +873,39 @@ internal partial class Build : NukeBuild
             }
             catch (AggregateException ex)
             {
-                foreach (var innerException in ex.Flatten().InnerExceptions.OfType<ApiValidationException>())
-                {
-                        var responseString = innerException.HttpResponse?.Body.ToString() ?? string.Empty;
-                        var responseDocument = JsonDocument.Parse(responseString);
-                        var alreadyExistsError = false;
-
-                        if (responseDocument.RootElement.TryGetProperty("errors", out var errors))
-                        {
-                            var errorCount = errors.GetArrayLength();
-
-                            if (errorCount > 0)
-                            {
-                                alreadyExistsError = errors.EnumerateArray().Any(e =>
-                                    e.GetProperty("code").GetString() == "already_exists");
-                            }
-                        }
-
-                        if (alreadyExistsError)
-                        {
-                            ExitCode = (int)ExitCodes.GithubReleaseAlreadyExists;
-                        }
-
-                        Log.Error($"Api Validation Error: {responseString}");
-                }
+                IterateAgregatedErrors(ex);
 
                 Assert.Fail("Publish Release Failed", ex);
             }
         });
+
+    private void IterateAgregatedErrors(AggregateException ex)
+    {
+        foreach (var innerException in ex.Flatten().InnerExceptions.OfType<ApiValidationException>())
+        {
+            var responseString = innerException.HttpResponse?.Body.ToString() ?? string.Empty;
+            var responseDocument = JsonDocument.Parse(responseString);
+            var alreadyExistsError = false;
+
+            if (responseDocument.RootElement.TryGetProperty("errors", out var errors))
+            {
+                var errorCount = errors.GetArrayLength();
+
+                if (errorCount > 0)
+                {
+                    alreadyExistsError = errors.EnumerateArray().Any(e =>
+                        e.GetProperty("code").GetString() == "already_exists");
+                }
+            }
+
+            if (alreadyExistsError)
+            {
+                ExitCode = (int)ExitCodes.GithubReleaseAlreadyExists;
+            }
+
+            Log.Error($"Api Validation Error: {responseString}");
+        }
+    }
 
     public Target ClearTemp => _ => _
         .Executes(() => ClearTempBeforeExit = true);
