@@ -41,7 +41,13 @@ public class VirtoCloudClient
         if (!response.IsSuccessStatusCode)
         {
             var error = VirtoCloudError.FromStringResponse(responseContent);
-            Assert.Fail(error.GetErrorMessage());
+            var errorMessage = error.GetErrorMessage();
+            if (string.IsNullOrWhiteSpace(errorMessage))
+            {
+                errorMessage = response.ReasonPhrase;
+            }
+
+            Assert.Fail(errorMessage);
         }
 
         Serilog.Log.Information(responseContent);

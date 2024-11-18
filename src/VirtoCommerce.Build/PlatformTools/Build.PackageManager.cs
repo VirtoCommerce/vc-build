@@ -422,19 +422,7 @@ namespace VirtoCommerce.Build
                      }
                  }
 
-                 var progress = new Progress<ProgressMessage>(m =>
-                 {
-                     if (m.Level == ProgressMessageLevel.Error)
-                     {
-                        ExitCode = 1;
-                        Log.Error(m.Message);
-
-                     }
-                     else
-                     {
-                        Log.Information(m.Message);
-                     }
-                 });
+                 var progress = PlatformProgressHandler();
 
                  if (!SkipDependencySolving)
                  {
@@ -447,13 +435,11 @@ namespace VirtoCommerce.Build
 
                      modulesToInstall.AddRange(missingModules);
                  }
+
                  modulesToInstall.ForEach(module => module.DependsOn.Clear());
                  moduleInstaller.Install(modulesToInstall, progress);
 
-                 if (ExitCode > 0)
-                 {
-                    Assert.Fail("Errors occurred while installing modules.");
-                 }
+                 Assert.False(ExitCode > 0, "Errors occurred while installing modules.");
 
                  foreach (var moduleSource in moduleSources)
                  {
@@ -461,11 +447,33 @@ namespace VirtoCommerce.Build
 
                      await installer.Install(moduleSource, progress);
                  }
-                 AbsolutePath absoluteDiscoveryPath = Path.GetFullPath(discoveryPath);
-                 var zipFiles = absoluteDiscoveryPath.GlobFiles("*/*.zip");
-                 zipFiles.ForEach(f => f.DeleteFile());
+                 CleanZipArtifacts(discoveryPath);
                  localModuleCatalog.Reload();
              });
+
+        private Progress<ProgressMessage> PlatformProgressHandler()
+        {
+            return new Progress<ProgressMessage>(m =>
+            {
+                if (m.Level == ProgressMessageLevel.Error)
+                {
+                    ExitCode = 1;
+                    Log.Error(m.Message);
+
+                }
+                else
+                {
+                    Log.Information(m.Message);
+                }
+            });
+        }
+
+        private static void CleanZipArtifacts(string discoveryPath)
+        {
+            AbsolutePath absoluteDiscoveryPath = Path.GetFullPath(discoveryPath);
+            var zipFiles = absoluteDiscoveryPath.GlobFiles("*/*.zip");
+            zipFiles.ForEach(f => f.DeleteFile());
+        }
 
         private static ManifestModuleInfo LoadModuleInfo(ModuleItem module, ManifestModuleInfo externalModule)
         {
