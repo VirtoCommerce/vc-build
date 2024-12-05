@@ -379,7 +379,7 @@ internal partial class Build : NukeBuild
                     Assert.Fail("No Coverage Report found");
                 }
 
-                FileSystemTasks.MoveFile(sonarCoverageReportPath, CoverageReportPath, FileExistsPolicy.Overwrite);
+                sonarCoverageReportPath.Move(CoverageReportPath, ExistsPolicy.FileOverwrite);
             }
             else
             {
@@ -818,10 +818,10 @@ internal partial class Build : NukeBuild
                     .Replace("netcoreapp3.0", "net5.0");
                 var sonarScannerShRightPath = Directory.GetParent(sonarScannerShPath)?.Parent?.FullName ?? string.Empty;
                 var tmpFile = TemporaryDirectory / sonarScript;
-                FileSystemTasks.MoveFile(sonarScannerShPath, tmpFile);
+                sonarScannerShPath.ToAbsolutePath().Move(tmpFile, ExistsPolicy.FileOverwrite);
                 sonarScannerShRightPath.ToAbsolutePath().DeleteDirectory();
                 var sonarScriptDestinationPath = Path.Combine(sonarScannerShRightPath, sonarScript);
-                FileSystemTasks.MoveFile(tmpFile, sonarScriptDestinationPath);
+                tmpFile.Move(sonarScriptDestinationPath);
                 Log.Information($"{sonarScript} path: {sonarScriptDestinationPath}");
                 var chmod = ToolResolver.GetPathTool("chmod");
                 chmod.Invoke($"+x {sonarScriptDestinationPath}");
