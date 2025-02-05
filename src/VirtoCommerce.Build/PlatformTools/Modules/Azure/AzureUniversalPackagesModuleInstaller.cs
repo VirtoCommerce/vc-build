@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -6,7 +7,6 @@ using System.Threading.Tasks;
 using Extensions;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
-using PlatformTools.Modules;
 using VirtoCommerce.Platform.Core.Modularity;
 
 namespace PlatformTools.Modules.Azure
@@ -32,20 +32,21 @@ namespace PlatformTools.Modules.Azure
                 Directory.CreateDirectory(moduleDestination);
                 moduleDestination.CreateOrCleanDirectory();
                 var azPath = ToolPathResolver.GetPathExecutable("az");
-                var azToolSettings = new AzureCliToolSettings()
-                    .AddProcessEnvironmentVariable("AZURE_DEVOPS_EXT_PAT", token)
-                    .SetProcessToolPath(azPath)
-                    .SetProcessArgumentConfigurator(c => c
-                        .Add("artifacts universal download")
-                        .Add("--organization \"{0}\"", artifacts.Organization)
-                        .Add("--project \"{0}\"", artifacts.Project)
-                        .Add("--feed {0}", artifacts.Feed)
-                        .Add("--name {0}", module.Id)
-                        .Add("--path \"{0}\"", moduleDestination)
-                        .Add("--scope {0}", "project")
-                        .Add("--version {0}", module.Version)
-                    );
-                ProcessTasks.StartProcess(azToolSettings).AssertZeroExitCode();
+                var arguments = new string[]
+                    {
+                        "artifacts universal download",
+                        $"--organization \"{artifacts.Organization}\"",
+                        $"--project \"{artifacts.Project}\"",
+                        $"--feed {artifacts.Feed}",
+                        $"--name {module.Id}",
+                        $"--path \"{moduleDestination}\"",
+                        "--scope project",
+                        $"--version {module.Version}"
+                    };
+
+                var envVars = new Dictionary<string, string>() { { "AZURE_DEVOPS_EXT_PAT", token } };
+
+                ProcessTasks.StartProcess(azPath, arguments: string.Join(' ', arguments), environmentVariables: envVars).AssertZeroExitCode();
 
                 var zipPath = Directory.GetFiles(moduleDestination).FirstOrDefault(p => p.EndsWith(".zip"));
                 if (zipPath == null)
