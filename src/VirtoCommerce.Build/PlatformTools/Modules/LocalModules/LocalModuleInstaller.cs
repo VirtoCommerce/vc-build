@@ -48,7 +48,7 @@ namespace PlatformTools.Modules.LocalModules
         private static Task SetupModuleFromDirectory(string src, string moduleDestination)
         {
             var absolutePath = src.ToAbsolutePath();
-            FileSystemTasks.CopyDirectoryRecursively(absolutePath, moduleDestination.ToAbsolutePath(), DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
+            absolutePath.Copy(moduleDestination.ToAbsolutePath(), ExistsPolicy.MergeAndOverwriteIfNewer);
             return Task.CompletedTask;
         }
     }

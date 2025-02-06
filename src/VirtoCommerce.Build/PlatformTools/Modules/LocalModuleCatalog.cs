@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using VirtoCommerce.Platform.Core.Modularity;
 using VirtoCommerce.Platform.DistributedLock;
 using VirtoCommerce.Platform.Modules;
+using VirtoCommerce.Platform.Modules.Local;
 
 namespace PlatformTools.Modules
 {
@@ -22,7 +23,9 @@ namespace PlatformTools.Modules
             {
                 var logger = new LoggerFactory().CreateLogger<LocalStorageModuleCatalog>();
                 var distributedLock = new InternalNoLockService(new LoggerFactory().CreateLogger<InternalNoLockService>());
-                _catalog = new LocalCatalog(options, distributedLock, logger);
+                var fileMetadataProvider = new FileMetadataProvider(options);
+                var fileCopyPolicy = new FileCopyPolicy(fileMetadataProvider);
+                _catalog = new LocalCatalog(options, distributedLock, fileCopyPolicy, logger, Options.Create(new ModuleSequenceBoostOptions()));
                 _catalog.Load();
             }
             else

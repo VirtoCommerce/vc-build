@@ -19,8 +19,8 @@ namespace PlatformTools.Modules
         private readonly ILogger<LocalStorageModuleCatalog> _logger;
         private readonly IInternalDistributedLockService _distributedLockProvider;
         private readonly string _discoveryPath;
-        public LocalCatalog(IOptions<LocalStorageModuleCatalogOptions> options, IInternalDistributedLockService distributedLockProvider, ILogger<LocalStorageModuleCatalog> logger) :
-            base(options, distributedLockProvider, logger)
+        public LocalCatalog(IOptions<LocalStorageModuleCatalogOptions> options, IInternalDistributedLockService distributedLockProvider, IFileCopyPolicy fileCopyPolicy, ILogger<LocalStorageModuleCatalog> logger, IOptions<ModuleSequenceBoostOptions> boostOptions) :
+            base(options, distributedLockProvider, fileCopyPolicy, logger, boostOptions)
         {
             _options = options.Value;
             _logger = logger;

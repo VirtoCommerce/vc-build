@@ -22,8 +22,7 @@ namespace Utils
             optionsBuilderAction(optionsBuilder);
             var options = optionsBuilder.Build();
 
-            FileSystemTasks.CopyFileToDirectory(options.ModuleManifestPath, options.SourceDirectory,
-                FileExistsPolicy.Overwrite);
+            options.ModuleManifestPath.ToAbsolutePath().CopyToDirectory(options.SourceDirectory, ExistsPolicy.FileOverwrite);
             
             //Exclude all ignored files and *module files not related to compressed module
             var ignoreModuleFilesRegex = IgnoreModuleFilesRegex();
@@ -36,8 +35,8 @@ namespace Utils
 
                 if (Directory.Exists(sourcePath))
                 {
-                    FileSystemTasks.CopyDirectoryRecursively(sourcePath, Path.Combine(options.SourceDirectory, folderName),
-                        DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                    sourcePath.ToAbsolutePath().Copy(Path.Combine(options.SourceDirectory, folderName),
+                        ExistsPolicy.MergeAndOverwrite);
                 }
             }
 
