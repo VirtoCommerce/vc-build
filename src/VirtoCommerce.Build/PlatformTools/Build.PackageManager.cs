@@ -313,7 +313,7 @@ namespace VirtoCommerce.Build
             if (File.Exists(AppsettingsPath))
             {
                 tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-                FileSystemTasks.MoveFile(AppsettingsPath, tempFile, FileExistsPolicy.Overwrite);
+                AppsettingsPath.Move(tempFile, ExistsPolicy.FileOverwrite);
             }
 
             platformZip.UncompressTo(RootDirectory);
@@ -326,7 +326,7 @@ namespace VirtoCommerce.Build
                     .Append(DateTime.Now.ToString("MMddyyHHmmss"))
                     .Append(".bak");
                 AbsolutePath destinationSettingsPath = !Force ? AppsettingsPath : Path.Join(Path.GetDirectoryName(AppsettingsPath), bakFileName.ToString());
-                FileSystemTasks.MoveFile(tempFile, destinationSettingsPath, FileExistsPolicy.Overwrite);
+                tempFile.ToAbsolutePath().Move(destinationSettingsPath, ExistsPolicy.FileOverwrite);
 
                 if (Force)
                 {

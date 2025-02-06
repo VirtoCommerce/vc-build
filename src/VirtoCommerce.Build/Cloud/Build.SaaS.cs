@@ -7,6 +7,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Cloud.Client;
 using Cloud.Models;
+using Extensions;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
@@ -216,7 +217,7 @@ internal partial class Build
             var moduleDestinationPath = Path.Combine(modulesPath, moduleDirectoryName);
             if (!webProjects.Any())
             {
-                FileSystemTasks.CopyDirectoryRecursively(directory, moduleDestinationPath, DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
+                directory.ToAbsolutePath().Copy(moduleDestinationPath, ExistsPolicy.MergeAndOverwriteIfNewer);
             }
             else
             {
@@ -240,11 +241,11 @@ internal partial class Build
                 {
                     var contentDestination = Path.Combine(moduleDestinationPath, contentDirectory);
                     var contentSource = Path.Combine(webProject.Directory, contentDirectory);
-                    FileSystemTasks.CopyDirectoryRecursively(contentSource, contentDestination, DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
+                    contentSource.ToAbsolutePath().Copy(contentDestination, ExistsPolicy.MergeAndOverwriteIfNewer);
                 }
 
                 var moduleManifestPath = webProject.Directory / "module.manifest";
-                FileSystemTasks.CopyFileToDirectory(moduleManifestPath, moduleDestinationPath, FileExistsPolicy.OverwriteIfNewer);
+                moduleManifestPath.CopyToDirectory(moduleDestinationPath, ExistsPolicy.FileOverwriteIfNewer);
             }
         }
     }
@@ -270,12 +271,12 @@ internal partial class Build
             foreach (var dir in directories)
             {
                 var dirName = Path.GetFileName(dir);
-                FileSystemTasks.CopyDirectoryRecursively(dir, Path.Combine(platformDirectory, dirName), DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
+                dir.ToAbsolutePath().Copy(Path.Combine(platformDirectory, dirName), ExistsPolicy.MergeAndOverwriteIfNewer);
             }
 
             foreach (var file in files)
             {
-                FileSystemTasks.CopyFileToDirectory(file, platformDirectory);
+                file.ToAbsolutePath().CopyToDirectory(platformDirectory);
             }
         }
     }
