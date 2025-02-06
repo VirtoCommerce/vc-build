@@ -764,7 +764,7 @@ internal partial class Build : NukeBuild
             );
         });
 
-    private string GetSonarBranchTarget(string branchName, string branchNameTarget)
+    private static string GetSonarBranchTarget(string branchName, string branchNameTarget)
     {
         var result = string.Empty;
         if (!_sonarLongLiveBranches.Contains(branchName))
