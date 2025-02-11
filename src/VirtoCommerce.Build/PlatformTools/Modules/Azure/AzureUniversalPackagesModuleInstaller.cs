@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -31,22 +32,26 @@ namespace PlatformTools.Modules.Azure
                 var moduleDestination = Path.Join(discoveryPath, module.Id).ToAbsolutePath();
                 Directory.CreateDirectory(moduleDestination);
                 moduleDestination.CreateOrCleanDirectory();
-                var azPath = ToolPathResolver.GetPathExecutable("az");
                 var arguments = new string[]
                     {
                         "artifacts universal download",
-                        $"--organization \"{artifacts.Organization}\"",
-                        $"--project \"{artifacts.Project}\"",
+                        $"--organization {artifacts.Organization}",
+                        $"--project {artifacts.Project}",
                         $"--feed {artifacts.Feed}",
                         $"--name {module.Id}",
-                        $"--path \"{moduleDestination}\"",
+                        $"--path {moduleDestination}",
                         "--scope project",
                         $"--version {module.Version}"
                     };
 
                 var envVars = new Dictionary<string, string>() { { "AZURE_DEVOPS_EXT_PAT", token } };
+                var shellScript = $"az {string.Join(' ', arguments)}";
+                foreach(DictionaryEntry systemEnvVariable in Environment.GetEnvironmentVariables())
+                {
+                    envVars.TryAdd(systemEnvVariable.Key?.ToString(), systemEnvVariable.Value?.ToString());
+                }
 
-                ProcessTasks.StartProcess(azPath, arguments: string.Join(' ', arguments), environmentVariables: envVars).AssertZeroExitCode();
+                ProcessTasks.StartShell(shellScript, environmentVariables: envVars).AssertZeroExitCode();
 
                 var zipPath = Directory.GetFiles(moduleDestination).FirstOrDefault(p => p.EndsWith(".zip"));
                 if (zipPath == null)
