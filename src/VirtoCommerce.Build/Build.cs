@@ -420,18 +420,7 @@ internal partial class Build : NukeBuild
     public Target StartRelease => _ => _
         .Executes(() =>
         {
-            var disableApproval = Environment.GetEnvironmentVariable("VCBUILD_DISABLE_RELEASE_APPROVAL");
-
-            if (disableApproval.IsNullOrEmpty() && !Force)
-            {
-                Console.Write($"Are you sure you want to release {GitRepository.Identifier}? (y/N): ");
-                var response = Console.ReadLine();
-
-                if (string.Compare(response, "y", true, CultureInfo.InvariantCulture) != 0)
-                {
-                    Assert.Fail("Aborted");
-                }
-            }
+            CheckIfAborted();
 
             var checkoutCommand = new StringBuilder("checkout dev");
 
@@ -496,18 +485,49 @@ internal partial class Build : NukeBuild
     public Target StartHotfix => _ => _
         .Executes(() =>
         {
-            GitTasks.Git($"checkout {MainBranch}");
+            CheckIfAborted();
+
+            var checkoutCommand = new StringBuilder("checkout");
+            checkoutCommand.Append(MainBranch);
+
+            if (Force)
+            {
+                checkoutCommand.Append(" --force");
+            }
+
+            GitTasks.Git(checkoutCommand.ToString());
             GitTasks.Git("pull");
             IncrementVersionPatch();
+
             var hotfixBranchName = $"hotfix/{CustomVersionPrefix}";
             Log.Information(Directory.GetCurrentDirectory());
             GitTasks.Git($"checkout -b {hotfixBranchName}");
             ChangeProjectVersion(CustomVersionPrefix);
-            var manifestPath = IsModule ? RootDirectory.GetRelativePathTo(ModuleManifestFile) : "";
-            GitTasks.Git($"add Directory.Build.props {manifestPath}");
+            if (!IsTheme)
+            {
+                var manifestPath = IsModule ? RootDirectory.GetRelativePathTo(ModuleManifestFile) : "";
+                GitTasks.Git($"add Directory.Build.props {manifestPath}");
+            }
+
             GitTasks.Git($"commit -m \"{CustomVersionPrefix}\"", logger: GitLogger);
             GitTasks.Git($"push -u origin {hotfixBranchName}");
         });
+
+    private static void CheckIfAborted()
+    {
+        var disableApproval = Environment.GetEnvironmentVariable("VCBUILD_DISABLE_RELEASE_APPROVAL");
+
+        if (disableApproval.IsNullOrEmpty() && !Force)
+        {
+            Console.Write($"Are you sure you want to hotfix {GitRepository.Identifier}? (y/N): ");
+            var response = Console.ReadLine();
+
+            if (string.Compare(response, "y", true, CultureInfo.InvariantCulture) != 0)
+            {
+                Assert.Fail("Aborted");
+            }
+        }
+    }
 
     public Target CompleteHotfix => _ => _
         .After(StartHotfix)
@@ -523,6 +543,33 @@ internal partial class Build : NukeBuild
             //remove hotfix branch
             GitTasks.Git($"branch -d {currentBranch}");
             GitTasks.Git($"push origin --delete {currentBranch}");
+        });
+
+    public Target QuickHotfix => _ => _
+        .Executes(() => {
+            var currentBranch = GitTasks.GitCurrentBranch();
+            GitTasks.Git($"checkout {MainBranch}");
+            GitTasks.Git($"pull");
+            IncrementVersionPatch();
+            var tempBranch = $"hotfix/{CustomVersionPrefix}";
+            GitTasks.Git($"checkout -b {tempBranch}");
+            GitTasks.Git($"merge {currentBranch}");
+            ChangeProjectVersion(CustomVersionPrefix);
+            GitTasks.Git($"tag {CustomVersionPrefix}");
+            if(!IsTheme)
+            {
+                var manifestPath = IsModule ? RootDirectory.GetRelativePathTo(ModuleManifestFile) : "";
+                GitTasks.Git($"add Directory.Build.props {manifestPath}");
+            }
+            GitTasks.Git($"commit -m \"{CustomVersionPrefix}\"", logger: GitLogger);
+
+            GitTasks.Git($"push -u origin {tempBranch}");
+            GitTasks.Git($"checkout {MainBranch}");
+            GitTasks.Git($"merge {tempBranch}");
+            GitTasks.Git($"push origin {MainBranch}");
+            
+            GitTasks.Git($"branch -d {tempBranch}");
+            GitTasks.Git($"push origin --delete {tempBranch}");
         });
 
     public Target IncrementMinor => _ => _
