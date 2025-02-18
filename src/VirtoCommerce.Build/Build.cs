@@ -420,18 +420,7 @@ internal partial class Build : NukeBuild
     public Target StartRelease => _ => _
         .Executes(() =>
         {
-            var disableApproval = Environment.GetEnvironmentVariable("VCBUILD_DISABLE_RELEASE_APPROVAL");
-
-            if (disableApproval.IsNullOrEmpty() && !Force)
-            {
-                Console.Write($"Are you sure you want to release {GitRepository.Identifier}? (y/N): ");
-                var response = Console.ReadLine();
-
-                if (string.Compare(response, "y", true, CultureInfo.InvariantCulture) != 0)
-                {
-                    Assert.Fail("Aborted");
-                }
-            }
+            CheckIfAborted();
 
             var checkoutCommand = new StringBuilder("checkout dev");
 
@@ -496,18 +485,7 @@ internal partial class Build : NukeBuild
     public Target StartHotfix => _ => _
         .Executes(() =>
         {
-            var disableApproval = Environment.GetEnvironmentVariable("VCBUILD_DISABLE_HOTFIX_APPROVAL");
-
-            if (disableApproval.IsNullOrEmpty() && !Force)
-            {
-                Console.Write($"Are you sure you want to hotfix {GitRepository.Identifier}? (y/N): ");
-                var response = Console.ReadLine();
-
-                if (string.Compare(response, "y", true, CultureInfo.InvariantCulture) != 0)
-                {
-                    Assert.Fail("Aborted");
-                }
-            }
+            CheckIfAborted();
 
             var checkoutCommand = new StringBuilder("checkout");
             checkoutCommand.Append(MainBranch);
@@ -520,12 +498,12 @@ internal partial class Build : NukeBuild
             GitTasks.Git(checkoutCommand.ToString());
             GitTasks.Git("pull");
             IncrementVersionPatch();
-            
+
             var hotfixBranchName = $"hotfix/{CustomVersionPrefix}";
             Log.Information(Directory.GetCurrentDirectory());
             GitTasks.Git($"checkout -b {hotfixBranchName}");
             ChangeProjectVersion(CustomVersionPrefix);
-            if(!IsTheme)
+            if (!IsTheme)
             {
                 var manifestPath = IsModule ? RootDirectory.GetRelativePathTo(ModuleManifestFile) : "";
                 GitTasks.Git($"add Directory.Build.props {manifestPath}");
@@ -534,6 +512,22 @@ internal partial class Build : NukeBuild
             GitTasks.Git($"commit -m \"{CustomVersionPrefix}\"", logger: GitLogger);
             GitTasks.Git($"push -u origin {hotfixBranchName}");
         });
+
+    private static void CheckIfAborted()
+    {
+        var disableApproval = Environment.GetEnvironmentVariable("VCBUILD_DISABLE_RELEASE_APPROVAL");
+
+        if (disableApproval.IsNullOrEmpty() && !Force)
+        {
+            Console.Write($"Are you sure you want to hotfix {GitRepository.Identifier}? (y/N): ");
+            var response = Console.ReadLine();
+
+            if (string.Compare(response, "y", true, CultureInfo.InvariantCulture) != 0)
+            {
+                Assert.Fail("Aborted");
+            }
+        }
+    }
 
     public Target CompleteHotfix => _ => _
         .After(StartHotfix)
