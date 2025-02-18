@@ -520,12 +520,8 @@ internal partial class Build : NukeBuild
             GitTasks.Git(checkoutCommand.ToString());
             GitTasks.Git("pull");
             IncrementVersionPatch();
-
-            var version = IsTheme
-                ? GetThemeVersion(PackageJsonPath)
-                : CustomVersionPrefix;
             
-            var hotfixBranchName = $"hotfix/{version}";
+            var hotfixBranchName = $"hotfix/{CustomVersionPrefix}";
             Log.Information(Directory.GetCurrentDirectory());
             GitTasks.Git($"checkout -b {hotfixBranchName}");
             ChangeProjectVersion(CustomVersionPrefix);
