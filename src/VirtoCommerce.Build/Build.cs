@@ -550,19 +550,26 @@ internal partial class Build : NukeBuild
             var currentBranch = GitTasks.GitCurrentBranch();
             GitTasks.Git($"checkout {MainBranch}");
             GitTasks.Git($"pull");
-            GitTasks.Git($"merge {currentBranch}");
             IncrementVersionPatch();
+            var tempBranch = $"hotfix/{CustomVersionPrefix}";
+            GitTasks.Git($"checkout -b {tempBranch}");
+            GitTasks.Git($"merge {currentBranch}");
             ChangeProjectVersion(CustomVersionPrefix);
+            GitTasks.Git($"tag {CustomVersionPrefix}");
             if(!IsTheme)
             {
                 var manifestPath = IsModule ? RootDirectory.GetRelativePathTo(ModuleManifestFile) : "";
                 GitTasks.Git($"add Directory.Build.props {manifestPath}");
             }
-            
             GitTasks.Git($"commit -m \"{CustomVersionPrefix}\"", logger: GitLogger);
+
+            GitTasks.Git($"push -u origin {tempBranch}");
+            GitTasks.Git($"checkout {MainBranch}");
+            GitTasks.Git($"merge {tempBranch}");
             GitTasks.Git($"push origin {MainBranch}");
-            GitTasks.Git($"branch -d {currentBranch}");
-            GitTasks.Git($"push origin --delete {currentBranch}");
+            
+            GitTasks.Git($"branch -d {tempBranch}");
+            GitTasks.Git($"push origin --delete {tempBranch}");
         });
 
     public Target IncrementMinor => _ => _
