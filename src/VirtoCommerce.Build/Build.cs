@@ -25,6 +25,7 @@ using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.Git;
 using Nuke.Common.Tools.Npm;
+using Nuke.Common.Tools.ReportGenerator;
 using Nuke.Common.Tools.SonarScanner;
 using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
@@ -368,10 +369,11 @@ internal partial class Build : NukeBuild
 
             if (coberturaReports.Count > 0)
             {
-                var reportGenerator = ToolResolver.GetNuGetTool("dotnet-reportgenerator-globaltool",
-                    "ReportGenerator.dll", "4.8.8", "netcoreapp3.0");
-                reportGenerator.Invoke(
-                    $"-reports:{outPath / "**/coverage.cobertura.xml"} -targetdir:{outPath} -reporttypes:SonarQube");
+                ReportGeneratorTasks.ReportGenerator(s => s
+                    .SetReports(outPath / "**/coverage.cobertura.xml")
+                    .SetTargetDirectory(outPath)
+                    .SetReportTypes(ReportTypes.SonarQube));
+
                 var sonarCoverageReportPath = outPath.GlobFiles("SonarQube.xml").FirstOrDefault();
 
                 if (sonarCoverageReportPath == null)

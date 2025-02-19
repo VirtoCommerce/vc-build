@@ -44,7 +44,7 @@
     <PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
     <PackageReference Include="Nuke.Common" Version="9.0.4" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.170.0" />
-    <PackageReference Include="dotnet-sonarscanner" Version="6.2.0">
+    <PackageReference Include="dotnet-sonarscanner" Version="9.1.0">
       <ExcludeAssets>all</ExcludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Build.Locator" Version="1.7.8" />
@@ -52,7 +52,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="dotnet-reportgenerator-globaltool" Version="4.8.8">
+    <PackageReference Include="dotnet-reportgenerator-globaltool" Version="5.4.4">
       <ExcludeAssets>all</ExcludeAssets>
     </PackageReference>
     <PackageReference Include="Swashbuckle.AspNetCore.Cli" Version="6.0.0">
