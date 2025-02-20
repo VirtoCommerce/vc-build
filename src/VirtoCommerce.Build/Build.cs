@@ -818,7 +818,7 @@ internal partial class Build : NukeBuild
         var result = string.Empty;
         if (!_sonarLongLiveBranches.Contains(branchName))
         {
-            result = $"/d:sonar.branch.target={branchNameTarget}";
+            result = $"/d:sonar.newCode.referenceBranch={branchNameTarget}";
         }
         return result;
     }
