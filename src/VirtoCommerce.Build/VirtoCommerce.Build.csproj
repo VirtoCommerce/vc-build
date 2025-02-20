@@ -52,7 +52,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="dotnet-reportgenerator-globaltool" Version="5.4.4">
+    <PackageReference Include="ReportGenerator" Version="5.4.4">
       <ExcludeAssets>all</ExcludeAssets>
     </PackageReference>
     <PackageReference Include="Swashbuckle.AspNetCore.Cli" Version="6.0.0">
