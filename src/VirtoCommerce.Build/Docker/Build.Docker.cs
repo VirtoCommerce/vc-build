@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Nuke.Common;
+using Nuke.Common.Tooling;
 using Nuke.Common.Tools.Docker;
 using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
@@ -57,12 +58,11 @@ namespace VirtoCommerce.Build
         .OnlyWhenDynamic(() => DockerCredentialsPassed)
         .Executes(() =>
         {
-            DockerTasks.DockerLogger = (_, m) => Log.Debug(m);
-
             var settings = new DockerLoginSettings()
                 .SetServer(DockerRegistryUrl)
                 .SetUsername(DockerUsername)
-                .SetPassword(DockerPassword);
+                .SetPassword(DockerPassword)
+                .SetProcessLogger((_, m) => Log.Debug(m));
             DockerTasks.DockerLogin(settings);
         });
 

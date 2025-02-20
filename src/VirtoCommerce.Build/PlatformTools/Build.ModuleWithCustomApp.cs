@@ -22,7 +22,7 @@ namespace VirtoCommerce.Build
             .OnlyWhenDynamic(() => ThereAreCustomApps)
             .Executes(() =>
             {
-                if (WebProject != null && ModuleManifest.Apps.Any())
+                if (WebProject != null && ModuleManifest.Apps.Length > 0)
                 {
                     foreach (var app in ModuleManifest.Apps)
                     {
@@ -31,14 +31,11 @@ namespace VirtoCommerce.Build
                             continue;
                         }
 
-                        
                         var chmod = ToolResolver.GetPathTool("yarn");
                         chmod.Invoke("install", WebProject.Directory / "App");
                         chmod.Invoke("build", WebProject.Directory / "App");
-                        FileSystemTasks.CopyDirectoryRecursively(WebProject.Directory / "App" / "dist",
-                            WebProject.Directory / "Content" / app.Id,
-                            DirectoryExistsPolicy.Merge,
-                            FileExistsPolicy.Overwrite);
+                        var sourceDirectory = WebProject.Directory / "App" / "dist";
+                        sourceDirectory.Copy(WebProject.Directory / "Content" / app.Id, ExistsPolicy.MergeAndOverwrite);
                     }
                 }
                 else

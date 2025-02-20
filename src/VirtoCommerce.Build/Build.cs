@@ -357,7 +357,7 @@ internal partial class Build : NukeBuild
                     .SetConfiguration(Configuration)
                     .SetFilter(TestsFilter)
                     .SetNoBuild(true)
-                    .SetProcessLogOutput(true)
+                    .SetProcessOutputLogging(true)
                     .SetResultsDirectory(outPath)
                     .SetDataCollector("XPlat Code Coverage");
 
@@ -379,7 +379,7 @@ internal partial class Build : NukeBuild
                     Assert.Fail("No Coverage Report found");
                 }
 
-                FileSystemTasks.MoveFile(sonarCoverageReportPath, CoverageReportPath, FileExistsPolicy.Overwrite);
+                sonarCoverageReportPath.Move(CoverageReportPath, ExistsPolicy.FileOverwrite);
             }
             else
             {
@@ -393,10 +393,10 @@ internal partial class Build : NukeBuild
         .Executes(() =>
         {
             var packages = ArtifactsDirectory.GlobFiles("*.nupkg", "*.snupkg").OrderBy(p => p.ToString());
-
-            DotNetLogger = CustomDotnetLogger;
+            
 
             DotNetNuGetPush(settings => settings
+                    .SetProcessLogger(CustomDotnetLogger)
                     .SetSource(Source)
                     .SetApiKey(ApiKey)
                     .SetSkipDuplicate(true)
@@ -420,19 +420,7 @@ internal partial class Build : NukeBuild
     public Target StartRelease => _ => _
         .Executes(() =>
         {
-            GitTasks.GitLogger = GitLogger;
-            var disableApproval = Environment.GetEnvironmentVariable("VCBUILD_DISABLE_RELEASE_APPROVAL");
-
-            if (disableApproval.IsNullOrEmpty() && !Force)
-            {
-                Console.Write($"Are you sure you want to release {GitRepository.Identifier}? (y/N): ");
-                var response = Console.ReadLine();
-
-                if (string.Compare(response, "y", true, CultureInfo.InvariantCulture) != 0)
-                {
-                    Assert.Fail("Aborted");
-                }
-            }
+            CheckIfAborted();
 
             var checkoutCommand = new StringBuilder("checkout dev");
 
@@ -484,7 +472,7 @@ internal partial class Build : NukeBuild
                 GitTasks.Git("add Directory.Build.props");
             }
 
-            GitTasks.Git($"commit -m \"{CustomVersionPrefix}\"");
+            GitTasks.Git($"commit -m \"{CustomVersionPrefix}\"", logger: GitLogger);
             GitTasks.Git("push origin dev");
             //remove release branch
             GitTasks.Git($"branch -d {currentBranch}");
@@ -497,18 +485,49 @@ internal partial class Build : NukeBuild
     public Target StartHotfix => _ => _
         .Executes(() =>
         {
-            GitTasks.Git($"checkout {MainBranch}");
+            CheckIfAborted();
+
+            var checkoutCommand = new StringBuilder("checkout");
+            checkoutCommand.Append(MainBranch);
+
+            if (Force)
+            {
+                checkoutCommand.Append(" --force");
+            }
+
+            GitTasks.Git(checkoutCommand.ToString());
             GitTasks.Git("pull");
             IncrementVersionPatch();
+
             var hotfixBranchName = $"hotfix/{CustomVersionPrefix}";
             Log.Information(Directory.GetCurrentDirectory());
             GitTasks.Git($"checkout -b {hotfixBranchName}");
             ChangeProjectVersion(CustomVersionPrefix);
-            var manifestPath = IsModule ? RootDirectory.GetRelativePathTo(ModuleManifestFile) : "";
-            GitTasks.Git($"add Directory.Build.props {manifestPath}");
-            GitTasks.Git($"commit -m \"{CustomVersionPrefix}\"");
+            if (!IsTheme)
+            {
+                var manifestPath = IsModule ? RootDirectory.GetRelativePathTo(ModuleManifestFile) : "";
+                GitTasks.Git($"add Directory.Build.props {manifestPath}");
+            }
+
+            GitTasks.Git($"commit -m \"{CustomVersionPrefix}\"", logger: GitLogger);
             GitTasks.Git($"push -u origin {hotfixBranchName}");
         });
+
+    private static void CheckIfAborted()
+    {
+        var disableApproval = Environment.GetEnvironmentVariable("VCBUILD_DISABLE_RELEASE_APPROVAL");
+
+        if (disableApproval.IsNullOrEmpty() && !Force)
+        {
+            Console.Write($"Are you sure you want to hotfix {GitRepository.Identifier}? (y/N): ");
+            var response = Console.ReadLine();
+
+            if (string.Compare(response, "y", true, CultureInfo.InvariantCulture) != 0)
+            {
+                Assert.Fail("Aborted");
+            }
+        }
+    }
 
     public Target CompleteHotfix => _ => _
         .After(StartHotfix)
@@ -524,6 +543,33 @@ internal partial class Build : NukeBuild
             //remove hotfix branch
             GitTasks.Git($"branch -d {currentBranch}");
             GitTasks.Git($"push origin --delete {currentBranch}");
+        });
+
+    public Target QuickHotfix => _ => _
+        .Executes(() => {
+            var currentBranch = GitTasks.GitCurrentBranch();
+            GitTasks.Git($"checkout {MainBranch}");
+            GitTasks.Git($"pull");
+            IncrementVersionPatch();
+            var tempBranch = $"hotfix/{CustomVersionPrefix}";
+            GitTasks.Git($"checkout -b {tempBranch}");
+            GitTasks.Git($"merge {currentBranch}");
+            ChangeProjectVersion(CustomVersionPrefix);
+            GitTasks.Git($"tag {CustomVersionPrefix}");
+            if(!IsTheme)
+            {
+                var manifestPath = IsModule ? RootDirectory.GetRelativePathTo(ModuleManifestFile) : "";
+                GitTasks.Git($"add Directory.Build.props {manifestPath}");
+            }
+            GitTasks.Git($"commit -m \"{CustomVersionPrefix}\"", logger: GitLogger);
+
+            GitTasks.Git($"push -u origin {tempBranch}");
+            GitTasks.Git($"checkout {MainBranch}");
+            GitTasks.Git($"merge {tempBranch}");
+            GitTasks.Git($"push origin {MainBranch}");
+            
+            GitTasks.Git($"branch -d {tempBranch}");
+            GitTasks.Git($"push origin --delete {tempBranch}");
         });
 
     public Target IncrementMinor => _ => _
@@ -590,8 +636,6 @@ internal partial class Build : NukeBuild
         .Before(UpdateManifest)
         .Executes(() =>
         {
-            GitTasks.GitLogger = GitLogger;
-
             if (!ModulesLocalDirectory.DirectoryExists())
             {
                 GitTasks.Git($"clone {ModulesRepository.HttpsUrl} {ModulesLocalDirectory}");
@@ -673,8 +717,7 @@ internal partial class Build : NukeBuild
         .After(UpdateManifest)
         .Executes(() =>
         {
-            GitTasks.GitLogger = GitLogger;
-            GitTasks.Git($"commit -am \"{ModuleManifest.Id} {ReleaseVersion}\"", ModulesLocalDirectory);
+            GitTasks.Git($"commit -am \"{ModuleManifest.Id} {ReleaseVersion}\"", ModulesLocalDirectory, logger: GitLogger);
             GitTasks.Git("push origin HEAD:master -f", ModulesLocalDirectory);
         });
 
@@ -759,48 +802,23 @@ internal partial class Build : NukeBuild
                     .SetPullRequestBase(SonarPRBase ?? Environment.GetEnvironmentVariable("CHANGE_TARGET"))
                     .SetPullRequestBranch(SonarPRBranch ?? Environment.GetEnvironmentVariable("CHANGE_TITLE"))
                     .SetPullRequestKey(SonarPRNumber ?? Environment.GetEnvironmentVariable("CHANGE_ID"))
-                    .SetProcessArgumentConfigurator(args =>
-                    {
-                        args = AddSonarPRProvider(args);
-                        args = AddSonarPRGithubRepo(args);
-
-                        return args;
-                    }))
+                    .AddProcessAdditionalArguments($"/d:sonar.pullrequest.provider={SonarPRProvider}",
+                                                   $"/d:sonar.pullrequest.github.repository={SonarGithubRepo}"))
                 .When(!PullRequest, cc => cc
                     .SetBranchName(branchName)
-                    .SetProcessArgumentConfigurator(args => AddSonarBranchTarget(args, branchName, branchNameTarget))
+                    .AddProcessAdditionalArguments(GetSonarBranchTarget(branchName, branchNameTarget))
                 )
             );
         });
 
-    private static Arguments AddSonarBranchTarget(Arguments args, string branchName, string branchNameTarget)
+    private static string GetSonarBranchTarget(string branchName, string branchNameTarget)
     {
+        var result = string.Empty;
         if (!_sonarLongLiveBranches.Contains(branchName))
         {
-            args = args.Add($"/d:\"sonar.branch.target={branchNameTarget}\"");
+            result = $"/d:sonar.branch.target={branchNameTarget}";
         }
-
-        return args;
-    }
-
-    private static Arguments AddSonarPRGithubRepo(Arguments args)
-    {
-        if (!string.IsNullOrEmpty(SonarGithubRepo))
-        {
-            args = args.Add("/d:sonar.pullrequest.github.repository={value}", SonarGithubRepo);
-        }
-
-        return args;
-    }
-
-    private static Arguments AddSonarPRProvider(Arguments args)
-    {
-        if (!string.IsNullOrEmpty(SonarPRProvider))
-        {
-            args = args.Add($"/d:sonar.pullrequest.provider={SonarPRProvider}");
-        }
-
-        return args;
+        return result;
     }
 
     public Target SonarQubeEnd => _ => _
@@ -818,10 +836,10 @@ internal partial class Build : NukeBuild
                     .Replace("netcoreapp3.0", "net5.0");
                 var sonarScannerShRightPath = Directory.GetParent(sonarScannerShPath)?.Parent?.FullName ?? string.Empty;
                 var tmpFile = TemporaryDirectory / sonarScript;
-                FileSystemTasks.MoveFile(sonarScannerShPath, tmpFile);
+                sonarScannerShPath.ToAbsolutePath().Move(tmpFile, ExistsPolicy.FileOverwrite);
                 sonarScannerShRightPath.ToAbsolutePath().DeleteDirectory();
                 var sonarScriptDestinationPath = Path.Combine(sonarScannerShRightPath, sonarScript);
-                FileSystemTasks.MoveFile(tmpFile, sonarScriptDestinationPath);
+                tmpFile.Move(sonarScriptDestinationPath);
                 Log.Information($"{sonarScript} path: {sonarScriptDestinationPath}");
                 var chmod = ToolResolver.GetPathTool("chmod");
                 chmod.Invoke($"+x {sonarScriptDestinationPath}");

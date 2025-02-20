@@ -125,6 +125,15 @@ vc-build QuickRelease
 vc-build QuickRelease -Force
 ```
 ---
+## QuickHotfix
+Creates a hotfix branch from the main branch, increments the patch version, merges the current branch into the created hotfix branch, and merges it back into the main branch.
+### Usage
+```console
+vc-build QuickHotfix
+vc-build QuickHotfix -MainBranch main
+vc-build QuickHotfix -CustomVersionPrefix 3.200.2
+```
+---
 ## Publish
 Executes `dotnet publish`.
 
