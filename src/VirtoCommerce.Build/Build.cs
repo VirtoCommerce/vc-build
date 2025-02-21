@@ -1237,8 +1237,13 @@ internal partial class Build : NukeBuild
 
     protected override void OnBuildCreated()
     {
-        HttpTasks.DefaultTimeout = TimeSpan.FromSeconds(HttpTimeout);
+        SetHttpTimeout(HttpTimeout);
         base.OnBuildCreated();
+    }
+
+    private static void SetHttpTimeout(int seconds)
+    {
+        HttpTasks.DefaultTimeout = TimeSpan.FromSeconds(seconds);
     }
 
     private void ValidateManifestsDependencies()
@@ -1291,15 +1296,15 @@ internal partial class Build : NukeBuild
 
     private void CompressExecuteMethod()
     {
+        const int MajorMinorPatch = 3;
         if (IsModule)
         {
             const string moduleIgnoreUrlTemplate = "https://raw.githubusercontent.com/VirtoCommerce/vc-platform/{0}/module.ignore";
             if(string.IsNullOrEmpty(GlobalModuleIgnoreFileUrl))
             {
-                Version.TryParse(ModuleManifest.PlatformVersion, out var platformVersion);
+                var platformVersionString = Version.TryParse(ModuleManifest.PlatformVersion, out var platformVersion) ? platformVersion.ToString(MajorMinorPatch) : "dev";
 
-                const int MajorMinorPatch = 3;
-                GlobalModuleIgnoreFileUrl = string.Format(moduleIgnoreUrlTemplate, platformVersion?.ToString(MajorMinorPatch) ?? "dev");
+                GlobalModuleIgnoreFileUrl = string.Format(moduleIgnoreUrlTemplate, platformVersionString);
             }
 
             string[] ignoredFiles;
