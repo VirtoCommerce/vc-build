@@ -1300,28 +1300,14 @@ internal partial class Build : NukeBuild
         if (IsModule)
         {
             const string moduleIgnoreUrlTemplate = "https://raw.githubusercontent.com/VirtoCommerce/vc-platform/{0}/module.ignore";
-            if(string.IsNullOrEmpty(GlobalModuleIgnoreFileUrl))
+            if (string.IsNullOrEmpty(GlobalModuleIgnoreFileUrl))
             {
                 var platformVersionString = Version.TryParse(ModuleManifest.PlatformVersion, out var platformVersion) ? platformVersion.ToString(MajorMinorPatch) : "dev";
 
                 GlobalModuleIgnoreFileUrl = string.Format(moduleIgnoreUrlTemplate, platformVersionString);
             }
 
-            string[] ignoredFiles;
-            if (GlobalModuleIgnoreFileUrl.StartsWith("http"))
-            {
-                var responseString = HttpTasks.HttpDownloadString(GlobalModuleIgnoreFileUrl);
-                if (responseString.StartsWith("404:"))
-                {
-                    responseString = HttpTasks.HttpDownloadString(string.Format(moduleIgnoreUrlTemplate, "dev"));
-                }
-                ignoredFiles = responseString.SplitLineBreaks();
-            }
-            else
-            {
-                ignoredFiles = File.ReadAllLines(GlobalModuleIgnoreFileUrl);
-            }
-
+            string[] ignoredFiles = GetGlobalIgnoreList(moduleIgnoreUrlTemplate);
 
             if (ModuleIgnoreFile.FileExists())
             {
@@ -1349,6 +1335,26 @@ internal partial class Build : NukeBuild
         {
             ArtifactPacker.CompressPlatform(ArtifactsDirectory / "publish", ZipFilePath);
         }
+    }
+
+    private static string[] GetGlobalIgnoreList(string moduleIgnoreUrlTemplate)
+    {
+        string[] ignoredFiles;
+        if (GlobalModuleIgnoreFileUrl.StartsWith("http"))
+        {
+            var responseString = HttpTasks.HttpDownloadString(GlobalModuleIgnoreFileUrl);
+            if (responseString.StartsWith("404:"))
+            {
+                responseString = HttpTasks.HttpDownloadString(string.Format(moduleIgnoreUrlTemplate, "dev"));
+            }
+            ignoredFiles = responseString.SplitLineBreaks();
+        }
+        else
+        {
+            ignoredFiles = File.ReadAllLines(GlobalModuleIgnoreFileUrl);
+        }
+
+        return ignoredFiles;
     }
 
     private static void CleanSolution(string[] searchPattern, AbsolutePath[] ignorePaths = null)
