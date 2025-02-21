@@ -25,6 +25,7 @@ using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.Git;
 using Nuke.Common.Tools.Npm;
+using Nuke.Common.Tools.ReportGenerator;
 using Nuke.Common.Tools.SonarScanner;
 using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
@@ -368,10 +369,11 @@ internal partial class Build : NukeBuild
 
             if (coberturaReports.Count > 0)
             {
-                var reportGenerator = ToolResolver.GetNuGetTool("dotnet-reportgenerator-globaltool",
-                    "ReportGenerator.dll", "4.8.8", "netcoreapp3.0");
-                reportGenerator.Invoke(
-                    $"-reports:{outPath / "**/coverage.cobertura.xml"} -targetdir:{outPath} -reporttypes:SonarQube");
+                ReportGeneratorTasks.ReportGenerator(s => s
+                    .SetReports(outPath / "**/coverage.cobertura.xml")
+                    .SetTargetDirectory(outPath)
+                    .SetReportTypes(ReportTypes.SonarQube));
+
                 var sonarCoverageReportPath = outPath.GlobFiles("SonarQube.xml").FirstOrDefault();
 
                 if (sonarCoverageReportPath == null)
@@ -816,7 +818,7 @@ internal partial class Build : NukeBuild
         var result = string.Empty;
         if (!_sonarLongLiveBranches.Contains(branchName))
         {
-            result = $"/d:sonar.branch.target={branchNameTarget}";
+            result = $"/d:sonar.newCode.referenceBranch={branchNameTarget}";
         }
         return result;
     }
@@ -1235,8 +1237,13 @@ internal partial class Build : NukeBuild
 
     protected override void OnBuildCreated()
     {
-        HttpTasks.DefaultTimeout = TimeSpan.FromSeconds(HttpTimeout);
+        SetHttpTimeout(HttpTimeout);
         base.OnBuildCreated();
+    }
+
+    private static void SetHttpTimeout(int seconds)
+    {
+        HttpTasks.DefaultTimeout = TimeSpan.FromSeconds(seconds);
     }
 
     private void ValidateManifestsDependencies()
@@ -1289,32 +1296,18 @@ internal partial class Build : NukeBuild
 
     private void CompressExecuteMethod()
     {
+        const int MajorMinorPatch = 3;
         if (IsModule)
         {
             const string moduleIgnoreUrlTemplate = "https://raw.githubusercontent.com/VirtoCommerce/vc-platform/{0}/module.ignore";
-            if(string.IsNullOrEmpty(GlobalModuleIgnoreFileUrl))
+            if (string.IsNullOrEmpty(GlobalModuleIgnoreFileUrl))
             {
-                Version.TryParse(ModuleManifest.PlatformVersion, out var platformVersion);
+                var platformVersionString = Version.TryParse(ModuleManifest.PlatformVersion, out var platformVersion) ? platformVersion.ToString(MajorMinorPatch) : "dev";
 
-                const int MajorMinorPatch = 3;
-                GlobalModuleIgnoreFileUrl = string.Format(moduleIgnoreUrlTemplate, platformVersion?.ToString(MajorMinorPatch) ?? "dev");
+                GlobalModuleIgnoreFileUrl = string.Format(moduleIgnoreUrlTemplate, platformVersionString);
             }
 
-            string[] ignoredFiles;
-            if (GlobalModuleIgnoreFileUrl.StartsWith("http"))
-            {
-                var responseString = HttpTasks.HttpDownloadString(GlobalModuleIgnoreFileUrl);
-                if (responseString.StartsWith("404:"))
-                {
-                    responseString = HttpTasks.HttpDownloadString(string.Format(moduleIgnoreUrlTemplate, "dev"));
-                }
-                ignoredFiles = responseString.SplitLineBreaks();
-            }
-            else
-            {
-                ignoredFiles = File.ReadAllLines(GlobalModuleIgnoreFileUrl);
-            }
-
+            string[] ignoredFiles = GetGlobalIgnoreList(moduleIgnoreUrlTemplate);
 
             if (ModuleIgnoreFile.FileExists())
             {
@@ -1342,6 +1335,26 @@ internal partial class Build : NukeBuild
         {
             ArtifactPacker.CompressPlatform(ArtifactsDirectory / "publish", ZipFilePath);
         }
+    }
+
+    private static string[] GetGlobalIgnoreList(string moduleIgnoreUrlTemplate)
+    {
+        string[] ignoredFiles;
+        if (GlobalModuleIgnoreFileUrl.StartsWith("http"))
+        {
+            var responseString = HttpTasks.HttpDownloadString(GlobalModuleIgnoreFileUrl);
+            if (responseString.StartsWith("404:"))
+            {
+                responseString = HttpTasks.HttpDownloadString(string.Format(moduleIgnoreUrlTemplate, "dev"));
+            }
+            ignoredFiles = responseString.SplitLineBreaks();
+        }
+        else
+        {
+            ignoredFiles = File.ReadAllLines(GlobalModuleIgnoreFileUrl);
+        }
+
+        return ignoredFiles;
     }
 
     private static void CleanSolution(string[] searchPattern, AbsolutePath[] ignorePaths = null)
