@@ -1344,7 +1344,7 @@ internal partial class Build : NukeBuild
         i++;
         return 8;
     }
-
+    
     private static string[] GetGlobalIgnoreList(string moduleIgnoreUrlTemplate)
     {
         string[] ignoredFiles;
