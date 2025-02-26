@@ -1337,14 +1337,6 @@ internal partial class Build : NukeBuild
         }
     }
 
-    public float MethodNotUsedForIssue()
-    {
-        var i = 1;
-        var j = 2;
-        i++;
-        return 8;
-    }
-
     private static string[] GetGlobalIgnoreList(string moduleIgnoreUrlTemplate)
     {
         string[] ignoredFiles;
