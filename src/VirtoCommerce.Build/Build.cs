@@ -558,7 +558,11 @@ internal partial class Build : NukeBuild
             GitTasks.Git($"merge {currentBranch}");
             ChangeProjectVersion(CustomVersionPrefix);
             GitTasks.Git($"tag {CustomVersionPrefix}");
-            if(!IsTheme)
+            if(IsTheme)
+            {
+                GitTasks.Git($"add {PackageJsonPath}");
+            }
+            else
             {
                 var manifestPath = IsModule ? RootDirectory.GetRelativePathTo(ModuleManifestFile) : "";
                 GitTasks.Git($"add Directory.Build.props {manifestPath}");
