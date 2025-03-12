@@ -395,7 +395,7 @@ internal partial class Build : NukeBuild
         .Executes(() =>
         {
             var packages = ArtifactsDirectory.GlobFiles("*.nupkg", "*.snupkg").OrderBy(p => p.ToString());
-            
+
 
             DotNetNuGetPush(settings => settings
                     .SetProcessLogger(CustomDotnetLogger)
@@ -490,7 +490,7 @@ internal partial class Build : NukeBuild
             CheckIfAborted();
 
             var checkoutCommand = new StringBuilder("checkout");
-            checkoutCommand.Append(MainBranch);
+            checkoutCommand.Append($" {MainBranch}");
 
             if (Force)
             {
@@ -573,7 +573,7 @@ internal partial class Build : NukeBuild
             GitTasks.Git($"checkout {MainBranch}");
             GitTasks.Git($"merge {tempBranch}");
             GitTasks.Git($"push origin {MainBranch}");
-            
+
             GitTasks.Git($"branch -d {tempBranch}");
             GitTasks.Git($"push origin --delete {tempBranch}");
         });
