@@ -15,7 +15,6 @@ using Microsoft.ApplicationInsights;
 using Microsoft.Build.Locator;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NuGet.Packaging;
 using Nuke.Common;
 using Nuke.Common.Execution;
 using Nuke.Common.Git;
@@ -256,6 +255,7 @@ internal partial class Build : NukeBuild
                 _telemetryClient = new TelemetryClient(telemetryConfig);
                 _telemetryClient.Context.Device.OperatingSystem = Environment.OSVersion.ToString();
                 _telemetryClient.Context.Component.Version = Assembly.GetEntryAssembly().GetName().Version.ToString();
+                TelemetryClient.Context.Device.Type = IsServerBuild ? "BuildServer" : "DeveloperMachine";
             }
             return _telemetryClient;
         }
@@ -288,14 +288,12 @@ internal partial class Build : NukeBuild
             {
                 { "args", args }
             });
-        TelemetryClient.Flush();
         base.OnTargetRunning(target);
     }
 
     protected override void OnTargetFailed(string target)
     {
         TelemetryClient.TrackException(new Exception($"{target} failed with arguments: {GetSafeCmdArguments()}"));
-        TelemetryClient.Flush();
         base.OnTargetFailed(target);
     }
 
@@ -946,8 +944,21 @@ internal partial class Build : NukeBuild
         CheckHelpRequested(args);
 
         CreateNukeDirectory();
+        int exitCode = 0;
 
-        var exitCode = Execute<Build>(x => x.Compile);
+        try
+        {
+            exitCode = Execute<Build>(x => x.Compile);
+        }
+        catch (Exception ex)
+        {
+            TelemetryClient.TrackException(ex);
+            throw;
+        }
+        finally
+        {
+            TelemetryClient.Flush();
+        }
 
         ClearTempOnExit();
 
