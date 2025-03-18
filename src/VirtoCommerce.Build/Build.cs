@@ -1259,7 +1259,7 @@ internal partial class Build : NukeBuild
             .ConfigureFiles(this)
             .ConfigureLevel()
             .ConfigureFilter(this)
-            .WriteTo.ApplicationInsights(TelemetryClient, TelemetryConverter.Events, Serilog.Events.LogEventLevel.Information)
+            .WriteTo.ApplicationInsights(TelemetryClient, TelemetryConverter.Traces, Serilog.Events.LogEventLevel.Information)
             .CreateLogger();
         base.OnBuildCreated();
     }
