@@ -12,10 +12,10 @@ using System.Threading.Tasks;
 using System.Xml;
 using Extensions;
 using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Build.Locator;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NuGet.Packaging;
 using Nuke.Common;
 using Nuke.Common.Execution;
 using Nuke.Common.Git;
@@ -245,19 +245,28 @@ internal partial class Build : NukeBuild
 
     private static string AIConnectionString = "InstrumentationKey=935c72ed-d8a9-4ef6-a4d1-b3ebfdfddfef;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/";
     private static TelemetryClient _telemetryClient;
-    protected static TelemetryClient TelemetryClient
+    private static TelemetryClient TelemetryClient
     {
         get
         {
             if (_telemetryClient == null)
             {
-                var telemetryConfig = new Microsoft.ApplicationInsights.Extensibility.TelemetryConfiguration();
-                telemetryConfig.ConnectionString = AIConnectionString;
-                _telemetryClient = new TelemetryClient(telemetryConfig);
+                _telemetryClient = new TelemetryClient(TelemetryConfiguration);
                 _telemetryClient.Context.Device.OperatingSystem = Environment.OSVersion.ToString();
                 _telemetryClient.Context.Component.Version = Assembly.GetEntryAssembly().GetName().Version.ToString();
+                _telemetryClient.Context.Device.Type = IsServerBuild ? "BuildServer" : "DeveloperMachine";
             }
             return _telemetryClient;
+        }
+    }
+
+    private static TelemetryConfiguration TelemetryConfiguration
+    {
+        get
+        {
+            var telemetryConfig = new TelemetryConfiguration();
+            telemetryConfig.ConnectionString = AIConnectionString;
+            return telemetryConfig;
         }
     }
 
@@ -288,15 +297,7 @@ internal partial class Build : NukeBuild
             {
                 { "args", args }
             });
-        TelemetryClient.Flush();
         base.OnTargetRunning(target);
-    }
-
-    protected override void OnTargetFailed(string target)
-    {
-        TelemetryClient.TrackException(new Exception($"{target} failed with arguments: {GetSafeCmdArguments()}"));
-        TelemetryClient.Flush();
-        base.OnTargetFailed(target);
     }
 
     public Target Clean => _ => _
@@ -946,8 +947,16 @@ internal partial class Build : NukeBuild
         CheckHelpRequested(args);
 
         CreateNukeDirectory();
+        int exitCode = 0;
 
-        var exitCode = Execute<Build>(x => x.Compile);
+        try
+        {
+            exitCode = Execute<Build>(x => x.Compile);
+        }
+        finally
+        {
+            TelemetryClient.Flush();
+        }
 
         ClearTempOnExit();
 
@@ -1242,6 +1251,16 @@ internal partial class Build : NukeBuild
     protected override void OnBuildCreated()
     {
         SetHttpTimeout(HttpTimeout);
+        Log.Logger = new LoggerConfiguration()
+            .ConfigureEnricher()
+            .ConfigureHost(this)
+            .ConfigureConsole(this)
+            .ConfigureInMemory(this)
+            .ConfigureFiles(this)
+            .ConfigureLevel()
+            .ConfigureFilter(this)
+            .WriteTo.ApplicationInsights(TelemetryClient, TelemetryConverter.Events, Serilog.Events.LogEventLevel.Information)
+            .CreateLogger();
         base.OnBuildCreated();
     }
 
