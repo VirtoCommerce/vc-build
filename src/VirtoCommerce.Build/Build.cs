@@ -12,10 +12,10 @@ using System.Threading.Tasks;
 using System.Xml;
 using Extensions;
 using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Build.Locator;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NuGet.Packaging;
 using Nuke.Common;
 using Nuke.Common.Execution;
 using Nuke.Common.Git;
@@ -25,6 +25,7 @@ using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.Git;
 using Nuke.Common.Tools.Npm;
+using Nuke.Common.Tools.ReportGenerator;
 using Nuke.Common.Tools.SonarScanner;
 using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
@@ -244,19 +245,28 @@ internal partial class Build : NukeBuild
 
     private static string AIConnectionString = "InstrumentationKey=935c72ed-d8a9-4ef6-a4d1-b3ebfdfddfef;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/";
     private static TelemetryClient _telemetryClient;
-    protected static TelemetryClient TelemetryClient
+    private static TelemetryClient TelemetryClient
     {
         get
         {
             if (_telemetryClient == null)
             {
-                var telemetryConfig = new Microsoft.ApplicationInsights.Extensibility.TelemetryConfiguration();
-                telemetryConfig.ConnectionString = AIConnectionString;
-                _telemetryClient = new TelemetryClient(telemetryConfig);
+                _telemetryClient = new TelemetryClient(TelemetryConfiguration);
                 _telemetryClient.Context.Device.OperatingSystem = Environment.OSVersion.ToString();
                 _telemetryClient.Context.Component.Version = Assembly.GetEntryAssembly().GetName().Version.ToString();
+                _telemetryClient.Context.Device.Type = IsServerBuild ? "BuildServer" : "DeveloperMachine";
             }
             return _telemetryClient;
+        }
+    }
+
+    private static TelemetryConfiguration TelemetryConfiguration
+    {
+        get
+        {
+            var telemetryConfig = new TelemetryConfiguration();
+            telemetryConfig.ConnectionString = AIConnectionString;
+            return telemetryConfig;
         }
     }
 
@@ -287,15 +297,7 @@ internal partial class Build : NukeBuild
             {
                 { "args", args }
             });
-        TelemetryClient.Flush();
         base.OnTargetRunning(target);
-    }
-
-    protected override void OnTargetFailed(string target)
-    {
-        TelemetryClient.TrackException(new Exception($"{target} failed with arguments: {GetSafeCmdArguments()}"));
-        TelemetryClient.Flush();
-        base.OnTargetFailed(target);
     }
 
     public Target Clean => _ => _
@@ -368,10 +370,11 @@ internal partial class Build : NukeBuild
 
             if (coberturaReports.Count > 0)
             {
-                var reportGenerator = ToolResolver.GetNuGetTool("dotnet-reportgenerator-globaltool",
-                    "ReportGenerator.dll", "4.8.8", "netcoreapp3.0");
-                reportGenerator.Invoke(
-                    $"-reports:{outPath / "**/coverage.cobertura.xml"} -targetdir:{outPath} -reporttypes:SonarQube");
+                ReportGeneratorTasks.ReportGenerator(s => s
+                    .SetReports(outPath / "**/coverage.cobertura.xml")
+                    .SetTargetDirectory(outPath)
+                    .SetReportTypes(ReportTypes.SonarQube));
+
                 var sonarCoverageReportPath = outPath.GlobFiles("SonarQube.xml").FirstOrDefault();
 
                 if (sonarCoverageReportPath == null)
@@ -393,7 +396,7 @@ internal partial class Build : NukeBuild
         .Executes(() =>
         {
             var packages = ArtifactsDirectory.GlobFiles("*.nupkg", "*.snupkg").OrderBy(p => p.ToString());
-            
+
 
             DotNetNuGetPush(settings => settings
                     .SetProcessLogger(CustomDotnetLogger)
@@ -488,7 +491,7 @@ internal partial class Build : NukeBuild
             CheckIfAborted();
 
             var checkoutCommand = new StringBuilder("checkout");
-            checkoutCommand.Append(MainBranch);
+            checkoutCommand.Append($" {MainBranch}");
 
             if (Force)
             {
@@ -556,7 +559,11 @@ internal partial class Build : NukeBuild
             GitTasks.Git($"merge {currentBranch}");
             ChangeProjectVersion(CustomVersionPrefix);
             GitTasks.Git($"tag {CustomVersionPrefix}");
-            if(!IsTheme)
+            if(IsTheme)
+            {
+                GitTasks.Git($"add {PackageJsonPath}");
+            }
+            else
             {
                 var manifestPath = IsModule ? RootDirectory.GetRelativePathTo(ModuleManifestFile) : "";
                 GitTasks.Git($"add Directory.Build.props {manifestPath}");
@@ -567,7 +574,7 @@ internal partial class Build : NukeBuild
             GitTasks.Git($"checkout {MainBranch}");
             GitTasks.Git($"merge {tempBranch}");
             GitTasks.Git($"push origin {MainBranch}");
-            
+
             GitTasks.Git($"branch -d {tempBranch}");
             GitTasks.Git($"push origin --delete {tempBranch}");
         });
@@ -816,7 +823,7 @@ internal partial class Build : NukeBuild
         var result = string.Empty;
         if (!_sonarLongLiveBranches.Contains(branchName))
         {
-            result = $"/d:sonar.branch.target={branchNameTarget}";
+            result = $"/d:sonar.newCode.referenceBranch={branchNameTarget}";
         }
         return result;
     }
@@ -940,8 +947,16 @@ internal partial class Build : NukeBuild
         CheckHelpRequested(args);
 
         CreateNukeDirectory();
+        int exitCode = 0;
 
-        var exitCode = Execute<Build>(x => x.Compile);
+        try
+        {
+            exitCode = Execute<Build>(x => x.Compile);
+        }
+        finally
+        {
+            TelemetryClient.Flush();
+        }
 
         ClearTempOnExit();
 
@@ -1235,8 +1250,23 @@ internal partial class Build : NukeBuild
 
     protected override void OnBuildCreated()
     {
-        HttpTasks.DefaultTimeout = TimeSpan.FromSeconds(HttpTimeout);
+        SetHttpTimeout(HttpTimeout);
+        Log.Logger = new LoggerConfiguration()
+            .ConfigureEnricher()
+            .ConfigureHost(this)
+            .ConfigureConsole(this)
+            .ConfigureInMemory(this)
+            .ConfigureFiles(this)
+            .ConfigureLevel()
+            .ConfigureFilter(this)
+            .WriteTo.ApplicationInsights(TelemetryClient, TelemetryConverter.Traces, Serilog.Events.LogEventLevel.Information)
+            .CreateLogger();
         base.OnBuildCreated();
+    }
+
+    private static void SetHttpTimeout(int seconds)
+    {
+        HttpTasks.DefaultTimeout = TimeSpan.FromSeconds(seconds);
     }
 
     private void ValidateManifestsDependencies()
@@ -1289,32 +1319,18 @@ internal partial class Build : NukeBuild
 
     private void CompressExecuteMethod()
     {
+        const int MajorMinorPatch = 3;
         if (IsModule)
         {
             const string moduleIgnoreUrlTemplate = "https://raw.githubusercontent.com/VirtoCommerce/vc-platform/{0}/module.ignore";
-            if(string.IsNullOrEmpty(GlobalModuleIgnoreFileUrl))
+            if (string.IsNullOrEmpty(GlobalModuleIgnoreFileUrl))
             {
-                Version.TryParse(ModuleManifest.PlatformVersion, out var platformVersion);
+                var platformVersionString = Version.TryParse(ModuleManifest.PlatformVersion, out var platformVersion) ? platformVersion.ToString(MajorMinorPatch) : "dev";
 
-                const int MajorMinorPatch = 3;
-                GlobalModuleIgnoreFileUrl = string.Format(moduleIgnoreUrlTemplate, platformVersion?.ToString(MajorMinorPatch) ?? "dev");
+                GlobalModuleIgnoreFileUrl = string.Format(moduleIgnoreUrlTemplate, platformVersionString);
             }
 
-            string[] ignoredFiles;
-            if (GlobalModuleIgnoreFileUrl.StartsWith("http"))
-            {
-                var responseString = HttpTasks.HttpDownloadString(GlobalModuleIgnoreFileUrl);
-                if (responseString.StartsWith("404:"))
-                {
-                    responseString = HttpTasks.HttpDownloadString(string.Format(moduleIgnoreUrlTemplate, "dev"));
-                }
-                ignoredFiles = responseString.SplitLineBreaks();
-            }
-            else
-            {
-                ignoredFiles = File.ReadAllLines(GlobalModuleIgnoreFileUrl);
-            }
-
+            string[] ignoredFiles = GetGlobalIgnoreList(moduleIgnoreUrlTemplate);
 
             if (ModuleIgnoreFile.FileExists())
             {
@@ -1342,6 +1358,26 @@ internal partial class Build : NukeBuild
         {
             ArtifactPacker.CompressPlatform(ArtifactsDirectory / "publish", ZipFilePath);
         }
+    }
+
+    private static string[] GetGlobalIgnoreList(string moduleIgnoreUrlTemplate)
+    {
+        string[] ignoredFiles;
+        if (GlobalModuleIgnoreFileUrl.StartsWith("http"))
+        {
+            var responseString = HttpTasks.HttpDownloadString(GlobalModuleIgnoreFileUrl);
+            if (responseString.StartsWith("404:"))
+            {
+                responseString = HttpTasks.HttpDownloadString(string.Format(moduleIgnoreUrlTemplate, "dev"));
+            }
+            ignoredFiles = responseString.SplitLineBreaks();
+        }
+        else
+        {
+            ignoredFiles = File.ReadAllLines(GlobalModuleIgnoreFileUrl);
+        }
+
+        return ignoredFiles;
     }
 
     private static void CleanSolution(string[] searchPattern, AbsolutePath[] ignorePaths = null)
