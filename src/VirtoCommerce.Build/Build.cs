@@ -1165,7 +1165,7 @@ internal partial class Build : NukeBuild
     public void IncrementVersionMinor()
     {
         var version = new Version(VersionPrefix);
-        var newPrefix = $"{version.Major}.{version.Minor + 1}.{version.Build}";
+        var newPrefix = $"{version.Major}.{version.Minor + 1}.0";
         CustomVersionPrefix = newPrefix;
     }
 
