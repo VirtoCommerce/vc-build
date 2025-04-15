@@ -522,7 +522,7 @@ internal partial class Build : NukeBuild
 
         if (disableApproval.IsNullOrEmpty() && !Force)
         {
-            Console.Write($"Are you sure you want to hotfix {GitRepository.Identifier}? (y/N): ");
+            Console.Write($"Are you sure you want to release {GitRepository.Identifier}? (y/N): ");
             var response = Console.ReadLine();
 
             if (string.Compare(response, "y", true, CultureInfo.InvariantCulture) != 0)
