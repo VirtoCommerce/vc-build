@@ -32,13 +32,31 @@ vc-build install -PackageManifestPath some_directory/vc-package.json -DiscoveryP
 ```
 ---
 ## Update
-Updates platform and modules to the latest stable bundle or specified versions.
+Updates platform and modules to the latest stable bundle or specified versions. Before proceeding with the update, it shows a diff of version changes and asks for user confirmation.
+
+### Parameters
+- `-Edge`: Update to the latest available versions instead of stable bundle
+- `-v`: Specify bundle name (default is "latest")
 
 ### Usage
 ```console
 vc-build Update
 vc-build Update -v 3
 vc-build Update -edge
+```
+---
+## ShowDiff
+Shows the differences between current and target versions of the platform and modules. This target is automatically triggered before the Update target and requires user confirmation to proceed.
+
+### Parameters
+- `-Edge`: Show differences for the latest available versions instead of stable bundle
+- `-v`: Specify bundle name (default is "latest")
+
+### Usage
+```console
+vc-build ShowDiff
+vc-build ShowDiff -v 3
+vc-build ShowDiff -edge
 ```
 ---
 ## InstallModules

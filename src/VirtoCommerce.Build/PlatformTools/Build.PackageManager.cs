@@ -94,10 +94,13 @@ namespace VirtoCommerce.Build
         public static AbsolutePath AppsettingsPath { get; set; } = PlatformRootDirectory / "appsettings.json";
         public static AbsolutePath PlatformRootDirectory => IsPlatformSource ? WebDirectory : RootDirectory;
 
+        [Parameter("Current Directory")]
+        public static AbsolutePath CurrentDirectory { get; set; } = RootDirectory;
+
         public Target InitPlatform => _ => _
              .Executes(() =>
              {
-                 var configuration = AppSettings.GetConfiguration(RootDirectory, AppsettingsPath);
+                 var configuration = AppSettings.GetConfiguration(CurrentDirectory, AppsettingsPath);
                  LocalModuleCatalog.GetCatalog(DiscoveryPath.EmptyToNull() ?? configuration.GetModulesDiscoveryPath(), ProbingPath);
              });
 
@@ -231,7 +234,7 @@ namespace VirtoCommerce.Build
         }
 
         private static bool IsNotServerBuild => !IsServerBuild;
-        private static bool ThereAreFilesToBackup => Directory.EnumerateFileSystemEntries(RootDirectory).Any(p => !p.Contains(".nuke"));
+        private static bool ThereAreFilesToBackup => Directory.EnumerateFileSystemEntries(CurrentDirectory).Any(p => !p.Contains(".nuke"));
 
         public Target Backup => _ => _
             .Triggers(Rollback, RemoveBackup)
@@ -247,13 +250,13 @@ namespace VirtoCommerce.Build
                     modulesDirs = Directory.EnumerateDirectories(discoveryPath).ToList();
                 }
                 var symlinks = modulesDirs.Where(m => new DirectoryInfo(m).LinkTarget != null).ToList();
-                CompressionExtensions.TarGZipTo(RootDirectory, BackupFile, filter: f => !SkipFile(f.ToFileInfo()) && !symlinks.Exists(s => f.ToFileInfo().FullName.StartsWith(s)));
+                CompressionExtensions.TarGZipTo(CurrentDirectory, BackupFile, filter: f => !SkipFile(f.ToFileInfo()) && !symlinks.Exists(s => f.ToFileInfo().FullName.StartsWith(s)));
             });
 
         private static bool SkipFile(FileInfo fileInfo)
         {
             const string nodeModules = "node_modules";
-            return fileInfo.FullName.StartsWith(RootDirectory / ".nuke") || fileInfo.FullName.Contains(nodeModules);
+            return fileInfo.FullName.StartsWith(CurrentDirectory / ".nuke") || fileInfo.FullName.Contains(nodeModules);
         }
 
         public bool ThereAreFailedTargets => FailedTargets.Count > 0 && SucceededTargets.Contains(Backup);
@@ -262,7 +265,7 @@ namespace VirtoCommerce.Build
             .After(Backup, Install, Update, InstallPlatform, InstallModules)
             .OnlyWhenDynamic(() => ThereAreFailedTargets)
             .AssuredAfterFailure()
-            .Executes(() => CompressionExtensions.UnTarGZipTo(BackupFile, RootDirectory));
+            .Executes(() => CompressionExtensions.UnTarGZipTo(BackupFile, CurrentDirectory));
 
         public bool WorkIsDone => FinishedTargets.Contains(Backup) && File.Exists(BackupFile);
         public Target RemoveBackup => _ => _
@@ -316,7 +319,7 @@ namespace VirtoCommerce.Build
                 AppsettingsPath.Move(tempFile, ExistsPolicy.FileOverwrite);
             }
 
-            platformZip.UncompressTo(RootDirectory);
+            platformZip.UncompressTo(CurrentDirectory);
             platformZip.DeleteFile();
 
             // return appsettings.json back
@@ -358,7 +361,7 @@ namespace VirtoCommerce.Build
         private static bool IsPlatformInstallationNeeded(string version)
         {
             var result = true;
-            var platformWebDllPath = RootDirectory / "VirtoCommerce.Platform.Web.dll";
+            var platformWebDllPath = CurrentDirectory / "VirtoCommerce.Platform.Web.dll";
             var newVersion = new Version(version);
 
             if (File.Exists(platformWebDllPath))
@@ -553,7 +556,7 @@ namespace VirtoCommerce.Build
 
         public Target Update => _ => _
              .Triggers(InstallPlatform, InstallModules)
-             .DependsOn(Backup)
+             .DependsOn(Backup, ShowDiff)
              .Executes(async () =>
              {
                  SkipDependencySolving = true;
@@ -591,6 +594,7 @@ namespace VirtoCommerce.Build
             await DownloadBundleManifest(bundleName, bundleTmpFilePath);
 
             var bundle = PackageManager.FromFile(bundleTmpFilePath);
+
             if (!IsPlatformSource)
             {
                 manifest = await UpdateStablePlatformAsync(manifest, bundle);
@@ -752,6 +756,135 @@ namespace VirtoCommerce.Build
             });
 
             return packageManifest;
+        }
+
+        public Target ShowDiff => _ => _
+             .Before(Update)
+             .OnlyWhenDynamic(() => IsNotServerBuild)
+             .Executes(async () =>
+             {
+                 var manifest = PackageManager.FromFile(PackageManifestPath);
+                 var bundle = await GetBundleManifest(manifest);
+                 ShowPlatformDiff(manifest, bundle);
+                 ShowModulesDiff(manifest, bundle);
+                 await ConfirmUpdate();
+             });
+
+        private static async Task<MixedPackageManifest> GetBundleManifest(ManifestBase manifest)
+        {
+            if (Edge)
+            {
+                return await GetEdgeBundleManifest(manifest);
+            }
+            return await GetStableBundleManifest();
+        }
+
+        private static async Task<MixedPackageManifest> GetEdgeBundleManifest(ManifestBase manifest)
+        {
+            var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
+            var bundle = (MixedPackageManifest)PackageManager.CreatePackageManifest(platformRelease.TagName);
+            var githubModules = PackageManager.GetGithubModules(manifest);
+            var githubModuleManifests = PackageManager.GetGithubModuleManifests(manifest);
+            var localModuleCatalog = LocalModuleCatalog.GetCatalog(GetDiscoveryPath(), ProbingPath);
+            var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubModuleManifests);
+            var modules = await GetEdgeModuleVersions(githubModules, externalModuleCatalog);
+            var bundleGithubReleases = new GithubReleases
+            {
+                ModuleSources = githubModuleManifests,
+                Modules = modules
+            };
+            bundle.Sources.Clear();
+            bundle.Sources.Add(bundleGithubReleases);
+            return bundle;
+        }
+
+        private static Task<List<ModuleItem>> GetEdgeModuleVersions(List<ModuleItem> githubModules, IModuleCatalog externalModuleCatalog)
+        {
+            var modules = new List<ModuleItem>();
+            foreach (var module in githubModules)
+            {
+                var externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().FirstOrDefault(m => m.Id == module.Id);
+                if (externalModule == null)
+                {
+                    Log.Warning($"No module {module.Id} found in external catalog");
+                    continue;
+                }
+                if (externalModule.Ref.StartsWith("file:///"))
+                {
+                    Log.Information($"{module.Id} is a local module, skipping version check");
+                    continue;
+                }
+                modules.Add(new ModuleItem(module.Id, externalModule.Version.ToString()));
+            }
+            return Task.FromResult(modules);
+        }
+
+        private static async Task<MixedPackageManifest> GetStableBundleManifest()
+        {
+            var bundleTmpFilePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            await DownloadBundleManifest(BundleName, bundleTmpFilePath);
+            var bundle = (MixedPackageManifest)PackageManager.FromFile(bundleTmpFilePath);
+            File.Delete(bundleTmpFilePath);
+            return bundle;
+        }
+
+        private static void ShowPlatformDiff(ManifestBase manifest, MixedPackageManifest bundle)
+        {
+            Log.Information("=== Platform Version Differences ===");
+            Log.Information($"Current: {manifest.PlatformVersion}");
+            Log.Information($"Target: {bundle.PlatformVersion}");
+        }
+
+        private static void ShowModulesDiff(ManifestBase manifest, MixedPackageManifest bundle)
+        {
+            var manifestGithubModules = PackageManager.GetGithubModules(manifest);
+            var bundleGithubModules = PackageManager.GetGithubModules(bundle);
+
+            Log.Information("\n=== Module Version Differences ===");
+            ShowExistingModuleDiffs(manifestGithubModules, bundleGithubModules);
+            ShowNewModuleDiffs(manifestGithubModules, bundleGithubModules);
+        }
+
+        private static void ShowExistingModuleDiffs(List<ModuleItem> manifestModules, List<ModuleItem> bundleModules)
+        {
+            foreach (var manifestModule in manifestModules)
+            {
+                var bundleModule = bundleModules.Find(m => m.Id == manifestModule.Id);
+                if (bundleModule != null)
+                {
+                    if (manifestModule.Version != bundleModule.Version)
+                    {
+                        Log.Information($"{manifestModule.Id}: {manifestModule.Version} -> {bundleModule.Version}");
+                    }
+                }
+                else
+                {
+                    Log.Information($"{manifestModule.Id}: {manifestModule.Version} (not in target)");
+                }
+            }
+        }
+
+        private static void ShowNewModuleDiffs(List<ModuleItem> manifestModules, List<ModuleItem> bundleModules)
+        {
+            foreach (var bundleModule in bundleModules)
+            {
+                if (!manifestModules.Exists(m => m.Id == bundleModule.Id))
+                {
+                    Log.Information($"{bundleModule.Id}: (not in manifest) -> {bundleModule.Version}");
+                }
+            }
+        }
+
+        private static Task ConfirmUpdate()
+        {
+            Log.Information("\nDo you want to proceed with the update? (y/n)");
+            var response = Console.ReadLine()?.ToLower();
+            if (response != "y")
+            {
+                Assert.Fail("Update cancelled by user");
+            }
+
+            return Task.CompletedTask;
         }
     }
 }
