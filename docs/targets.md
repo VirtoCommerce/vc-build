@@ -45,6 +45,20 @@ vc-build Update -v 3
 vc-build Update -edge
 ```
 ---
+## ShowDiff
+Shows the differences between current and target versions of the platform and modules. This target is automatically triggered before the Update target and requires user confirmation to proceed.
+
+### Parameters
+- `-Edge`: Show differences for the latest available versions instead of stable bundle
+- `-v`: Specify bundle name (default is "latest")
+
+### Usage
+```console
+vc-build ShowDiff
+vc-build ShowDiff -v 3
+vc-build ShowDiff -edge
+```
+---
 ## InstallModules
 Installs modules according to `vc-package.json` and solves dependencies.
 
