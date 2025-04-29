@@ -395,7 +395,29 @@ namespace VirtoCommerce.Build
                  var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubReleases.ModuleSources);
                  var moduleInstaller = await ModuleInstallerFacade.GetModuleInstaller(discoveryPath, ProbingPath, GitHubToken, githubReleases.ModuleSources);
                  var modulesToInstall = new List<ManifestModuleInfo>();
-                 var alreadyInstalledModules = localModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.IsInstalled).ToList();
+                 var alreadyInstalledModules = localModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.IsInstalled || IsNonVirtoModuleInstalled(m, (MixedPackageManifest)packageManifest)).ToList();
+
+                 // Remove modules that are no longer in the manifest
+                 var modulesToRemove = alreadyInstalledModules
+                     .Where(m => !githubReleases.Modules.Exists(module =>
+                         module.Id.EqualsInvariant(m.ModuleName) ||
+                         module.Id.EqualsInvariant(m.Id)) &&
+                         !localModuleCatalog.IsModuleSymlinked(m.ModuleName) &&
+                         !IsNonVirtoModuleInstalled(m, (MixedPackageManifest)packageManifest))
+                     .ToList();
+
+                 foreach (var moduleToRemove in modulesToRemove)
+                 {
+                     Log.Information($"Removing module {moduleToRemove.ModuleName} as it's no longer in the manifest");
+                     var moduleToDelete = ((LocalCatalog)localModuleCatalog).Items.OfType<ManifestModuleInfo>().FirstOrDefault(m =>
+                         m.ModuleName.EqualsInvariant(moduleToRemove.ModuleName) ||
+                         m.Id.EqualsInvariant(moduleToRemove.ModuleName));
+                     var modulePath = moduleToDelete?.FullPhysicalPath;
+                     if (Directory.Exists(modulePath))
+                     {
+                         Directory.Delete(modulePath, true);
+                     }
+                 }
 
                  foreach (var module in githubReleases.Modules)
                  {
@@ -453,6 +475,64 @@ namespace VirtoCommerce.Build
                  CleanZipArtifacts(discoveryPath);
                  localModuleCatalog.Reload();
              });
+
+        private bool IsNonVirtoModuleInstalled(ManifestModuleInfo module, MixedPackageManifest manifest)
+        {
+            var moduleDirectoryName = Path.GetFileName(module.FullPhysicalPath);
+            foreach (var source in manifest.Sources)
+            {
+                if(source is GithubReleases)
+                {
+                    continue;
+                }
+
+                switch (source)
+                {
+                    case AzureBlob azureBlob:
+                        if (CheckModules(azureBlob.Modules, m => m.BlobName.Replace(".zip", ""), moduleDirectoryName))
+                        {
+                            return true;
+                        }
+                        break;
+                    case AzurePipelineArtifacts azurePipeline:
+                        if (CheckModules(azurePipeline.Modules, m => m.Id, moduleDirectoryName))
+                        {
+                            return true;
+                        }
+                        break;
+                    case AzureUniversalPackages azureUniversal:
+                        if (CheckModules(azureUniversal.Modules, m => m.Id, moduleDirectoryName))
+                        {
+                            return true;
+                        }
+                        break;
+                    case GithubPrivateRepos githubPrivate:
+                        if (CheckModules(githubPrivate.Modules, m => m.Id, moduleDirectoryName))
+                        {
+                            return true;
+                        }
+                        break;
+                    case GitlabJobArtifacts gitlabJob:
+                        if (CheckModules(gitlabJob.Modules, m => m.Id, moduleDirectoryName))
+                        {
+                            return true;
+                        }
+                        break;
+                    case Local local:
+                        if (CheckModules(local.Modules, m => string.IsNullOrWhiteSpace(m.Id) ? Path.GetFileName(m.Path) : m.Id, moduleDirectoryName))
+                        {
+                            return true;
+                        }
+                        break;
+                }
+            }
+            return false;
+        }
+
+        private static bool CheckModules<T>(IEnumerable<T> modules, Func<T, string> nameSelector, string moduleDirectoryName)
+        {
+            return modules.Any(m => nameSelector(m) == moduleDirectoryName);
+        }
 
         private Progress<ProgressMessage> PlatformProgressHandler()
         {
