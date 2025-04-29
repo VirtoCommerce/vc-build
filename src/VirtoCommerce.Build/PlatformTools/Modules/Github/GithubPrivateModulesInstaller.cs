@@ -1,13 +1,11 @@
 using System;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Extensions;
 using Nuke.Common.IO;
 using Octokit;
-using PlatformTools.Modules;
 using VirtoCommerce.Platform.Core.Modularity;
 
 namespace PlatformTools.Modules.Github
