@@ -913,7 +913,6 @@ namespace VirtoCommerce.Build
 
             Log.Information("\n=== Module Version Differences ===");
             ShowExistingModuleDiffs(manifestGithubModules, bundleGithubModules);
-            ShowNewModuleDiffs(manifestGithubModules, bundleGithubModules);
         }
 
         private static void ShowExistingModuleDiffs(List<ModuleItem> manifestModules, List<ModuleItem> bundleModules)
@@ -935,24 +934,14 @@ namespace VirtoCommerce.Build
             }
         }
 
-        private static void ShowNewModuleDiffs(List<ModuleItem> manifestModules, List<ModuleItem> bundleModules)
-        {
-            foreach (var bundleModule in bundleModules)
-            {
-                if (!manifestModules.Exists(m => m.Id == bundleModule.Id))
-                {
-                    Log.Information($"{bundleModule.Id}: (not in manifest) -> {bundleModule.Version}");
-                }
-            }
-        }
-
         private static Task ConfirmUpdate()
         {
             Log.Information("\nDo you want to proceed with the update? (y/n)");
             var response = Console.ReadLine()?.ToLower();
             if (response != "y")
             {
-                Assert.Fail("Update cancelled by user");
+                Log.Information("Update cancelled by user");
+                Environment.Exit(0);
             }
 
             return Task.CompletedTask;
