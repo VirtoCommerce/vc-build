@@ -429,6 +429,20 @@ namespace VirtoCommerce.Build
                  localModuleCatalog.Reload();
              });
 
+        public Target ValidateDependencies => _ => _
+             .OnlyWhenDynamic(() => !PlatformParameter)
+             .Executes(async () =>
+             {
+                 var packageManifest = PackageManager.FromFile(PackageManifestPath);
+                 var githubReleases = PackageManager.GetGithubModulesSource(packageManifest);
+                 var discoveryPath = GetDiscoveryPath();
+                 var localModuleCatalog = (LocalCatalog)LocalModuleCatalog.GetCatalog(discoveryPath, ProbingPath);
+                 var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubReleases.ModuleSources);
+                 var modulesToInstall = new List<ManifestModuleInfo>();
+                 var alreadyInstalledModules = localModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.IsInstalled).ToList();
+                 localModuleCatalog.Validate();
+             });
+
         private static void SolveDependenciesIfRequested(Platform.Modules.ExternalModuleCatalog externalModuleCatalog, List<ManifestModuleInfo> modulesToInstall, List<ManifestModuleInfo> alreadyInstalledModules)
         {
             if (!SkipDependencySolving && Edge)
