@@ -113,7 +113,7 @@ namespace VirtoCommerce.Build
              });
 
         public Target Install => _ => _
-             .Triggers(InstallPlatform, InstallModules)
+             .Triggers(InstallPlatform, InstallModules, ValidateDependencies)
              .DependsOn(Backup)
              .Executes(async () =>
              {
@@ -430,7 +430,9 @@ namespace VirtoCommerce.Build
              });
 
         public Target ValidateDependencies => _ => _
-             .OnlyWhenDynamic(() => !PlatformParameter)
+             .OnlyWhenDynamic(() => !PlatformParameter && IsNotServerBuild)
+             .After(Backup, Update, Install, InstallPlatform, InstallModules)
+             .Before(Rollback)
              .Executes(async () =>
              {
                  var packageManifest = PackageManager.FromFile(PackageManifestPath);
@@ -440,8 +442,26 @@ namespace VirtoCommerce.Build
                  var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubReleases.ModuleSources);
                  var modulesToInstall = new List<ManifestModuleInfo>();
                  var alreadyInstalledModules = localModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.IsInstalled).ToList();
-                 localModuleCatalog.Validate();
+                 if (!localModuleCatalog.IsDependenciesValid() && SucceededTargets.Contains(Backup))
+                 {
+                     ProceedWithErrorsOrFail();
+                 }
              });
+
+        private static void ProceedWithErrorsOrFail()
+        {
+            Log.Information("Do you want to proceed with the errors or perform a rollback? ((p)roceed/(r)ollback): ");
+
+            var response = Console.ReadLine()?.ToLower();
+            if (response == "r")
+            {
+                Assert.Fail("Dependencies are not valid. Rollback is requested.");
+            }
+            else if (response == "p")
+            {
+                Log.Warning("Proceeding with errors. This may lead to unexpected behavior.");
+            }
+        }
 
         private static void SolveDependenciesIfRequested(Platform.Modules.ExternalModuleCatalog externalModuleCatalog, List<ManifestModuleInfo> modulesToInstall, List<ManifestModuleInfo> alreadyInstalledModules)
         {
@@ -640,7 +660,7 @@ namespace VirtoCommerce.Build
              });
 
         public Target Update => _ => _
-             .Triggers(InstallPlatform, InstallModules)
+             .Triggers(InstallPlatform, InstallModules, ValidateDependencies)
              .DependsOn(Backup, ShowDiff)
              .Executes(async () =>
              {
