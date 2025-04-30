@@ -439,9 +439,7 @@ namespace VirtoCommerce.Build
                  var githubReleases = PackageManager.GetGithubModulesSource(packageManifest);
                  var discoveryPath = GetDiscoveryPath();
                  var localModuleCatalog = (LocalCatalog)LocalModuleCatalog.GetCatalog(discoveryPath, ProbingPath);
-                 var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubReleases.ModuleSources);
-                 var modulesToInstall = new List<ManifestModuleInfo>();
-                 var alreadyInstalledModules = localModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.IsInstalled).ToList();
+                 await ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubReleases.ModuleSources);
                  if (!localModuleCatalog.IsDependenciesValid() && SucceededTargets.Contains(Backup))
                  {
                      ProceedWithErrorsOrFail();
