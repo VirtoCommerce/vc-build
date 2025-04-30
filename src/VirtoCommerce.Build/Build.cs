@@ -527,7 +527,8 @@ internal partial class Build : NukeBuild
 
             if (string.Compare(response, "y", true, CultureInfo.InvariantCulture) != 0)
             {
-                Assert.Fail("Aborted");
+                Log.Information("Aborted");
+                Environment.Exit(0);
             }
         }
     }

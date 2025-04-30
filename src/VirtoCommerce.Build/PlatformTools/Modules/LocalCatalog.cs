@@ -217,5 +217,27 @@ namespace PlatformTools.Modules
                 }
             }
         }
+
+        public bool IsDependenciesValid()
+        {
+            Validate();
+            ValidateDependencyGraph();
+            var modulesErrors = Modules.OfType<ManifestModuleInfo>().Where(m => m.Errors.Count > 0).ToList();
+            foreach (var module in modulesErrors)
+            {
+                foreach (var error in module.Errors)
+                {
+                    Serilog.Log.Error("{moduleId}: {error}", module.Id, error);
+                }
+            }
+
+            if(modulesErrors.Count > 0)
+            {
+                Serilog.Log.Error("Module validation failed. See the logs for more details.");
+                return false;
+            }
+
+            return true;
+        }
     }
 }

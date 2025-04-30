@@ -113,7 +113,7 @@ namespace VirtoCommerce.Build
              });
 
         public Target Install => _ => _
-             .Triggers(InstallPlatform, InstallModules)
+             .Triggers(InstallPlatform, InstallModules, ValidateDependencies)
              .DependsOn(Backup)
              .Executes(async () =>
              {
@@ -429,6 +429,38 @@ namespace VirtoCommerce.Build
                  localModuleCatalog.Reload();
              });
 
+        public Target ValidateDependencies => _ => _
+             .OnlyWhenDynamic(() => !PlatformParameter && IsNotServerBuild)
+             .After(Backup, Update, Install, InstallPlatform, InstallModules)
+             .Before(Rollback)
+             .Executes(async () =>
+             {
+                 var packageManifest = PackageManager.FromFile(PackageManifestPath);
+                 var githubReleases = PackageManager.GetGithubModulesSource(packageManifest);
+                 var discoveryPath = GetDiscoveryPath();
+                 var localModuleCatalog = (LocalCatalog)LocalModuleCatalog.GetCatalog(discoveryPath, ProbingPath);
+                 await ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubReleases.ModuleSources);
+                 if (!localModuleCatalog.IsDependenciesValid() && SucceededTargets.Contains(Backup))
+                 {
+                     ProceedWithErrorsOrFail();
+                 }
+             });
+
+        private static void ProceedWithErrorsOrFail()
+        {
+            Log.Information("Do you want to proceed with the errors or perform a rollback? ((p)roceed/(r)ollback): ");
+
+            var response = Console.ReadLine()?.ToLower();
+            if (response == "r")
+            {
+                Assert.Fail("Dependencies are not valid. Rollback is requested.");
+            }
+            else if (response == "p")
+            {
+                Log.Warning("Proceeding with errors. This may lead to unexpected behavior.");
+            }
+        }
+
         private static void SolveDependenciesIfRequested(Platform.Modules.ExternalModuleCatalog externalModuleCatalog, List<ManifestModuleInfo> modulesToInstall, List<ManifestModuleInfo> alreadyInstalledModules)
         {
             if (!SkipDependencySolving && Edge)
@@ -626,7 +658,7 @@ namespace VirtoCommerce.Build
              });
 
         public Target Update => _ => _
-             .Triggers(InstallPlatform, InstallModules)
+             .Triggers(InstallPlatform, InstallModules, ValidateDependencies)
              .DependsOn(Backup, ShowDiff)
              .Executes(async () =>
              {
@@ -913,7 +945,6 @@ namespace VirtoCommerce.Build
 
             Log.Information("\n=== Module Version Differences ===");
             ShowExistingModuleDiffs(manifestGithubModules, bundleGithubModules);
-            ShowNewModuleDiffs(manifestGithubModules, bundleGithubModules);
         }
 
         private static void ShowExistingModuleDiffs(List<ModuleItem> manifestModules, List<ModuleItem> bundleModules)
@@ -935,24 +966,14 @@ namespace VirtoCommerce.Build
             }
         }
 
-        private static void ShowNewModuleDiffs(List<ModuleItem> manifestModules, List<ModuleItem> bundleModules)
-        {
-            foreach (var bundleModule in bundleModules)
-            {
-                if (!manifestModules.Exists(m => m.Id == bundleModule.Id))
-                {
-                    Log.Information($"{bundleModule.Id}: (not in manifest) -> {bundleModule.Version}");
-                }
-            }
-        }
-
         private static Task ConfirmUpdate()
         {
             Log.Information("\nDo you want to proceed with the update? (y/n)");
             var response = Console.ReadLine()?.ToLower();
             if (response != "y")
             {
-                Assert.Fail("Update cancelled by user");
+                Log.Information("Update cancelled by user");
+                Environment.Exit(0);
             }
 
             return Task.CompletedTask;
