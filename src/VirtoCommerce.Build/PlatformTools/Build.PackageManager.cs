@@ -232,14 +232,12 @@ namespace VirtoCommerce.Build
                 return IsPlatformInstallationNeeded(manifest.PlatformVersion);
             }
         }
-
-        private static bool IsNotServerBuild => !IsServerBuild;
         private static bool ThereAreFilesToBackup => Directory.EnumerateFileSystemEntries(CurrentDirectory).Any(p => !p.Contains(".nuke"));
 
         public Target Backup => _ => _
             .Triggers(Rollback, RemoveBackup)
             .Before(Install, Update, InstallPlatform, InstallModules)
-            .OnlyWhenDynamic(() => IsNotServerBuild && ThereAreFilesToBackup)
+            .OnlyWhenDynamic(() => IsLocalBuild && ThereAreFilesToBackup)
             .ProceedAfterFailure()
             .Executes(() =>
             {
@@ -430,7 +428,7 @@ namespace VirtoCommerce.Build
              });
 
         public Target ValidateDependencies => _ => _
-             .OnlyWhenDynamic(() => !PlatformParameter && IsNotServerBuild)
+             .OnlyWhenDynamic(() => !PlatformParameter && IsLocalBuild)
              .After(Backup, Update, Install, InstallPlatform, InstallModules)
              .Before(Rollback)
              .Executes(async () =>
@@ -863,7 +861,7 @@ namespace VirtoCommerce.Build
 
         public Target ShowDiff => _ => _
              .Before(Update)
-             .OnlyWhenDynamic(() => IsNotServerBuild)
+             .OnlyWhenDynamic(() => IsLocalBuild)
              .Executes(async () =>
              {
                  var manifest = PackageManager.FromFile(PackageManifestPath);
