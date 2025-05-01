@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Automatic uninstallation of modules that are removed from package manifest
 - ShowDiff target (#162)
+- ValidateDependencies Target
 ### Bug fixes
 - Fix for the version incrementing
 

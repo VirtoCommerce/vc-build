@@ -68,6 +68,15 @@ vc-build InstallModules
 vc-build InstallModules -DiscoveryPath ../modules
 ```
 ---
+## ValidateDependencies
+Validates module dependencies against the installed platform version and other modules. Checks for version conflicts and missing dependencies. This target is automatically triggered by the Install and Update targets.
+
+### Usage
+```console
+vc-build ValidateDependencies
+vc-build ValidateDependencies -DiscoveryPath ../modules
+```
+---
 ## InstallPlatform
 Installs the platform according to `vc-package.json`.
 
