@@ -522,12 +522,13 @@ internal partial class Build : NukeBuild
 
         if (disableApproval.IsNullOrEmpty() && !Force)
         {
-            Console.Write($"Are you sure you want to hotfix {GitRepository.Identifier}? (y/N): ");
+            Console.Write($"Are you sure you want to release {GitRepository.Identifier}? (y/N): ");
             var response = Console.ReadLine();
 
             if (string.Compare(response, "y", true, CultureInfo.InvariantCulture) != 0)
             {
-                Assert.Fail("Aborted");
+                Log.Information("Aborted");
+                Environment.Exit(0);
             }
         }
     }
@@ -1165,7 +1166,7 @@ internal partial class Build : NukeBuild
     public void IncrementVersionMinor()
     {
         var version = new Version(VersionPrefix);
-        var newPrefix = $"{version.Major}.{version.Minor + 1}.{version.Build}";
+        var newPrefix = $"{version.Major}.{version.Minor + 1}.0";
         CustomVersionPrefix = newPrefix;
     }
 

@@ -32,13 +32,31 @@ vc-build install -PackageManifestPath some_directory/vc-package.json -DiscoveryP
 ```
 ---
 ## Update
-Updates platform and modules to the latest stable bundle or specified versions.
+Updates platform and modules to the latest stable bundle or specified versions. Before proceeding with the update, it shows a diff of version changes and asks for user confirmation.
+
+### Parameters
+- `-Edge`: Update to the latest available versions instead of stable bundle
+- `-v`: Specify bundle name (default is "latest")
 
 ### Usage
 ```console
 vc-build Update
 vc-build Update -v 3
 vc-build Update -edge
+```
+---
+## ShowDiff
+Shows the differences between current and target versions of the platform and modules. This target is automatically triggered before the Update target and requires user confirmation to proceed.
+
+### Parameters
+- `-Edge`: Show differences for the latest available versions instead of stable bundle
+- `-v`: Specify bundle name (default is "latest")
+
+### Usage
+```console
+vc-build ShowDiff
+vc-build ShowDiff -v 3
+vc-build ShowDiff -edge
 ```
 ---
 ## InstallModules
@@ -48,6 +66,15 @@ Installs modules according to `vc-package.json` and solves dependencies.
 ```console
 vc-build InstallModules
 vc-build InstallModules -DiscoveryPath ../modules
+```
+---
+## ValidateDependencies
+Validates module dependencies against the installed platform version and other modules. Checks for version conflicts and missing dependencies. This target is automatically triggered by the Install and Update targets.
+
+### Usage
+```console
+vc-build ValidateDependencies
+vc-build ValidateDependencies -DiscoveryPath ../modules
 ```
 ---
 ## InstallPlatform

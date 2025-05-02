@@ -3,6 +3,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [3.811.0] - 2025-04-29
+### Added
+- Automatic uninstallation of modules that are removed from package manifest
+- ShowDiff target (#162)
+- ValidateDependencies Target
+### Bug fixes
+- Fix for the version incrementing
+
 ## [3.800.0] - 2024-04-15
 ### Features
 - Updated to Net 8.
@@ -91,6 +99,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rollback if modules installation failed
 ### Fixed
 - CSC warning CS8785: Generator 'RazorSourceGenerator' failed to generate source.
+
+## [3.9.0] - 2022-11-15
+### Added
+- Support for custom module installation paths
+### Fixed
+- Module version resolution in complex dependency trees
+
+## [3.8.0] - 2022-10-20
+### Added
+- Enhanced logging for module installation process
+### Changed
+- Improved error handling in module installation
+
+## [3.7.0] - 2022-09-15
+### Added
+- Support for module-specific configuration
+### Fixed
+- Module dependency resolution issues
+
+## [3.6.0] - 2022-08-10
+### Added
+- New module validation checks
+### Changed
+- Updated module installation process
 
 ## [3.5.0] - 2022-07-21
 ### Added
@@ -227,17 +259,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated Nuke.Common dependency
 - github-release tool replaced by Octokit
 
+## [1.4.18] - 2020-12-15
+### Added
+- Enhanced error reporting for module installation
+### Fixed
+- Module version compatibility checks
+
+## [1.4.17] - 2020-12-01
+### Added
+- Support for module-specific environment variables
+### Changed
+- Improved module installation performance
+
 ## [1.4.16] - 2020-10-12
 ### Added
 - Targets: GetManifestGit, UpdateManifest, PublishManifestGit
-
-## [1.4.15] - 2020-10-06
-### Added
-- PushChanges parameter
-- ModulesJsonRepoUrl parameter
-### Fixed
-- Search of WebProject
-- Git Log filter
 
 ## [1.4.7] - 2020-09-17
 ### Added
@@ -245,6 +281,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Default value for SwaggerValidatorUri
 - Parameters for Sonar PullRequests Decoration
+
+## [1.4.6] - 2020-09-15
+### Added
+- Module installation progress indicators
+### Fixed
+- Module dependency resolution
+
+## [1.4.5] - 2020-09-10
+### Added
+- Support for module-specific build configurations
+### Changed
+- Updated module installation process
+
+## [1.4.4] - 2020-09-08
+### Added
+- Enhanced module validation
+### Fixed
+- Module installation error handling
 
 ## [1.4.3] - 2020-09-07
 ### Added
