@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using Nuke.Common;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.Docker;
@@ -44,7 +43,7 @@ namespace VirtoCommerce.Build
                 }
 
                 var result = new List<string>();
-                foreach(var tag in DockerImageTag)
+                foreach (var tag in DockerImageTag)
                 {
                     result.Add(DockerImageName.Append($":{tag}"));
                 }
@@ -84,7 +83,7 @@ namespace VirtoCommerce.Build
         .Executes(() =>
         {
             DockerImagePushSettings settings;
-            if(DockerImageTag?.Length > 1)
+            if (DockerImageTag?.Length > 1)
             {
                 settings = new DockerImagePushSettings()
                     .SetName(DockerImageName)
@@ -95,7 +94,7 @@ namespace VirtoCommerce.Build
                 settings = new DockerImagePushSettings()
                     .SetName(DockerImageFullName[0]);
             }
-                
+
             DockerTasks.DockerImagePush(settings);
 
         });

@@ -11,7 +11,7 @@
     <ToolCommandName>vc-build</ToolCommandName>
     <PackageOutputPath>./artifacts</PackageOutputPath>
     <Title>VirtoCommerce build CLI</Title>
-    <Description>Cross-platform  build automation system for VirtoCommerce projects</Description>
+    <Description>Cross-platform build automation system for VirtoCommerce projects</Description>
     <NeutralLanguage>en-US</NeutralLanguage>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <StartupObject>VirtoCommerce.Build.Build</StartupObject>
@@ -49,7 +49,7 @@
       <ExcludeAssets>all</ExcludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Build.Locator" Version="1.7.8" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.5" />
   </ItemGroup>
 
   <ItemGroup>

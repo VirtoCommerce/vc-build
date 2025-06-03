@@ -12,7 +12,6 @@ using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
-using Nuke.Common.Tools.Docker;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Utilities.Collections;
 using Serilog;
@@ -30,6 +29,7 @@ internal partial class Build
     public string ArgoConfigFile { get; set; }
 
     [Parameter("Path to the manifest of environment")] public string Manifest { get; set; }
+    [Parameter("Routes file for the environment")] public string RoutesFile { get; set; }
 
     [Parameter("Array of Helm parameters")]
     public HelmParameter[] HelmParameters { get; set; }
@@ -154,7 +154,12 @@ internal partial class Build
         {
             var cloudClient = new VirtoCloudClient(CloudUrl, await GetCloudTokenAsync());
             var rawYaml = await File.ReadAllTextAsync(string.IsNullOrWhiteSpace(Manifest) ? ArgoConfigFile : Manifest);
-            await cloudClient.UpdateEnvironmentAsync(rawYaml, AppProject);
+            string routesFileContent = null;
+            if (!string.IsNullOrWhiteSpace(RoutesFile))
+            {
+                routesFileContent = await File.ReadAllTextAsync(RoutesFile);
+            }
+            await cloudClient.UpdateEnvironmentAsync(rawYaml, AppProject, routesFileContent);
         });
 
     private static bool CheckAppServiceStatus(string expected, string actual)

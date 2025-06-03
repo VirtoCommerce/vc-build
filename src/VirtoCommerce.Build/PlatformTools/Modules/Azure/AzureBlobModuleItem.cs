@@ -1,5 +1,3 @@
-using PlatformTools.Modules;
-
 namespace PlatformTools.Modules.Azure
 {
     internal class AzureBlobModuleItem : ModuleItem

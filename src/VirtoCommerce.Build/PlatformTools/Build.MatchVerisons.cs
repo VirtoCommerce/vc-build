@@ -7,7 +7,6 @@ using Nuke.Common.ProjectModel;
 using Nuke.Common.Utilities;
 using PlatformTools;
 using VirtoCommerce.Platform.Core.Common;
-using VirtoCommerce.Platform.Core.Modularity;
 
 namespace VirtoCommerce.Build
 {

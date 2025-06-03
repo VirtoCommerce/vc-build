@@ -8,8 +8,6 @@
  */
 
 
-using System;
-
 namespace VirtoCloud.Client.Client
 {
     /// <summary>

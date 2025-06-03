@@ -9,20 +9,10 @@
 
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.IO;
+using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
 using System.Text;
-using System.Text.RegularExpressions;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Linq;
-using System.ComponentModel.DataAnnotations;
-using FileParameter = VirtoCloud.Client.Client.FileParameter;
-using OpenAPIDateConverter = VirtoCloud.Client.Client.OpenAPIDateConverter;
 
 namespace VirtoCloud.Client.Model
 {
@@ -99,12 +89,12 @@ namespace VirtoCloud.Client.Model
             {
                 return false;
             }
-            return 
+            return
                 (
                     this.AppProject == input.AppProject ||
                     (this.AppProject != null &&
                     this.AppProject.Equals(input.AppProject))
-                ) && 
+                ) &&
                 (
                     this.Name == input.Name ||
                     (this.Name != null &&

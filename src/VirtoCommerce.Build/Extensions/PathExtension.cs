@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Nuke.Common.IO;
 using System.IO;
+using Nuke.Common.IO;
 
 namespace Extensions
 {
@@ -12,7 +7,7 @@ namespace Extensions
     {
         public static AbsolutePath ToAbsolutePath(this string path)
         {
-            if(path == null)
+            if (path == null)
             {
                 return null;
             }
