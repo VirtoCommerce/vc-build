@@ -1,4 +1,3 @@
-using System.Linq;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
@@ -12,7 +11,8 @@ namespace VirtoCommerce.Build
 
         public Target CompressWithCustomApp => _ => _
             .DependsOn(Clean, WebPackBuild, BuildCustomApp, Test, Publish)
-            .Executes(() => {
+            .Executes(() =>
+            {
                 Log.Warning("{target} is deprecated. Use {actualTarget} instead.", nameof(CompressWithCustomApp), nameof(Compress));
                 CompressExecuteMethod();
             });

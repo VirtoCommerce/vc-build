@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using PlatformTools.Modules;
 
 namespace PlatformTools.Modules.Gitlab;
 

@@ -14,11 +14,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Net.Http;
 using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 
 namespace VirtoCloud.Client.Client
 {
@@ -183,7 +180,7 @@ namespace VirtoCloud.Client.Client
         /// <summary>
         /// Gets or sets the base path for API access.
         /// </summary>
-        public virtual string BasePath 
+        public virtual string BasePath
         {
             get { return _basePath; }
             set { _basePath = value; }
@@ -521,7 +518,7 @@ namespace VirtoCloud.Client.Client
 
             return url;
         }
-        
+
         /// <summary>
         /// Gets and Sets the RemoteCertificateValidationCallback
         /// </summary>
@@ -538,7 +535,7 @@ namespace VirtoCloud.Client.Client
         {
             string report = "C# SDK (VirtoCloud.Client) Debug Report:\n";
             report += "    OS: " + System.Environment.OSVersion + "\n";
-            report += "    .NET Framework Version: " + System.Environment.Version  + "\n";
+            report += "    .NET Framework Version: " + System.Environment.Version + "\n";
             report += "    Version of the API: v1\n";
             report += "    SDK Package Version: 1.0.0\n";
 
@@ -577,15 +574,19 @@ namespace VirtoCloud.Client.Client
         /// <return>Merged configuration.</return>
         public static IReadableConfiguration MergeConfigurations(IReadableConfiguration first, IReadableConfiguration second)
         {
-            if (second == null) return first ?? GlobalConfiguration.Instance;
+            if (second == null)
+                return first ?? GlobalConfiguration.Instance;
 
             Dictionary<string, string> apiKey = first.ApiKey.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
             Dictionary<string, string> apiKeyPrefix = first.ApiKeyPrefix.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
             Dictionary<string, string> defaultHeaders = first.DefaultHeaders.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
-            foreach (var kvp in second.ApiKey) apiKey[kvp.Key] = kvp.Value;
-            foreach (var kvp in second.ApiKeyPrefix) apiKeyPrefix[kvp.Key] = kvp.Value;
-            foreach (var kvp in second.DefaultHeaders) defaultHeaders[kvp.Key] = kvp.Value;
+            foreach (var kvp in second.ApiKey)
+                apiKey[kvp.Key] = kvp.Value;
+            foreach (var kvp in second.ApiKeyPrefix)
+                apiKeyPrefix[kvp.Key] = kvp.Value;
+            foreach (var kvp in second.DefaultHeaders)
+                defaultHeaders[kvp.Key] = kvp.Value;
 
             var config = new Configuration
             {

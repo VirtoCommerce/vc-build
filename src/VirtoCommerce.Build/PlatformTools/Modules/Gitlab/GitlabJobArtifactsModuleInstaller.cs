@@ -3,7 +3,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
 using Nuke.Common.IO;
-using PlatformTools.Modules;
 using VirtoCommerce.Platform.Core.Modularity;
 
 namespace PlatformTools.Modules.Gitlab;
