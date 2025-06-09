@@ -1,5 +1,3 @@
-using PlatformTools.Modules;
-
 namespace PlatformTools.Modules.Gitlab;
 
 internal class GitlabJobArtifactsModuleItem : ModuleItem

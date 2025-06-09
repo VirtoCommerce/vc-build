@@ -10,11 +10,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Net;
 using System.Net.Http;
-using System.Net.Mime;
 using VirtoCloud.Client.Client;
 using VirtoCloud.Client.Model;
 
@@ -1451,7 +1447,7 @@ namespace VirtoCloud.Client.Api
                 new VirtoCloud.Client.Client.Configuration { BasePath = basePath }
             );
             this.ApiClient = new VirtoCloud.Client.Client.ApiClient(this.Configuration.BasePath);
-            this.Client =  this.ApiClient;
+            this.Client = this.ApiClient;
             this.AsynchronousClient = this.ApiClient;
             this.ExceptionFactory = VirtoCloud.Client.Client.Configuration.DefaultExceptionFactory;
         }
@@ -1466,7 +1462,8 @@ namespace VirtoCloud.Client.Api
         /// <returns></returns>
         public SaaSDeploymentApi(VirtoCloud.Client.Client.Configuration configuration)
         {
-            if (configuration == null) throw new ArgumentNullException("configuration");
+            if (configuration == null)
+                throw new ArgumentNullException("configuration");
 
             this.Configuration = VirtoCloud.Client.Client.Configuration.MergeConfigurations(
                 VirtoCloud.Client.Client.GlobalConfiguration.Instance,
@@ -1508,14 +1505,15 @@ namespace VirtoCloud.Client.Api
         /// </remarks>
         public SaaSDeploymentApi(HttpClient client, string basePath, HttpClientHandler handler = null)
         {
-            if (client == null) throw new ArgumentNullException("client");
+            if (client == null)
+                throw new ArgumentNullException("client");
 
             this.Configuration = VirtoCloud.Client.Client.Configuration.MergeConfigurations(
                 VirtoCloud.Client.Client.GlobalConfiguration.Instance,
                 new VirtoCloud.Client.Client.Configuration { BasePath = basePath }
             );
             this.ApiClient = new VirtoCloud.Client.Client.ApiClient(client, this.Configuration.BasePath, handler);
-            this.Client =  this.ApiClient;
+            this.Client = this.ApiClient;
             this.AsynchronousClient = this.ApiClient;
             this.ExceptionFactory = VirtoCloud.Client.Client.Configuration.DefaultExceptionFactory;
         }
@@ -1534,8 +1532,10 @@ namespace VirtoCloud.Client.Api
         /// </remarks>
         public SaaSDeploymentApi(HttpClient client, VirtoCloud.Client.Client.Configuration configuration, HttpClientHandler handler = null)
         {
-            if (configuration == null) throw new ArgumentNullException("configuration");
-            if (client == null) throw new ArgumentNullException("client");
+            if (configuration == null)
+                throw new ArgumentNullException("configuration");
+            if (client == null)
+                throw new ArgumentNullException("client");
 
             this.Configuration = VirtoCloud.Client.Client.Configuration.MergeConfigurations(
                 VirtoCloud.Client.Client.GlobalConfiguration.Instance,
@@ -1557,9 +1557,12 @@ namespace VirtoCloud.Client.Api
         /// <exception cref="ArgumentNullException"></exception>
         public SaaSDeploymentApi(VirtoCloud.Client.Client.ISynchronousClient client, VirtoCloud.Client.Client.IAsynchronousClient asyncClient, VirtoCloud.Client.Client.IReadableConfiguration configuration)
         {
-            if (client == null) throw new ArgumentNullException("client");
-            if (asyncClient == null) throw new ArgumentNullException("asyncClient");
-            if (configuration == null) throw new ArgumentNullException("configuration");
+            if (client == null)
+                throw new ArgumentNullException("client");
+            if (asyncClient == null)
+                throw new ArgumentNullException("asyncClient");
+            if (configuration == null)
+                throw new ArgumentNullException("configuration");
 
             this.Client = client;
             this.AsynchronousClient = asyncClient;
@@ -1653,10 +1656,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.Data = body;
 
@@ -1673,7 +1678,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("AppProjectsCreate", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -1704,8 +1710,8 @@ namespace VirtoCloud.Client.Api
             VirtoCloud.Client.Client.RequestOptions localVarRequestOptions = new VirtoCloud.Client.Client.RequestOptions();
 
             string[] _contentTypes = new string[] {
-                "application/json-patch+json", 
-                "application/json", 
+                "application/json-patch+json",
+                "application/json",
                 "text/json"
             };
 
@@ -1715,10 +1721,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.Data = body;
 
@@ -1736,7 +1744,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("AppProjectsCreate", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -1774,10 +1783,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.Data = body;
 
@@ -1794,7 +1805,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("AppProjectsDelete", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -1825,8 +1837,8 @@ namespace VirtoCloud.Client.Api
             VirtoCloud.Client.Client.RequestOptions localVarRequestOptions = new VirtoCloud.Client.Client.RequestOptions();
 
             string[] _contentTypes = new string[] {
-                "application/json-patch+json", 
-                "application/json", 
+                "application/json-patch+json",
+                "application/json",
                 "text/json"
             };
 
@@ -1836,10 +1848,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.Data = body;
 
@@ -1857,7 +1871,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("AppProjectsDelete", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -1890,10 +1905,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
             // authentication (oauth2) required
@@ -1909,7 +1926,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("AppProjectsGetOrganizationsList", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -1946,10 +1964,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
             // authentication (oauth2) required
@@ -1966,7 +1986,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("AppProjectsGetOrganizationsList", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -1999,10 +2020,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
             // authentication (oauth2) required
@@ -2018,7 +2041,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("AppProjectsList", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -2055,10 +2079,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
             // authentication (oauth2) required
@@ -2075,7 +2101,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("AppProjectsList", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -2113,10 +2140,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.Data = body;
 
@@ -2133,7 +2162,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("AppProjectsUpdate", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -2164,8 +2194,8 @@ namespace VirtoCloud.Client.Api
             VirtoCloud.Client.Client.RequestOptions localVarRequestOptions = new VirtoCloud.Client.Client.RequestOptions();
 
             string[] _contentTypes = new string[] {
-                "application/json-patch+json", 
-                "application/json", 
+                "application/json-patch+json",
+                "application/json",
                 "text/json"
             };
 
@@ -2175,10 +2205,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.Data = body;
 
@@ -2196,7 +2228,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("AppProjectsUpdate", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -2229,10 +2262,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
             // authentication (oauth2) required
@@ -2248,7 +2283,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("AppsKibana", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -2285,10 +2321,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
             // authentication (oauth2) required
@@ -2305,7 +2343,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("AppsKibana", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -2338,10 +2377,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
             // authentication (oauth2) required
@@ -2357,7 +2398,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("CacheClear", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -2394,10 +2436,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
             // authentication (oauth2) required
@@ -2414,7 +2458,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("CacheClear", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -2453,10 +2498,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.PathParameters.Add("path", VirtoCloud.Client.Client.ClientUtils.ParameterToString(path)); // path parameter
 
@@ -2467,7 +2514,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("DocsGetContent", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -2510,10 +2558,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.PathParameters.Add("path", VirtoCloud.Client.Client.ClientUtils.ParameterToString(path)); // path parameter
 
@@ -2525,7 +2575,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("DocsGetContent", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -2558,10 +2609,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
 
@@ -2571,7 +2624,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("DocsGetMenu", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -2608,10 +2662,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
 
@@ -2622,7 +2678,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("DocsGetMenu", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -2661,10 +2718,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.PathParameters.Add("appProject", VirtoCloud.Client.Client.ClientUtils.ParameterToString(appProject)); // path parameter
 
@@ -2681,7 +2740,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsCanCreate", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -2724,10 +2784,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.PathParameters.Add("appProject", VirtoCloud.Client.Client.ClientUtils.ParameterToString(appProject)); // path parameter
 
@@ -2745,7 +2807,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsCanCreate", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -2783,10 +2846,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.Data = cloudEnvironment;
 
@@ -2803,7 +2868,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsCanSave", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -2834,8 +2900,8 @@ namespace VirtoCloud.Client.Api
             VirtoCloud.Client.Client.RequestOptions localVarRequestOptions = new VirtoCloud.Client.Client.RequestOptions();
 
             string[] _contentTypes = new string[] {
-                "application/json-patch+json", 
-                "application/json", 
+                "application/json-patch+json",
+                "application/json",
                 "text/json"
             };
 
@@ -2845,10 +2911,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.Data = cloudEnvironment;
 
@@ -2866,7 +2934,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsCanSave", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -2904,10 +2973,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.Data = newEnvironmentModel;
 
@@ -2924,7 +2995,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsCreate", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -2955,8 +3027,8 @@ namespace VirtoCloud.Client.Api
             VirtoCloud.Client.Client.RequestOptions localVarRequestOptions = new VirtoCloud.Client.Client.RequestOptions();
 
             string[] _contentTypes = new string[] {
-                "application/json-patch+json", 
-                "application/json", 
+                "application/json-patch+json",
+                "application/json",
                 "text/json"
             };
 
@@ -2966,10 +3038,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.Data = newEnvironmentModel;
 
@@ -2987,7 +3061,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsCreate", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -3024,10 +3099,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             if (complexIds != null)
             {
@@ -3051,7 +3128,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsDelete", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -3092,10 +3170,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             if (complexIds != null)
             {
@@ -3120,7 +3200,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsDelete", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -3165,10 +3246,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.PathParameters.Add("appProject", VirtoCloud.Client.Client.ClientUtils.ParameterToString(appProject)); // path parameter
             localVarRequestOptions.PathParameters.Add("appName", VirtoCloud.Client.Client.ClientUtils.ParameterToString(appName)); // path parameter
@@ -3186,7 +3269,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsDownloadManifest", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -3235,10 +3319,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.PathParameters.Add("appProject", VirtoCloud.Client.Client.ClientUtils.ParameterToString(appProject)); // path parameter
             localVarRequestOptions.PathParameters.Add("appName", VirtoCloud.Client.Client.ClientUtils.ParameterToString(appName)); // path parameter
@@ -3257,7 +3343,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsDownloadManifest", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -3290,10 +3377,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
             // authentication (oauth2) required
@@ -3309,7 +3398,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsGetClusters", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -3346,10 +3436,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
             // authentication (oauth2) required
@@ -3366,7 +3458,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsGetClusters", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -3409,10 +3502,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.PathParameters.Add("envName", VirtoCloud.Client.Client.ClientUtils.ParameterToString(envName)); // path parameter
 
@@ -3429,7 +3524,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsGetEnvironment", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -3476,10 +3572,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.PathParameters.Add("envName", VirtoCloud.Client.Client.ClientUtils.ParameterToString(envName)); // path parameter
 
@@ -3497,7 +3595,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsGetEnvironment", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -3546,10 +3645,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.PathParameters.Add("organizationName", VirtoCloud.Client.Client.ClientUtils.ParameterToString(organizationName)); // path parameter
             localVarRequestOptions.PathParameters.Add("envName", VirtoCloud.Client.Client.ClientUtils.ParameterToString(envName)); // path parameter
@@ -3567,7 +3668,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsGetEnvironment_0", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -3620,10 +3722,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.PathParameters.Add("organizationName", VirtoCloud.Client.Client.ClientUtils.ParameterToString(organizationName)); // path parameter
             localVarRequestOptions.PathParameters.Add("envName", VirtoCloud.Client.Client.ClientUtils.ParameterToString(envName)); // path parameter
@@ -3642,7 +3746,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsGetEnvironment_0", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -3850,10 +3955,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             if (imageName != null)
             {
@@ -3873,7 +3980,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsGetImageTags", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -3912,10 +4020,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             if (imageName != null)
             {
@@ -3936,7 +4046,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsGetImageTags", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -3975,10 +4086,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.PathParameters.Add("appProjectName", VirtoCloud.Client.Client.ClientUtils.ParameterToString(appProjectName)); // path parameter
 
@@ -3995,7 +4108,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsGetImages", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -4038,10 +4152,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.PathParameters.Add("appProjectName", VirtoCloud.Client.Client.ClientUtils.ParameterToString(appProjectName)); // path parameter
 
@@ -4059,7 +4175,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsGetImages", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -4092,10 +4209,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
             // authentication (oauth2) required
@@ -4111,7 +4230,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsGetLimits", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -4148,10 +4268,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
             // authentication (oauth2) required
@@ -4168,7 +4290,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsGetLimits", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -4207,10 +4330,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.PathParameters.Add("name", VirtoCloud.Client.Client.ClientUtils.ParameterToString(name)); // path parameter
 
@@ -4227,7 +4352,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsGetServicePlan", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -4270,10 +4396,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.PathParameters.Add("name", VirtoCloud.Client.Client.ClientUtils.ParameterToString(name)); // path parameter
 
@@ -4291,7 +4419,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsGetServicePlan", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -4324,10 +4453,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
             // authentication (oauth2) required
@@ -4343,7 +4474,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsGetSummary", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -4380,10 +4512,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
             // authentication (oauth2) required
@@ -4400,7 +4534,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsGetSummary", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -4433,10 +4568,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
             // authentication (oauth2) required
@@ -4452,7 +4589,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsGetTier", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -4489,10 +4627,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
             // authentication (oauth2) required
@@ -4509,7 +4649,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsGetTier", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -4546,10 +4687,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
             // authentication (oauth2) required
@@ -4565,7 +4708,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsList", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -4606,10 +4750,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
             // authentication (oauth2) required
@@ -4626,7 +4772,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsList", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -4664,10 +4811,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.Data = cloudEnvironment;
 
@@ -4684,7 +4833,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsUpdate", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -4715,8 +4865,8 @@ namespace VirtoCloud.Client.Api
             VirtoCloud.Client.Client.RequestOptions localVarRequestOptions = new VirtoCloud.Client.Client.RequestOptions();
 
             string[] _contentTypes = new string[] {
-                "application/json-patch+json", 
-                "application/json", 
+                "application/json-patch+json",
+                "application/json",
                 "text/json"
             };
 
@@ -4726,10 +4876,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.Data = cloudEnvironment;
 
@@ -4747,7 +4899,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsUpdate", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -4785,10 +4938,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             if (manifest != null)
             {
@@ -4812,7 +4967,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsUpdate_0", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -4854,10 +5010,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             if (manifest != null)
             {
@@ -4882,7 +5040,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsUpdate_0", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -4920,10 +5079,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.Data = environmentNameValidationRequest;
 
@@ -4940,7 +5101,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsValidateName", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -4971,8 +5133,8 @@ namespace VirtoCloud.Client.Api
             VirtoCloud.Client.Client.RequestOptions localVarRequestOptions = new VirtoCloud.Client.Client.RequestOptions();
 
             string[] _contentTypes = new string[] {
-                "application/json-patch+json", 
-                "application/json", 
+                "application/json-patch+json",
+                "application/json",
                 "text/json"
             };
 
@@ -4982,10 +5144,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.Data = environmentNameValidationRequest;
 
@@ -5003,7 +5167,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("EnvironmentsValidateName", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -5041,10 +5206,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.Data = body;
 
@@ -5061,7 +5228,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("MetricsGetMetrics", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -5092,8 +5260,8 @@ namespace VirtoCloud.Client.Api
             VirtoCloud.Client.Client.RequestOptions localVarRequestOptions = new VirtoCloud.Client.Client.RequestOptions();
 
             string[] _contentTypes = new string[] {
-                "application/json-patch+json", 
-                "application/json", 
+                "application/json-patch+json",
+                "application/json",
                 "text/json"
             };
 
@@ -5103,10 +5271,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.Data = body;
 
@@ -5124,7 +5294,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("MetricsGetMetrics", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -5157,10 +5328,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
 
@@ -5170,7 +5343,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("RssGetNews", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -5207,10 +5381,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
 
@@ -5221,7 +5397,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("RssGetNews", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -5259,10 +5436,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.Data = body;
 
@@ -5273,7 +5452,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("SystemVersion", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -5304,8 +5484,8 @@ namespace VirtoCloud.Client.Api
             VirtoCloud.Client.Client.RequestOptions localVarRequestOptions = new VirtoCloud.Client.Client.RequestOptions();
 
             string[] _contentTypes = new string[] {
-                "application/json-patch+json", 
-                "application/json", 
+                "application/json-patch+json",
+                "application/json",
                 "text/json"
             };
 
@@ -5315,10 +5495,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.Data = body;
 
@@ -5330,7 +5512,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("SystemVersion", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -5363,10 +5546,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
             // authentication (oauth2) required
@@ -5382,7 +5567,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("TemplatesGetClusters", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -5419,10 +5605,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
             // authentication (oauth2) required
@@ -5439,7 +5627,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("TemplatesGetClusters", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -5478,10 +5667,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.PathParameters.Add("name", VirtoCloud.Client.Client.ClientUtils.ParameterToString(name)); // path parameter
 
@@ -5498,7 +5689,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("TemplatesGetServicePlan", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -5541,10 +5733,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
             localVarRequestOptions.PathParameters.Add("name", VirtoCloud.Client.Client.ClientUtils.ParameterToString(name)); // path parameter
 
@@ -5562,7 +5756,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("TemplatesGetServicePlan", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -5595,10 +5790,12 @@ namespace VirtoCloud.Client.Api
             };
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
             // authentication (oauth2) required
@@ -5614,7 +5811,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("TemplatesGetServicePlans", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;
@@ -5651,10 +5849,12 @@ namespace VirtoCloud.Client.Api
 
 
             var localVarContentType = VirtoCloud.Client.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+            if (localVarContentType != null)
+                localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
 
             var localVarAccept = VirtoCloud.Client.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+            if (localVarAccept != null)
+                localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
 
 
             // authentication (oauth2) required
@@ -5671,7 +5871,8 @@ namespace VirtoCloud.Client.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("TemplatesGetServicePlans", localVarResponse);
-                if (_exception != null) throw _exception;
+                if (_exception != null)
+                    throw _exception;
             }
 
             return localVarResponse;

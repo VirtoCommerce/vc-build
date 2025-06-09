@@ -4,9 +4,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Cloud.Models;
-using Newtonsoft.Json;
 using Nuke.Common;
-using Nuke.Common.IO;
 using Nuke.Common.Utilities;
 using VirtoCloud.Client.Model;
 
@@ -23,12 +21,13 @@ public class VirtoCloudClient
         _client.DefaultRequestHeaders.Add("api_key", token);
     }
 
-    public async Task<string> UpdateEnvironmentAsync(string manifest, string appProject)
+    public async Task<string> UpdateEnvironmentAsync(string manifest, string appProject, string routes = null)
     {
         var content = new Dictionary<string, string>
         {
             { "manifest", manifest },
-            { "appProject", appProject }
+            { "appProject", appProject },
+            { "routes", routes },
         };
         var response = await _client.SendAsync(new HttpRequestMessage
         {

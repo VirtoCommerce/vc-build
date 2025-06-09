@@ -8,25 +8,18 @@
  */
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Reflection;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters;
-using System.Text;
-using System.Threading;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Web;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Polly;
 
 namespace VirtoCloud.Client.Client
@@ -82,7 +75,7 @@ namespace VirtoCloud.Client.Client
 
         public async Task<T> Deserialize<T>(HttpResponseMessage response)
         {
-            var result = (T) await Deserialize(response, typeof(T)).ConfigureAwait(false);
+            var result = (T)await Deserialize(response, typeof(T)).ConfigureAwait(false);
             return result;
         }
 
@@ -212,7 +205,8 @@ namespace VirtoCloud.Client.Client
         /// <exception cref="ArgumentException"></exception>
         public ApiClient(string basePath)
         {
-            if (string.IsNullOrEmpty(basePath)) throw new ArgumentException("basePath cannot be empty");
+            if (string.IsNullOrEmpty(basePath))
+                throw new ArgumentException("basePath cannot be empty");
 
             _httpClientHandler = new HttpClientHandler();
             _httpClient = new HttpClient(_httpClientHandler, true);
@@ -249,8 +243,10 @@ namespace VirtoCloud.Client.Client
         /// </remarks>
         public ApiClient(HttpClient client, string basePath, HttpClientHandler handler = null)
         {
-            if (client == null) throw new ArgumentNullException("client cannot be null");
-            if (string.IsNullOrEmpty(basePath)) throw new ArgumentException("basePath cannot be empty");
+            if (client == null)
+                throw new ArgumentNullException("client cannot be null");
+            if (string.IsNullOrEmpty(basePath))
+                throw new ArgumentException("basePath cannot be empty");
 
             _httpClientHandler = handler;
             _httpClient = client;
@@ -262,7 +258,8 @@ namespace VirtoCloud.Client.Client
         /// </summary>
         public void Dispose()
         {
-            if(_disposeClient) {
+            if (_disposeClient)
+            {
                 _httpClient.Dispose();
             }
         }
@@ -310,9 +307,12 @@ namespace VirtoCloud.Client.Client
             RequestOptions options,
             IReadableConfiguration configuration)
         {
-            if (path == null) throw new ArgumentNullException("path");
-            if (options == null) throw new ArgumentNullException("options");
-            if (configuration == null) throw new ArgumentNullException("configuration");
+            if (path == null)
+                throw new ArgumentNullException("path");
+            if (options == null)
+                throw new ArgumentNullException("options");
+            if (configuration == null)
+                throw new ArgumentNullException("configuration");
 
             WebRequestPathBuilder builder = new WebRequestPathBuilder(_baseUrl, path);
 
@@ -399,7 +399,7 @@ namespace VirtoCloud.Client.Client
 
         private async Task<ApiResponse<T>> ToApiResponse<T>(HttpResponseMessage response, object responseData, Uri uri)
         {
-            T result = (T) responseData;
+            T result = (T)responseData;
             string rawContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
             var transformed = new ApiResponse<T>(response.StatusCode, new Multimap<string, string>(), result, rawContent)
@@ -428,13 +428,14 @@ namespace VirtoCloud.Client.Client
 
             if (_httpClientHandler != null && response != null)
             {
-                try {
+                try
+                {
                     foreach (Cookie cookie in _httpClientHandler.CookieContainer.GetCookies(uri))
                     {
                         transformed.Cookies.Add(cookie);
                     }
                 }
-                catch (PlatformNotSupportedException) {}
+                catch (PlatformNotSupportedException) { }
             }
 
             return transformed;
@@ -465,13 +466,15 @@ namespace VirtoCloud.Client.Client
 
                 if (configuration.Proxy != null)
                 {
-                    if(_httpClientHandler == null) throw new InvalidOperationException("Configuration `Proxy` not supported when the client is explicitly created without an HttpClientHandler, use the proper constructor.");
+                    if (_httpClientHandler == null)
+                        throw new InvalidOperationException("Configuration `Proxy` not supported when the client is explicitly created without an HttpClientHandler, use the proper constructor.");
                     _httpClientHandler.Proxy = configuration.Proxy;
                 }
 
                 if (configuration.ClientCertificates != null)
                 {
-                    if(_httpClientHandler == null) throw new InvalidOperationException("Configuration `ClientCertificates` not supported when the client is explicitly created without an HttpClientHandler, use the proper constructor.");
+                    if (_httpClientHandler == null)
+                        throw new InvalidOperationException("Configuration `ClientCertificates` not supported when the client is explicitly created without an HttpClientHandler, use the proper constructor.");
                     _httpClientHandler.ClientCertificates.AddRange(configuration.ClientCertificates);
                 }
 
@@ -479,7 +482,8 @@ namespace VirtoCloud.Client.Client
 
                 if (cookieContainer != null)
                 {
-                    if(_httpClientHandler == null) throw new InvalidOperationException("Request property `CookieContainer` not supported when the client is explicitly created without an HttpClientHandler, use the proper constructor.");
+                    if (_httpClientHandler == null)
+                        throw new InvalidOperationException("Request property `CookieContainer` not supported when the client is explicitly created without an HttpClientHandler, use the proper constructor.");
                     foreach (var cookie in cookieContainer)
                     {
                         _httpClientHandler.CookieContainer.Add(cookie);
@@ -517,11 +521,11 @@ namespace VirtoCloud.Client.Client
                 // if the response type is oneOf/anyOf, call FromJSON to deserialize the data
                 if (typeof(VirtoCloud.Client.Model.AbstractOpenAPISchema).IsAssignableFrom(typeof(T)))
                 {
-                    responseData = (T) typeof(T).GetMethod("FromJson").Invoke(null, new object[] { response.Content });
+                    responseData = (T)typeof(T).GetMethod("FromJson").Invoke(null, new object[] { response.Content });
                 }
                 else if (typeof(T).Name == "Stream") // for binary response
                 {
-                    responseData = (T) (object) await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                    responseData = (T)(object)await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
                 }
 
                 InterceptResponse(req, response);

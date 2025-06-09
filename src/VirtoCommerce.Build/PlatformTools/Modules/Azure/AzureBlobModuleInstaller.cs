@@ -3,7 +3,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
-using PlatformTools.Modules;
 using VirtoCommerce.Platform.Core.Modularity;
 using AzureBlobs = Azure.Storage.Blobs;
 

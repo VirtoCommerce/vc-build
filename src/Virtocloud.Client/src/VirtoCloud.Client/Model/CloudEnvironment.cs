@@ -9,20 +9,11 @@
 
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.IO;
 using System.Runtime.Serialization;
 using System.Text;
-using System.Text.RegularExpressions;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Linq;
-using System.ComponentModel.DataAnnotations;
-using FileParameter = VirtoCloud.Client.Client.FileParameter;
-using OpenAPIDateConverter = VirtoCloud.Client.Client.OpenAPIDateConverter;
 
 namespace VirtoCloud.Client.Model
 {
@@ -189,64 +180,64 @@ namespace VirtoCloud.Client.Model
             {
                 return false;
             }
-            return 
+            return
                 (
                     this.Labels == input.Labels ||
                     this.Labels != null &&
                     input.Labels != null &&
                     this.Labels.SequenceEqual(input.Labels)
-                ) && 
+                ) &&
                 (
                     this.AppProjectId == input.AppProjectId ||
                     (this.AppProjectId != null &&
                     this.AppProjectId.Equals(input.AppProjectId))
-                ) && 
+                ) &&
                 (
                     this.MetadataName == input.MetadataName ||
                     (this.MetadataName != null &&
                     this.MetadataName.Equals(input.MetadataName))
-                ) && 
+                ) &&
                 (
                     this.TenantId == input.TenantId ||
                     (this.TenantId != null &&
                     this.TenantId.Equals(input.TenantId))
-                ) && 
+                ) &&
                 (
                     this.Id == input.Id ||
                     (this.Id != null &&
                     this.Id.Equals(input.Id))
-                ) && 
+                ) &&
                 (
                     this.Name == input.Name ||
                     (this.Name != null &&
                     this.Name.Equals(input.Name))
-                ) && 
+                ) &&
                 (
                     this.Status == input.Status ||
                     (this.Status != null &&
                     this.Status.Equals(input.Status))
-                ) && 
+                ) &&
                 (
                     this.SyncStatus == input.SyncStatus ||
                     (this.SyncStatus != null &&
                     this.SyncStatus.Equals(input.SyncStatus))
-                ) && 
+                ) &&
                 (
                     this.Created == input.Created ||
                     (this.Created != null &&
                     this.Created.Equals(input.Created))
-                ) && 
+                ) &&
                 (
                     this.Updated == input.Updated ||
                     (this.Updated != null &&
                     this.Updated.Equals(input.Updated))
-                ) && 
+                ) &&
                 (
                     this.Urls == input.Urls ||
                     this.Urls != null &&
                     input.Urls != null &&
                     this.Urls.SequenceEqual(input.Urls)
-                ) && 
+                ) &&
                 (
                     this.Helm == input.Helm ||
                     (this.Helm != null &&

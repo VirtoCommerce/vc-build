@@ -268,11 +268,12 @@ vc-build Configure -Sql "MsSql connection string" -Redis "Redis connection strin
 ```
 ---
 ## CloudEnvUpdate
-Updates applications in the cloud. Accepts parameters like `CloudToken`, `Manifest`.
+Updates applications in the cloud. Accepts the following parameters: `CloudToken`, `Manifest`, `RoutesFile` (optional).
 
 ### Usage
 ```console
 vc-build CloudEnvUpdate -CloudToken <your token> -Manifest <path to application manifest>
+vc-build CloudEnvUpdate -CloudToken <your token> -Manifest <path to application manifest> -RoutesFile <path to routes file>
 ```
 ---
 ## CloudEnvSetParameter

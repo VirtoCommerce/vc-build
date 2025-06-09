@@ -1,6 +1,5 @@
 using System.IO;
 using System.Linq;
-using PlatformTools.Modules;
 using VirtoCommerce.Platform.Core.Modularity;
 
 namespace PlatformTools.Extensions
@@ -10,7 +9,7 @@ namespace PlatformTools.Extensions
         public static bool IsModuleSymlinked(this ILocalModuleCatalog moduleCatalog, string moduleId)
         {
             var moduleInfo = moduleCatalog.Modules.OfType<ManifestModuleInfo>().FirstOrDefault(m => m.ModuleName == moduleId);
-            if(moduleInfo == null)
+            if (moduleInfo == null)
             {
                 return false;
             }

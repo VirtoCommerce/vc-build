@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Newtonsoft.Json;
-using Nuke.Common;
 
 namespace Cloud.Models
 {
@@ -29,7 +27,8 @@ namespace Cloud.Models
                 var cloudError = JsonConvert.DeserializeObject<VirtoCloudError>(response);
                 var message = cloudError?.Message ?? response;
                 var errors = cloudError?.Errors ?? new List<string>();
-                return new VirtoCloudError {
+                return new VirtoCloudError
+                {
                     Message = message,
                     Errors = errors
                 };
