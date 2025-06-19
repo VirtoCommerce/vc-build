@@ -726,7 +726,11 @@ internal partial class Build : NukeBuild
         .Executes(() =>
         {
             GitTasks.Git($"commit -am \"{ModuleManifest.Id} {ReleaseVersion}\"", ModulesLocalDirectory, logger: GitLogger);
-            GitTasks.Git("push origin HEAD:master -f", ModulesLocalDirectory);
+            ControlFlow.ExecuteWithRetry(() =>
+            {
+                GitTasks.Git("pull --rebase origin master", ModulesLocalDirectory);
+                GitTasks.Git("push origin HEAD:master", ModulesLocalDirectory);
+            }, delay: TimeSpan.FromSeconds(3));
         });
 
     public Target PublishModuleManifest => _ => _
