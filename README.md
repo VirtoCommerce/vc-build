@@ -51,6 +51,15 @@ dotnet tool update VirtoCommerce.GlobalTool -g
 
 ```
 
+## Checking installed version
+To check which `VirtoCommerce.GlobalTool` tools are installed globally on your system, use the following command:
+
+```console
+
+dotnet tool list -g
+
+```
+
 ## Getting started
 To use `VirtoCommerce.GlobalTool` by invoke the tool run the following command: `vc-build`
 
