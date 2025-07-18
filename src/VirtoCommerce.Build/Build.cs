@@ -350,7 +350,7 @@ internal partial class Build : NukeBuild
             var testProjects = Solution.GetAllProjects("*.Test|*.Tests|*.Testing");
             var outPath = RootDirectory / ".tmp";
 
-            foreach (var testProjectPath in testProjects.Select(p=> p.Path).ToArray())
+            foreach (var testProjectPath in testProjects.Select(p => p.Path).ToArray())
             {
                 DotNet($"add \"{testProjectPath}\" package coverlet.collector");
 
@@ -550,7 +550,8 @@ internal partial class Build : NukeBuild
         });
 
     public Target QuickHotfix => _ => _
-        .Executes(() => {
+        .Executes(() =>
+        {
             var currentBranch = GitTasks.GitCurrentBranch();
             GitTasks.Git($"checkout {MainBranch}");
             GitTasks.Git($"pull");
@@ -560,7 +561,7 @@ internal partial class Build : NukeBuild
             GitTasks.Git($"merge {currentBranch}");
             ChangeProjectVersion(CustomVersionPrefix);
             GitTasks.Git($"tag {CustomVersionPrefix}");
-            if(IsTheme)
+            if (IsTheme)
             {
                 GitTasks.Git($"add {PackageJsonPath}");
             }
@@ -637,7 +638,7 @@ internal partial class Build : NukeBuild
         });
 
     public Target Compress => _ => _
-        .DependsOn(Clean, WebPackBuild, BuildCustomApp, Test, Publish)
+        .DependsOn(MatchVersions, Clean, WebPackBuild, BuildCustomApp, Test, Publish)
         .Executes(CompressExecuteMethod);
 
     public Target GetManifestGit => _ => _

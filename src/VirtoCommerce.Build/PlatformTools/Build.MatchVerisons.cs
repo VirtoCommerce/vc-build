@@ -1,11 +1,10 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Nuke.Common;
 using Nuke.Common.ProjectModel;
-using Nuke.Common.Utilities;
 using PlatformTools;
+using Serilog;
 using VirtoCommerce.Platform.Core.Common;
 
 namespace VirtoCommerce.Build
@@ -16,33 +15,47 @@ namespace VirtoCommerce.Build
         private static partial Regex ModuleNameRegEx();
 
         public Target MatchVersions => _ => _
-             .Executes(() =>
+            .Before(Clean, Restore, WebPackBuild, BuildCustomApp, Test, Publish)
+            .OnlyWhenDynamic(() => IsModule)
+            .Executes(() =>
              {
                  var allPackages = new List<PackageItem>();
-                 var allProjects = Solution.GetAllProjects("*");
-
+                 var allProjects = Solution.AllProjects;
                  foreach (var project in allProjects)
                  {
                      var packagesInfo = GetProjectPackages(project);
                      allPackages.AddRange(packagesInfo);
                  }
 
-                 var errors = new List<string>();
+                 var errors = ValidateModuleDependencies(allPackages);
 
-                 var platformErrors = ValdatePlatformVersion(allPackages);
-                 errors.AddRange(platformErrors);
-
-                 var dependencyVerionErrors = ValidateModuleDependenciesVersions(allPackages);
-                 errors.AddRange(dependencyVerionErrors);
-
-                 var missedDependenciesErrors = ValidateForMissedDependencies(allPackages);
-                 errors.AddRange(missedDependenciesErrors);
+                 foreach (var error in errors)
+                 {
+                     Log.Error(error);
+                 }
 
                  if (errors.Count > 0)
                  {
-                     Assert.Fail(errors.Join(Environment.NewLine));
+                     Assert.Fail("Dependency version mismatch detected. Please review the log for details and resolve all inconsistencies before proceeding.");
                  }
              });
+
+
+
+        private static List<string> ValidateModuleDependencies(List<PackageItem> allPackages)
+        {
+            var errors = new List<string>();
+
+            var platformErrors = ValidatePlatformVersion(allPackages);
+            errors.AddRange(platformErrors);
+
+            var dependencyVersionErrors = ValidateModuleDependenciesVersions(allPackages);
+            errors.AddRange(dependencyVersionErrors);
+
+            var missedDependenciesErrors = ValidateForMissedDependencies(allPackages);
+            errors.AddRange(missedDependenciesErrors);
+            return errors;
+        }
 
         /// <summary>
         /// Get list of VirtoCommerce packages (platform and module)
@@ -79,7 +92,7 @@ namespace VirtoCommerce.Build
         /// <summary>
         /// Check match between manifest platform version and platform packages
         /// </summary>
-        private static List<string> ValdatePlatformVersion(IEnumerable<PackageItem> packages)
+        private static List<string> ValidatePlatformVersion(IList<PackageItem> packages)
         {
             return packages
                 .Where(package => package.IsPlatformPackage && SemanticVersion.Parse(package.Version) != SemanticVersion.Parse(ModuleManifest.PlatformVersion))
@@ -91,7 +104,7 @@ namespace VirtoCommerce.Build
         /// <summary>
         /// Check dependencies for module packages versions mismatch
         /// </summary>
-        private static List<string> ValidateModuleDependenciesVersions(IEnumerable<PackageItem> packages)
+        private static List<string> ValidateModuleDependenciesVersions(IList<PackageItem> packages)
         {
             var result = new List<string>();
 
@@ -118,14 +131,9 @@ namespace VirtoCommerce.Build
         /// <summary>
         /// Check project packages for missed dependency in manifest
         /// </summary>
-        private static List<string> ValidateForMissedDependencies(IEnumerable<PackageItem> packages)
+        private static List<string> ValidateForMissedDependencies(IList<PackageItem> packages)
         {
             var result = new List<string>();
-
-            if (ModuleManifest.Dependencies.IsNullOrEmpty())
-            {
-                return result;
-            }
 
             foreach (var packageGroupKey in packages.Where(x => !x.IsPlatformPackage).GroupBy(x => x.Name).Select(packageGroup => packageGroup.Key))
             {
