@@ -42,7 +42,7 @@ namespace VirtoCommerce.Build
 
 
 
-        private static List<string> ValidateModuleDependencies(List<PackageItem> allPackages)
+        private static List<string> ValidateModuleDependencies(IList<PackageItem> allPackages)
         {
             var errors = new List<string>();
 
@@ -54,6 +54,22 @@ namespace VirtoCommerce.Build
 
             var missedDependenciesErrors = ValidateForMissedDependencies(allPackages);
             errors.AddRange(missedDependenciesErrors);
+
+            var consistencyErrors = ValidatePlatformPackagesConsistency(allPackages);
+            errors.AddRange(consistencyErrors);
+
+            return errors;
+        }
+
+        private static List<string> ValidatePlatformPackagesConsistency(IList<PackageItem> packages)
+        {
+            List<string> errors = [];
+            var platformPackagesVersions = packages.Where(p => p.IsPlatformPackage).Select(p => p.Version).Distinct().ToList();
+            if (platformPackagesVersions.Count > 1)
+            {
+                var projects = packages.Where(p => p.IsPlatformPackage).Select(p => p.ProjectName).Distinct().ToList();
+                errors.Add($"Platform packages have multiple versions: {string.Join(", ", platformPackagesVersions)} in projects: {string.Join(", ", projects)}");
+            }
             return errors;
         }
 
