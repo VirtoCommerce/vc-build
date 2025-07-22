@@ -71,8 +71,7 @@ namespace VirtoCommerce.Build
         private static List<string> ValidateModulesPackagesConsistency(IList<PackageItem> allPackages)
         {
             List<string> errors = [];
-            var dependencies = ModuleManifest.Dependencies.Select(d => d.Id).ToArray();
-            var groups = allPackages.Where(p => !p.IsPlatformPackage && ModuleNameRegEx().IsMatch(p.Name)).GroupBy(p => GetDependencyName(p.Name, dependencies) ?? p.Name).ToList();
+            var groups = allPackages.Where(p => !p.IsPlatformPackage && ModuleNameRegEx().IsMatch(p.Name)).GroupBy(p => GetDependencyName(p.Name) ?? p.Name).ToList();
             foreach (var packageGroup in groups)
             {
                 if (packageGroup.Count() > 1)
@@ -192,7 +191,7 @@ namespace VirtoCommerce.Build
             return match.Groups.Values.Any(x => x.Value == dependencyName);
         }
 
-        private static string GetDependencyName(string packageName, string[] dependencies)
+        private static string GetDependencyName(string packageName)
         {
             var match = ModuleNameFromDependencyRegEx().Match(packageName);
             return match.Success ? match.Groups["ModuleId"].Value : null;
