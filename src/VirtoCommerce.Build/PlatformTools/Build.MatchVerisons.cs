@@ -6,6 +6,7 @@ using Nuke.Common.ProjectModel;
 using PlatformTools;
 using Serilog;
 using VirtoCommerce.Platform.Core.Common;
+using VirtoCommerce.Platform.Core.Modularity;
 
 namespace VirtoCommerce.Build
 {
@@ -13,6 +14,9 @@ namespace VirtoCommerce.Build
     {
         [GeneratedRegex(@"(VirtoCommerce.+)Module", RegexOptions.Compiled)]
         private static partial Regex ModuleNameRegEx();
+
+        [GeneratedRegex(@"^(?<ModuleId>VirtoCommerce\.[^.]+?)(Module)?\.")]
+        private static partial Regex ModuleNameFromDependencyRegEx();
 
         public Target MatchVersions => _ => _
             .Before(Clean, Restore, WebPackBuild, BuildCustomApp, Test, Publish)
@@ -55,9 +59,29 @@ namespace VirtoCommerce.Build
             var missedDependenciesErrors = ValidateForMissedDependencies(allPackages);
             errors.AddRange(missedDependenciesErrors);
 
-            var consistencyErrors = ValidatePlatformPackagesConsistency(allPackages);
-            errors.AddRange(consistencyErrors);
+            var platformPackagesConsistency = ValidatePlatformPackagesConsistency(allPackages);
+            errors.AddRange(platformPackagesConsistency);
 
+            var modulesPackagesConsistency = ValidateModulesPackagesConsistency(allPackages);
+            errors.AddRange(modulesPackagesConsistency);
+
+            return errors;
+        }
+
+        private static List<string> ValidateModulesPackagesConsistency(IList<PackageItem> allPackages)
+        {
+            List<string> errors = [];
+            var dependencies = ModuleManifest.Dependencies.Select(d => d.Id).ToArray();
+            var groups = allPackages.Where(p => !p.IsPlatformPackage && ModuleNameRegEx().IsMatch(p.Name)).GroupBy(p => GetDependencyName(p.Name, dependencies) ?? p.Name).ToList();
+            foreach (var packageGroup in groups)
+            {
+                if (packageGroup.Count() > 1)
+                {
+                    var versions = packageGroup.Select(p => p.Version).Distinct().ToList();
+                    var projects = packageGroup.Select(p => p.ProjectName).Distinct().ToList();
+                    errors.Add($"Module {packageGroup.Key} has multiple versions: {string.Join(", ", versions)} in projects: {string.Join(", ", projects)}");
+                }
+            }
             return errors;
         }
 
@@ -166,6 +190,12 @@ namespace VirtoCommerce.Build
         {
             var match = ModuleNameRegEx().Match(packageName);
             return match.Groups.Values.Any(x => x.Value == dependencyName);
+        }
+
+        private static string GetDependencyName(string packageName, string[] dependencies)
+        {
+            var match = ModuleNameFromDependencyRegEx().Match(packageName);
+            return match.Success ? match.Groups["ModuleId"].Value : null;
         }
     }
 }
