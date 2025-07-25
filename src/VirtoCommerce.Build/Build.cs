@@ -350,7 +350,7 @@ internal partial class Build : NukeBuild
             var testProjects = Solution.GetAllProjects("*.Test|*.Tests|*.Testing");
             var outPath = RootDirectory / ".tmp";
 
-            foreach (var testProjectPath in testProjects.Select(p=> p.Path).ToArray())
+            foreach (var testProjectPath in testProjects.Select(p => p.Path).ToArray())
             {
                 DotNet($"add \"{testProjectPath}\" package coverlet.collector");
 
@@ -550,7 +550,8 @@ internal partial class Build : NukeBuild
         });
 
     public Target QuickHotfix => _ => _
-        .Executes(() => {
+        .Executes(() =>
+        {
             var currentBranch = GitTasks.GitCurrentBranch();
             GitTasks.Git($"checkout {MainBranch}");
             GitTasks.Git($"pull");
@@ -560,7 +561,7 @@ internal partial class Build : NukeBuild
             GitTasks.Git($"merge {currentBranch}");
             ChangeProjectVersion(CustomVersionPrefix);
             GitTasks.Git($"tag {CustomVersionPrefix}");
-            if(IsTheme)
+            if (IsTheme)
             {
                 GitTasks.Git($"add {PackageJsonPath}");
             }
@@ -638,7 +639,7 @@ internal partial class Build : NukeBuild
 
     public Target Compress => _ => _
         .DependsOn(Clean, WebPackBuild, BuildCustomApp, Test, Publish)
-        .Executes(CompressExecuteMethod);
+        .Executes(async () => await CompressExecuteMethod());
 
     public Target GetManifestGit => _ => _
         .Before(UpdateManifest)
@@ -1322,7 +1323,7 @@ internal partial class Build : NukeBuild
         }
     }
 
-    private void CompressExecuteMethod()
+    private async Task CompressExecuteMethod()
     {
         const int MajorMinorPatch = 3;
         if (IsModule)
@@ -1335,14 +1336,17 @@ internal partial class Build : NukeBuild
                 GlobalModuleIgnoreFileUrl = string.Format(moduleIgnoreUrlTemplate, platformVersionString);
             }
 
-            string[] ignoredFiles = GetGlobalIgnoreList(moduleIgnoreUrlTemplate);
+            List<string> ignoredFiles = [];
+            ignoredFiles.AddRange(GetGlobalIgnoreList(moduleIgnoreUrlTemplate));
 
             if (ModuleIgnoreFile.FileExists())
             {
-                ignoredFiles = ignoredFiles.Concat(ModuleIgnoreFile.ReadAllLines()).ToArray();
+                ignoredFiles.AddRange(ModuleIgnoreFile.ReadAllLines());
             }
 
-            ignoredFiles = ignoredFiles.Select(x => x.Trim()).Distinct().ToArray();
+            ignoredFiles.AddRange(await GetIgnoreListFromDependencies(ModuleManifest.Dependencies));
+
+            ignoredFiles = ignoredFiles.Select(x => x.Trim()).Distinct().ToList();
 
             var keepFiles = Array.Empty<string>();
             if (ModuleKeepFile.FileExists())
@@ -1365,6 +1369,46 @@ internal partial class Build : NukeBuild
         }
     }
 
+    private static async Task<string[]> GetIgnoreListFromDependencies(ManifestDependency[] moduleManifestDependencies)
+    {
+        const string defaultModuleManifest = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/modules_v3.json";
+        var result = new List<string>();
+
+        var json = await new HttpClient().GetStringAsync(defaultModuleManifest);
+        var modules = JsonConvert.DeserializeObject<List<ExternalModuleManifest>>(json);
+
+        foreach (var dependency in moduleManifestDependencies)
+        {
+            var module = modules.FirstOrDefault(m => m.Id == dependency.Id);
+            var version = module?.Versions?.FirstOrDefault(v => string.IsNullOrEmpty(v.SemanticVersion.Prerelease));
+            if (version == null)
+            {
+                continue;
+            }
+
+            var tempZip = Path.GetTempFileName();
+            await using (var fs = new FileStream(tempZip, System.IO.FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                var httpClient = new HttpClient();
+                var downloadUrl = version.PackageUrl.Replace(version.Version, dependency.Version);
+                var response = await httpClient.GetAsync(downloadUrl);
+                response.EnsureSuccessStatusCode();
+                await response.Content.CopyToAsync(fs);
+            }
+
+            using (var archive = System.IO.Compression.ZipFile.OpenRead(tempZip))
+            {
+                var dlls = archive.Entries
+                    .Where(e => e.FullName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+                    .Select(e => Path.GetFileName(e.FullName))
+                    .ToArray();
+                result.AddRange(dlls);
+            }
+            File.Delete(tempZip);
+        }
+        return result.Distinct().ToArray();
+    }
+
     private static string[] GetGlobalIgnoreList(string moduleIgnoreUrlTemplate)
     {
         string[] ignoredFiles;
@@ -1375,7 +1419,7 @@ internal partial class Build : NukeBuild
             {
                 responseString = HttpTasks.HttpDownloadString(string.Format(moduleIgnoreUrlTemplate, "dev"));
             }
-            ignoredFiles = responseString.SplitLineBreaks();
+            ignoredFiles = responseString.SplitLineBreaks(StringSplitOptions.RemoveEmptyEntries);
         }
         else
         {

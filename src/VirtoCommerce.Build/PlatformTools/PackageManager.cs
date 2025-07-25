@@ -10,7 +10,7 @@ namespace PlatformTools
 {
     public static class PackageManager
     {
-        private const string _defaultModuleManifest = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/modules_v3.json";
+        private const string DefaultModuleManifest = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/modules_v3.json";
 
         public static ManifestBase CreatePackageManifest(string platformVersion, string platformAssetUrl)
         {
@@ -25,7 +25,7 @@ namespace PlatformTools
                     {
                         ModuleSources = new List<string>
                         {
-                            _defaultModuleManifest
+                            DefaultModuleManifest
                         },
                         Modules = new List<ModuleItem>()
                     }
