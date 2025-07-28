@@ -1323,15 +1323,16 @@ internal partial class Build : NukeBuild
         }
     }
 
-    private async Task CompressExecuteMethod()
+    private static async Task CompressExecuteMethod()
     {
-        const int MajorMinorPatch = 3;
+        const int majorMinorPatch = 3;
+
         if (IsModule)
         {
             const string moduleIgnoreUrlTemplate = "https://raw.githubusercontent.com/VirtoCommerce/vc-platform/{0}/module.ignore";
             if (string.IsNullOrEmpty(GlobalModuleIgnoreFileUrl))
             {
-                var platformVersionString = Version.TryParse(ModuleManifest.PlatformVersion, out var platformVersion) ? platformVersion.ToString(MajorMinorPatch) : "dev";
+                var platformVersionString = Version.TryParse(ModuleManifest.PlatformVersion, out var platformVersion) ? platformVersion.ToString(majorMinorPatch) : "dev";
 
                 GlobalModuleIgnoreFileUrl = string.Format(moduleIgnoreUrlTemplate, platformVersionString);
             }
@@ -1374,13 +1375,15 @@ internal partial class Build : NukeBuild
         const string defaultModuleManifest = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/modules_v3.json";
         var result = new List<string>();
 
-        var json = await new HttpClient().GetStringAsync(defaultModuleManifest);
+        var httpClient = new HttpClient();
+        var json = await httpClient.GetStringAsync(defaultModuleManifest);
         var modules = JsonConvert.DeserializeObject<List<ExternalModuleManifest>>(json);
 
         foreach (var dependency in moduleManifestDependencies)
         {
             var module = modules.FirstOrDefault(m => m.Id == dependency.Id);
             var version = module?.Versions?.FirstOrDefault(v => string.IsNullOrEmpty(v.SemanticVersion.Prerelease));
+
             if (version == null)
             {
                 continue;
@@ -1389,7 +1392,6 @@ internal partial class Build : NukeBuild
             var tempZip = Path.GetRandomFileName();
             await using (var fs = new FileStream(tempZip, System.IO.FileMode.Create, FileAccess.Write, FileShare.None))
             {
-                var httpClient = new HttpClient();
                 var downloadUrl = version.PackageUrl.Replace(version.Version, dependency.Version);
                 var response = await httpClient.GetAsync(downloadUrl);
                 response.EnsureSuccessStatusCode();
@@ -1399,13 +1401,15 @@ internal partial class Build : NukeBuild
             using (var archive = System.IO.Compression.ZipFile.OpenRead(tempZip))
             {
                 var dlls = archive.Entries
-                    .Where(e => e.FullName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
-                    .Select(e => Path.GetFileName(e.FullName))
-                    .ToArray();
+                    .Where(e => e.FullName.EndsWithOrdinalIgnoreCase(".dll"))
+                    .Select(e => Path.GetFileName(e.FullName));
+
                 result.AddRange(dlls);
             }
+
             File.Delete(tempZip);
         }
+
         return result.Distinct().ToArray();
     }
 
