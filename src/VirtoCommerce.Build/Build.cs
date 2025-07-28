@@ -1386,7 +1386,7 @@ internal partial class Build : NukeBuild
                 continue;
             }
 
-            var tempZip = Path.GetTempFileName();
+            var tempZip = Path.GetRandomFileName();
             await using (var fs = new FileStream(tempZip, System.IO.FileMode.Create, FileAccess.Write, FileShare.None))
             {
                 var httpClient = new HttpClient();
