@@ -6,7 +6,6 @@ using Nuke.Common.ProjectModel;
 using PlatformTools;
 using Serilog;
 using VirtoCommerce.Platform.Core.Common;
-using VirtoCommerce.Platform.Core.Modularity;
 
 namespace VirtoCommerce.Build
 {
@@ -25,6 +24,7 @@ namespace VirtoCommerce.Build
              {
                  var allPackages = new List<PackageItem>();
                  var allProjects = Solution.AllProjects;
+
                  foreach (var project in allProjects)
                  {
                      var packagesInfo = GetProjectPackages(project);
@@ -43,7 +43,6 @@ namespace VirtoCommerce.Build
                      Assert.Fail("Dependency version mismatch detected. Please review the log for details and resolve all inconsistencies before proceeding.");
                  }
              });
-
 
 
         private static List<string> ValidateModuleDependencies(IList<PackageItem> allPackages)
@@ -71,12 +70,12 @@ namespace VirtoCommerce.Build
         private static List<string> ValidateModulesPackagesConsistency(IList<PackageItem> allPackages)
         {
             List<string> errors = [];
-            var groups = allPackages.Where(p => !p.IsPlatformPackage && ModuleNameRegEx().IsMatch(p.Name)).GroupBy(p => GetDependencyName(p.Name) ?? p.Name).ToList();
+            var groups = allPackages.Where(p => !p.IsPlatformPackage && ModuleNameRegEx().IsMatch(p.Name)).GroupBy(p => GetDependencyName(p.Name) ?? p.Name);
             foreach (var packageGroup in groups)
             {
-                if (packageGroup.Count() > 1)
+                var versions = packageGroup.Select(p => p.Version).Distinct().ToList();
+                if (versions.Count > 1)
                 {
-                    var versions = packageGroup.Select(p => p.Version).Distinct().ToList();
                     var projects = packageGroup.Select(p => p.ProjectName).Distinct().ToList();
                     errors.Add($"Module {packageGroup.Key} has multiple versions: {string.Join(", ", versions)} in projects: {string.Join(", ", projects)}");
                 }
