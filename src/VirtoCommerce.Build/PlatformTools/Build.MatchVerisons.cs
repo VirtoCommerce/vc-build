@@ -94,12 +94,12 @@ namespace VirtoCommerce.Build
         /// </summary>
         private static void ValidateMissingDependencies(IList<PackageItem> packages, List<Error> errors)
         {
-            foreach (var packageGroup in packages.Where(x => !x.IsPlatformPackage).GroupBy(x => x.Name))
+            foreach (var packageGroup in packages
+                         .Where(x => !x.IsPlatformPackage)
+                         .GroupBy(x => x.Name)
+                         .Where(g => !ModuleManifest.Dependencies.Any(dependency => HasNameMatch(g.Key, dependency.Id))))
             {
-                if (!ModuleManifest.Dependencies.Any(dependency => HasNameMatch(packageGroup.Key, dependency.Id)))
-                {
-                    errors.Add(Error.MissingManifestDependency(packageGroup.Key, packageGroup.First().Version));
-                }
+                errors.Add(Error.MissingManifestDependency(packageGroup.Key, packageGroup.First().Version));
             }
         }
 
