@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -1389,33 +1390,20 @@ internal partial class Build : NukeBuild
                 continue;
             }
 
-            var tempZip = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-            try
-            {
+            using var memoryStream = new MemoryStream();
+            var zipUrl = version.PackageUrl.Replace(version.Version, dependency.Version);
+            var response = await httpClient.GetAsync(zipUrl);
+            response.EnsureSuccessStatusCode();
+            await response.Content.CopyToAsync(memoryStream);
+            memoryStream.Position = 0L;
 
-                await using (var fs = new FileStream(tempZip, System.IO.FileMode.Create, FileAccess.Write,
-                                 FileShare.None))
-                {
-                    var downloadUrl = version.PackageUrl.Replace(version.Version, dependency.Version);
-                    var response = await httpClient.GetAsync(downloadUrl);
-                    response.EnsureSuccessStatusCode();
-                    await response.Content.CopyToAsync(fs);
-                }
+            using var zipArchive = new ZipArchive(memoryStream, ZipArchiveMode.Read);
 
-                using (var archive = System.IO.Compression.ZipFile.OpenRead(tempZip))
-                {
-                    var dlls = archive.Entries
-                        .Where(e => e.FullName.EndsWithOrdinalIgnoreCase(".dll"))
-                        .Select(e => Path.GetFileName(e.FullName));
+            var dllNames = zipArchive.Entries
+                .Where(x => x.FullName.EndsWithOrdinalIgnoreCase(".dll"))
+                .Select(x => Path.GetFileName(x.FullName));
 
-                    result.AddRange(dlls);
-                }
-            }
-            finally
-            {
-                File.Delete(tempZip);
-            }
-
+            result.AddRange(dllNames);
         }
 
         return result.Distinct().ToArray();
