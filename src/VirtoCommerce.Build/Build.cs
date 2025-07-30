@@ -1389,25 +1389,33 @@ internal partial class Build : NukeBuild
                 continue;
             }
 
-            var tempZip = Path.GetRandomFileName();
-            await using (var fs = new FileStream(tempZip, System.IO.FileMode.Create, FileAccess.Write, FileShare.None))
+            var tempZip = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            try
             {
-                var downloadUrl = version.PackageUrl.Replace(version.Version, dependency.Version);
-                var response = await httpClient.GetAsync(downloadUrl);
-                response.EnsureSuccessStatusCode();
-                await response.Content.CopyToAsync(fs);
+
+                await using (var fs = new FileStream(tempZip, System.IO.FileMode.Create, FileAccess.Write,
+                                 FileShare.None))
+                {
+                    var downloadUrl = version.PackageUrl.Replace(version.Version, dependency.Version);
+                    var response = await httpClient.GetAsync(downloadUrl);
+                    response.EnsureSuccessStatusCode();
+                    await response.Content.CopyToAsync(fs);
+                }
+
+                using (var archive = System.IO.Compression.ZipFile.OpenRead(tempZip))
+                {
+                    var dlls = archive.Entries
+                        .Where(e => e.FullName.EndsWithOrdinalIgnoreCase(".dll"))
+                        .Select(e => Path.GetFileName(e.FullName));
+
+                    result.AddRange(dlls);
+                }
+            }
+            finally
+            {
+                File.Delete(tempZip);
             }
 
-            using (var archive = System.IO.Compression.ZipFile.OpenRead(tempZip))
-            {
-                var dlls = archive.Entries
-                    .Where(e => e.FullName.EndsWithOrdinalIgnoreCase(".dll"))
-                    .Select(e => Path.GetFileName(e.FullName));
-
-                result.AddRange(dlls);
-            }
-
-            File.Delete(tempZip);
         }
 
         return result.Distinct().ToArray();
