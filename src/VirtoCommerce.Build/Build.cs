@@ -1390,14 +1390,10 @@ internal partial class Build : NukeBuild
                 continue;
             }
 
-            using var memoryStream = new MemoryStream();
             var zipUrl = version.PackageUrl.Replace(version.Version, dependency.Version);
-            var response = await httpClient.GetAsync(zipUrl);
-            response.EnsureSuccessStatusCode();
-            await response.Content.CopyToAsync(memoryStream);
-            memoryStream.Position = 0L;
+            var zipStream = await httpClient.GetStreamAsync(zipUrl);
 
-            using var zipArchive = new ZipArchive(memoryStream, ZipArchiveMode.Read);
+            using var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Read);
 
             var dllNames = zipArchive.Entries
                 .Where(x => x.FullName.EndsWithOrdinalIgnoreCase(".dll"))
