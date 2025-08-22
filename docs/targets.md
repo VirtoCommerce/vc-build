@@ -187,6 +187,21 @@ vc-build compress -configuration Release
 vc-build Compress -NugetConfig <path to nuget config>
 ```
 ---
+## MatchVersions
+Validates version consistency of all VirtoCommerce dependencies across all projects in the solution.
+Checks performed:
+- All module dependencies listed in the manifest are present in project references.
+- All `VirtoCommerce.Platform.*` dependencies in all projects match the version specified in the manifest.
+- All module dependencies in all projects match the version specified in the manifest.
+- All `VirtoCommerce.Platform.*` dependencies across all projects have the same version.
+- All module dependencies (`VirtoCommerce.*Module`) across all projects have the same version.
+
+If any inconsistencies are found, the build will fail and detailed errors will be logged.
+### Usage
+```console
+vc-build MatchVersions
+```
+---
 ## PublishModuleManifest
 Updates `modules_v3.json` with information from the current artifact's `module.manifest`.
 
