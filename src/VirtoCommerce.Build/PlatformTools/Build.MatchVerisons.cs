@@ -17,9 +17,12 @@ namespace VirtoCommerce.Build
         [GeneratedRegex(@"^(?<ModuleId>VirtoCommerce\.[^.]+?)(Module)?\.")]
         private static partial Regex ModuleNameFromDependencyRegEx();
 
+        [Parameter("Disable MatchVersion target")]
+        public bool DisableMatchVersions { get; set; }
+
         public Target MatchVersions => _ => _
             .Before(Clean, Restore, WebPackBuild, BuildCustomApp, Test, Publish)
-            .OnlyWhenDynamic(() => IsModule)
+            .OnlyWhenDynamic(() => IsModule && !DisableMatchVersions)
             .Executes(() =>
              {
                  var allPackages = new List<PackageItem>();
