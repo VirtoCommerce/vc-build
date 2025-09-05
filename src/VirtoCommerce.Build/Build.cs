@@ -190,6 +190,10 @@ internal partial class Build : NukeBuild
     [Parameter("Http tasks timeout in seconds")]
     public static int HttpTimeout { get; set; } = 180;
 
+    [Parameter("Prereleases Blob Container")]
+    public static string PrereleasesBlobContainer { get; set; } =
+        "https://vc3prerelease.blob.core.windows.net/packages/";
+
     protected static GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
 
     protected static AbsolutePath SourceDirectory => RootDirectory / "src";
@@ -1390,7 +1394,10 @@ internal partial class Build : NukeBuild
                 continue;
             }
 
-            var zipUrl = version.PackageUrl.Replace(version.Version, dependency.Version);
+            var zipUrl = Version.TryParse(dependency.Version, out var _)
+                ? version.PackageUrl.Replace(version.Version, dependency.Version)
+                : $"{PrereleasesBlobContainer}{dependency.Id}_{dependency.Version}.zip";
+
             var zipStream = await httpClient.GetStreamAsync(zipUrl);
 
             using var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Read);
