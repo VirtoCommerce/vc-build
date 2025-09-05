@@ -643,8 +643,8 @@ internal partial class Build : NukeBuild
         });
 
     public Target Compress => _ => _
-        .DependsOn(Clean, WebPackBuild, BuildCustomApp, Test, Publish)
-        .Executes(async () => await CompressExecuteMethod());
+        .DependsOn(MatchVersions, Clean, WebPackBuild, BuildCustomApp, Test, Publish)
+        .Executes(CompressExecuteMethod);
 
     public Target GetManifestGit => _ => _
         .Before(UpdateManifest)
