@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -188,6 +189,10 @@ internal partial class Build : NukeBuild
 
     [Parameter("Http tasks timeout in seconds")]
     public static int HttpTimeout { get; set; } = 180;
+
+    [Parameter("Prereleases Blob Container")]
+    public static string PrereleasesBlobContainer { get; set; } =
+        "https://vc3prerelease.blob.core.windows.net/packages/";
 
     protected static GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
 
@@ -1323,27 +1328,31 @@ internal partial class Build : NukeBuild
         }
     }
 
-    private void CompressExecuteMethod()
+    private static async Task CompressExecuteMethod()
     {
-        const int MajorMinorPatch = 3;
+        const int majorMinorPatch = 3;
+
         if (IsModule)
         {
             const string moduleIgnoreUrlTemplate = "https://raw.githubusercontent.com/VirtoCommerce/vc-platform/{0}/module.ignore";
             if (string.IsNullOrEmpty(GlobalModuleIgnoreFileUrl))
             {
-                var platformVersionString = Version.TryParse(ModuleManifest.PlatformVersion, out var platformVersion) ? platformVersion.ToString(MajorMinorPatch) : "dev";
+                var platformVersionString = Version.TryParse(ModuleManifest.PlatformVersion, out var platformVersion) ? platformVersion.ToString(majorMinorPatch) : "dev";
 
                 GlobalModuleIgnoreFileUrl = string.Format(moduleIgnoreUrlTemplate, platformVersionString);
             }
 
-            string[] ignoredFiles = GetGlobalIgnoreList(moduleIgnoreUrlTemplate);
+            List<string> ignoredFiles = [];
+            ignoredFiles.AddRange(GetGlobalIgnoreList(moduleIgnoreUrlTemplate));
 
             if (ModuleIgnoreFile.FileExists())
             {
-                ignoredFiles = ignoredFiles.Concat(ModuleIgnoreFile.ReadAllLines()).ToArray();
+                ignoredFiles.AddRange(ModuleIgnoreFile.ReadAllLines());
             }
 
-            ignoredFiles = ignoredFiles.Select(x => x.Trim()).Distinct().ToArray();
+            ignoredFiles.AddRange(await GetIgnoreListFromDependencies(ModuleManifest.Dependencies));
+
+            ignoredFiles = ignoredFiles.Select(x => x.Trim()).Distinct().ToList();
 
             var keepFiles = Array.Empty<string>();
             if (ModuleKeepFile.FileExists())
@@ -1366,6 +1375,43 @@ internal partial class Build : NukeBuild
         }
     }
 
+    private static async Task<string[]> GetIgnoreListFromDependencies(ManifestDependency[] moduleManifestDependencies)
+    {
+        const string defaultModuleManifest = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/modules_v3.json";
+        var result = new List<string>();
+
+        var httpClient = new HttpClient();
+        var json = await httpClient.GetStringAsync(defaultModuleManifest);
+        var modules = JsonConvert.DeserializeObject<List<ExternalModuleManifest>>(json);
+
+        foreach (var dependency in moduleManifestDependencies)
+        {
+            var module = modules.FirstOrDefault(m => m.Id == dependency.Id);
+            var version = module?.Versions?.FirstOrDefault(v => string.IsNullOrEmpty(v.SemanticVersion.Prerelease));
+
+            if (version == null)
+            {
+                continue;
+            }
+
+            var zipUrl = Version.TryParse(dependency.Version, out var _)
+                ? version.PackageUrl.Replace(version.Version, dependency.Version)
+                : $"{PrereleasesBlobContainer}{dependency.Id}_{dependency.Version}.zip";
+
+            var zipStream = await httpClient.GetStreamAsync(zipUrl);
+
+            using var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Read);
+
+            var dllNames = zipArchive.Entries
+                .Where(x => x.FullName.EndsWithOrdinalIgnoreCase(".dll"))
+                .Select(x => Path.GetFileName(x.FullName));
+
+            result.AddRange(dllNames);
+        }
+
+        return result.Distinct().ToArray();
+    }
+
     private static string[] GetGlobalIgnoreList(string moduleIgnoreUrlTemplate)
     {
         string[] ignoredFiles;
@@ -1376,7 +1422,7 @@ internal partial class Build : NukeBuild
             {
                 responseString = HttpTasks.HttpDownloadString(string.Format(moduleIgnoreUrlTemplate, "dev"));
             }
-            ignoredFiles = responseString.SplitLineBreaks();
+            ignoredFiles = responseString.SplitLineBreaks(StringSplitOptions.RemoveEmptyEntries);
         }
         else
         {
