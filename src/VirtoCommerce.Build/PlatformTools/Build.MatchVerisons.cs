@@ -120,7 +120,7 @@ namespace VirtoCommerce.Build
                 {
                     packageVersion = SemanticVersion.Parse(package.Version);
                 }
-                catch (FormatException _)
+                catch (FormatException)
                 {
                     errors.Add(Error.InvalidVersionFormat(package));
                     continue;
@@ -130,7 +130,7 @@ namespace VirtoCommerce.Build
                 {
                     moduleManifestPlatformVersion = SemanticVersion.Parse(ModuleManifest.PlatformVersion);
                 }
-                catch (FormatException _)
+                catch (FormatException)
                 {
                     errors.Add(new Error("Platform version is invalid in the module manifest: {ManifestPlatformVersion}", ModuleManifest.PlatformVersion));
                     continue;
