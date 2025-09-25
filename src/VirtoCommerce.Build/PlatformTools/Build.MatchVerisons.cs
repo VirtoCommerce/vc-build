@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -112,10 +113,33 @@ namespace VirtoCommerce.Build
         private static void ValidatePlatformVersionMismatch(IList<PackageItem> packages, List<Error> errors)
         {
             foreach (var package in packages
-                         .Where(x => x.IsPlatformPackage &&
-                                     SemanticVersion.Parse(x.Version) != SemanticVersion.Parse(ModuleManifest.PlatformVersion)))
+                         .Where(x => x.IsPlatformPackage))
             {
-                errors.Add(Error.PlatformVersionMismatch(ModuleManifest.PlatformVersion, package));
+                SemanticVersion packageVersion;
+                try
+                {
+                    packageVersion = SemanticVersion.Parse(package.Version);
+                }
+                catch (FormatException _)
+                {
+                    errors.Add(Error.InvalidVersionFormat(package));
+                    continue;
+                }
+                SemanticVersion moduleManifestPlatformVersion;
+                try
+                {
+                    moduleManifestPlatformVersion = SemanticVersion.Parse(ModuleManifest.PlatformVersion);
+                }
+                catch (FormatException _)
+                {
+                    errors.Add(new Error("Platform version is invalid in the module manifest: {ManifestPlatformVersion}", ModuleManifest.PlatformVersion));
+                    continue;
+                }
+
+                if (packageVersion != moduleManifestPlatformVersion)
+                {
+                    errors.Add(Error.PlatformVersionMismatch(ModuleManifest.PlatformVersion, package));
+                }
             }
         }
 
