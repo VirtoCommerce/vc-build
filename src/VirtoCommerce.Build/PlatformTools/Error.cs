@@ -40,4 +40,10 @@ internal class Error(string messageTemplate, params object[] propertyValues)
             "Module version mismatch. Module: {DependencyId}, manifest version: {DependencyVersion}, package name: {PackageName}, package version: {PackageVersion}, project name: {ProjectName}",
             dependency.Id, dependency.Version, package.Name, package.Version, package.ProjectName);
     }
+
+    public static Error InvalidVersionFormat(PackageItem package) =>
+        new(
+            "Invalid version format. Package name: {PackageName}, package version: {PackageVersion}, project name: {ProjectName}",
+            package.Name, package.Version, package.ProjectName
+        );
 }
