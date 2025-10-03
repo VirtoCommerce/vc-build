@@ -1403,7 +1403,7 @@ internal partial class Build : NukeBuild
             using var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Read);
 
             var dllNames = zipArchive.Entries
-                .Where(x => x.FullName.EndsWithOrdinalIgnoreCase(".dll"))
+                .Where(x => x.FullName.EndsWithOrdinalIgnoreCase(".dll") || x.FullName.EndsWithOrdinalIgnoreCase(".so"))
                 .Select(x => Path.GetFileName(x.FullName));
 
             result.AddRange(dllNames);
