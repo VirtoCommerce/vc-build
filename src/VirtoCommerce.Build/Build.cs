@@ -1400,16 +1400,26 @@ internal partial class Build : NukeBuild
             var cacheFileName = $"{dependency.Id}_{dependency.Version}.zip";
             var cacheFilePath = Path.Combine(cacheDir, cacheFileName);
 
-            if (!File.Exists(cacheFilePath))
+            for (var attempt = 0; attempt < 2; attempt++)
             {
-                await HttpTasks.HttpDownloadFileAsync(zipUrl, cacheFilePath);
+                if (!File.Exists(cacheFilePath))
+                {
+                    await HttpTasks.HttpDownloadFileAsync(zipUrl, cacheFilePath);
+                }
+                try
+                {
+                    using var zipArchive = ZipFile.OpenRead(cacheFilePath);
+                    var dllNames = zipArchive.Entries
+                        .Where(x => x.FullName.EndsWithOrdinalIgnoreCase(".dll") || x.FullName.EndsWithOrdinalIgnoreCase(".so"))
+                        .Select(x => Path.GetFileName(x.FullName));
+                    result.AddRange(dllNames);
+                    break;
+                }
+                catch (Exception)
+                {
+                    File.Delete(cacheFilePath);
+                }
             }
-
-            using var zipArchive = ZipFile.OpenRead(cacheFilePath);
-            var dllNames = zipArchive.Entries
-                .Where(x => x.FullName.EndsWithOrdinalIgnoreCase(".dll") || x.FullName.EndsWithOrdinalIgnoreCase(".so"))
-                .Select(x => Path.GetFileName(x.FullName));
-            result.AddRange(dllNames);
         }
         return result.Distinct().ToArray();
     }
