@@ -1379,36 +1379,38 @@ internal partial class Build : NukeBuild
     {
         const string defaultModuleManifest = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/modules_v3.json";
         var result = new List<string>();
-
-        var httpClient = new HttpClient();
-        var json = await httpClient.GetStringAsync(defaultModuleManifest);
+        var json = await HttpTasks.HttpDownloadStringAsync(defaultModuleManifest);
         var modules = JsonConvert.DeserializeObject<List<ExternalModuleManifest>>(json);
+
+        var cacheDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".vc-build", "cache");
+        Directory.CreateDirectory(cacheDir);
 
         foreach (var dependency in moduleManifestDependencies)
         {
             var module = modules.FirstOrDefault(m => m.Id == dependency.Id);
             var version = module?.Versions?.FirstOrDefault(v => string.IsNullOrEmpty(v.SemanticVersion.Prerelease));
-
             if (version == null)
             {
                 continue;
             }
-
             var zipUrl = Version.TryParse(dependency.Version, out var _)
                 ? version.PackageUrl.Replace(version.Version, dependency.Version)
                 : $"{PrereleasesBlobContainer}{dependency.Id}_{dependency.Version}.zip";
 
-            var zipStream = await httpClient.GetStreamAsync(zipUrl);
+            var cacheFileName = $"{dependency.Id}_{dependency.Version}.zip";
+            var cacheFilePath = Path.Combine(cacheDir, cacheFileName);
 
-            using var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Read);
+            if (!File.Exists(cacheFilePath))
+            {
+                await HttpTasks.HttpDownloadFileAsync(zipUrl, cacheFilePath);
+            }
 
+            using var zipArchive = ZipFile.OpenRead(cacheFilePath);
             var dllNames = zipArchive.Entries
                 .Where(x => x.FullName.EndsWithOrdinalIgnoreCase(".dll") || x.FullName.EndsWithOrdinalIgnoreCase(".so"))
                 .Select(x => Path.GetFileName(x.FullName));
-
             result.AddRange(dllNames);
         }
-
         return result.Distinct().ToArray();
     }
 
