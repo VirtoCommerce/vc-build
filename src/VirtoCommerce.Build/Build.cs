@@ -1405,7 +1405,7 @@ internal partial class Build : NukeBuild
         const string defaultModuleManifest = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/modules_v3.json";
         var result = new List<string>();
         var json = await HttpTasks.HttpDownloadStringAsync(defaultModuleManifest);
-        var modules = JsonConvert.DeserializeObject<List<ExternalModuleManifest>>(json)
+        var modules = JsonConvert.DeserializeObject<List<ExternalModuleManifest>>(json);
 
         foreach (var dependency in moduleManifestDependencies)
         {
