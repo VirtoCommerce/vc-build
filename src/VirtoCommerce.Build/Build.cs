@@ -284,6 +284,31 @@ internal partial class Build : NukeBuild
         nameof(SonarAuthToken),
         nameof(DockerPassword)
         };
+
+    private static string _modulesCachePath;
+    [Parameter("Modules cache path")]
+    public static string ModulesCachePath
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(_modulesCachePath))
+            {
+                var envVarCachePath = Environment.GetEnvironmentVariable("VCBUILD_CACHE");
+                var defaultCachePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                    ".vc-build", "cache");
+                _modulesCachePath = string.IsNullOrWhiteSpace(envVarCachePath) ? defaultCachePath : envVarCachePath;
+            }
+
+            if (!Directory.Exists(_modulesCachePath))
+            {
+                Directory.CreateDirectory(_modulesCachePath);
+            }
+
+            return _modulesCachePath;
+        }
+        set => _modulesCachePath = value;
+    }
+
     private static string GetSafeCmdArguments()
     {
         var safeArgs = EnvironmentInfo.CommandLineArguments.Join(" ");
@@ -1382,46 +1407,82 @@ internal partial class Build : NukeBuild
         var json = await HttpTasks.HttpDownloadStringAsync(defaultModuleManifest);
         var modules = JsonConvert.DeserializeObject<List<ExternalModuleManifest>>(json);
 
-        var cacheDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".vc-build", "cache");
-        Directory.CreateDirectory(cacheDir);
+        var cacheDir = ModulesCachePath;
 
         foreach (var dependency in moduleManifestDependencies)
         {
             var module = modules.FirstOrDefault(m => m.Id == dependency.Id);
-            var version = module?.Versions?.FirstOrDefault(v => string.IsNullOrEmpty(v.SemanticVersion.Prerelease));
-            if (version == null)
+            var versionDescription = module?.Versions?.FirstOrDefault(v => string.IsNullOrEmpty(v.SemanticVersion.Prerelease));
+            if (versionDescription == null)
             {
                 continue;
             }
-            var zipUrl = Version.TryParse(dependency.Version, out var _)
-                ? version.PackageUrl.Replace(version.Version, dependency.Version)
-                : $"{PrereleasesBlobContainer}{dependency.Id}_{dependency.Version}.zip";
-
-            var cacheFileName = $"{dependency.Id}_{dependency.Version}.zip";
-            var cacheFilePath = Path.Combine(cacheDir, cacheFileName);
-
-            for (var attempt = 0; attempt < 2; attempt++)
+            var zipUrl = GetModuleZipUrl(dependency, versionDescription);
+            var moduleArchive = await GetModuleZip(dependency, zipUrl);
+            if (moduleArchive == null)
             {
-                if (!File.Exists(cacheFilePath))
+                continue;
+            }
+
+            var moduleBinaries = GetModuleIgnoreFiles(moduleArchive);
+            result.AddRange(moduleBinaries);
+        }
+        return result.Distinct().ToArray();
+    }
+
+    private static string GetCacheModulePath(ManifestDependency dependency)
+    {
+        var cacheFileName = $"{dependency.Id}_{dependency.Version}.zip";
+        return Path.Combine(ModulesCachePath, cacheFileName);
+    }
+
+    private static List<string> GetModuleIgnoreFiles(ZipArchive zipArchive)
+    {
+        return zipArchive.Entries
+            .Where(FilterModuleBinaries)
+            .Select(x => Path.GetFileName(x.FullName)).ToList();
+    }
+
+    private static bool FilterModuleBinaries(ZipArchiveEntry x)
+    {
+        return x.FullName.EndsWithOrdinalIgnoreCase(".dll") || x.FullName.EndsWithOrdinalIgnoreCase(".so");
+    }
+
+    private static string GetModuleZipUrl(ManifestDependency dependency, ExternalModuleManifestVersion versionDescription)
+    {
+        return Version.TryParse(dependency.Version, out var _)
+            ? versionDescription.PackageUrl.Replace(versionDescription.Version, dependency.Version)
+            : $"{PrereleasesBlobContainer}{dependency.Id}_{dependency.Version}.zip";
+    }
+
+    private static async Task<ZipArchive> GetModuleZip(ManifestDependency dependency, string packageUrl)
+    {
+        const int attemptsNumber = 3;
+        var zipPath = GetCacheModulePath(dependency);
+        ZipArchive result = null;
+
+        for (var attempt = 0; attempt < attemptsNumber; attempt++)
+        {
+            try
+            {
+                if (!File.Exists(zipPath))
                 {
-                    await HttpTasks.HttpDownloadFileAsync(zipUrl, cacheFilePath);
+                    await HttpTasks.HttpDownloadFileAsync(packageUrl, zipPath);
                 }
-                try
+
+                result = ZipFile.OpenRead(zipPath);
+                break;
+            }
+            catch (Exception)
+            {
+                if (File.Exists(zipPath))
                 {
-                    using var zipArchive = ZipFile.OpenRead(cacheFilePath);
-                    var dllNames = zipArchive.Entries
-                        .Where(x => x.FullName.EndsWithOrdinalIgnoreCase(".dll") || x.FullName.EndsWithOrdinalIgnoreCase(".so"))
-                        .Select(x => Path.GetFileName(x.FullName));
-                    result.AddRange(dllNames);
-                    break;
-                }
-                catch (Exception)
-                {
-                    File.Delete(cacheFilePath);
+                    File.Delete(zipPath);
                 }
             }
         }
-        return result.Distinct().ToArray();
+
+        return result;
     }
 
     private static string[] GetGlobalIgnoreList(string moduleIgnoreUrlTemplate)
