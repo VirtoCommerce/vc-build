@@ -294,14 +294,9 @@ internal partial class Build : NukeBuild
             if (string.IsNullOrEmpty(_modulesCachePath))
             {
                 var envVarCachePath = Environment.GetEnvironmentVariable("VCBUILD_CACHE");
-                var defaultCachePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                    ".vc-build", "cache");
-                _modulesCachePath = string.IsNullOrWhiteSpace(envVarCachePath) ? defaultCachePath : envVarCachePath;
-            }
-
-            if (!Directory.Exists(_modulesCachePath))
-            {
-                Directory.CreateDirectory(_modulesCachePath);
+                _modulesCachePath = string.IsNullOrWhiteSpace(envVarCachePath)
+                    ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".vc-build", "cache")
+                    : envVarCachePath;
             }
 
             return _modulesCachePath;
@@ -1422,7 +1417,7 @@ internal partial class Build : NukeBuild
                 continue;
             }
 
-            var moduleBinaries = GetModuleIgnoreFiles(moduleArchive);
+            var moduleBinaries = GetModuleBinaryFiles(moduleArchive);
             result.AddRange(moduleBinaries);
         }
         return result.Distinct().ToArray();
@@ -1434,14 +1429,15 @@ internal partial class Build : NukeBuild
         return Path.Combine(ModulesCachePath, cacheFileName);
     }
 
-    private static List<string> GetModuleIgnoreFiles(ZipArchive zipArchive)
+    private static List<string> GetModuleBinaryFiles(ZipArchive zipArchive)
     {
         return zipArchive.Entries
-            .Where(FilterModuleBinaries)
-            .Select(x => Path.GetFileName(x.FullName)).ToList();
+            .Where(IsBinaryFile)
+            .Select(x => Path.GetFileName(x.FullName))
+            .ToList();
     }
 
-    private static bool FilterModuleBinaries(ZipArchiveEntry x)
+    private static bool IsBinaryFile(ZipArchiveEntry x)
     {
         return x.FullName.EndsWithOrdinalIgnoreCase(".dll") || x.FullName.EndsWithOrdinalIgnoreCase(".so");
     }
