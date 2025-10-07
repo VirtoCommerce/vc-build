@@ -1405,9 +1405,7 @@ internal partial class Build : NukeBuild
         const string defaultModuleManifest = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/modules_v3.json";
         var result = new List<string>();
         var json = await HttpTasks.HttpDownloadStringAsync(defaultModuleManifest);
-        var modules = JsonConvert.DeserializeObject<List<ExternalModuleManifest>>(json);
-
-        var cacheDir = ModulesCachePath;
+        var modules = JsonConvert.DeserializeObject<List<ExternalModuleManifest>>(json)
 
         foreach (var dependency in moduleManifestDependencies)
         {
@@ -1418,7 +1416,7 @@ internal partial class Build : NukeBuild
                 continue;
             }
             var zipUrl = GetModuleZipUrl(dependency, versionDescription);
-            var moduleArchive = await GetModuleZip(dependency, zipUrl);
+            using var moduleArchive = await GetModuleZip(dependency, zipUrl);
             if (moduleArchive == null)
             {
                 continue;
