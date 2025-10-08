@@ -108,6 +108,92 @@ This target normally checks and excludes from the resulting zip all files which 
 vc-build compress -configuration Release
 ```
 
+## Container Create (Docker Containerization)
+
+```console
+vc-build CloudUp -EnvironmentName <environment-name> -DockerUsername <docker-username> -DockerPassword <docker-password>
+vc-build CloudDeploy -EnvironmentName <environment-name> -DockerUsername <docker-username> -DockerPassword <docker-password>
+vc-build PrepareDockerContext -DockerUsername <docker-username> -EnvironmentName <environment-name>
+```
+
+The vc-build tool provides comprehensive Docker containerization capabilities for VirtoCommerce applications. The container creation functionality automates the entire process of building, configuring, and deploying Docker containers for VirtoCommerce platforms and modules.
+
+### What Container Create Does
+
+The container creation process performs these key operations:
+
+1. **Prepares Docker Build Context** (`PrepareDockerContext` target):
+   - Creates a clean Docker build directory structure in `artifacts/docker/`
+   - Downloads the official VirtoCommerce Dockerfile and helper scripts
+   - Compiles and publishes the VirtoCommerce platform to the Docker context
+   - Builds and copies all discovered modules to the container
+   - Configures Docker image names, tags, and build parameters
+
+2. **Builds Docker Image** (`BuildImage` target):
+   - Uses Docker to build a containerized image of the VirtoCommerce application
+   - Includes the platform, all modules, and proper configuration
+   - Tags the image with specified or auto-generated tags
+
+3. **Pushes to Registry** (`PushImage` target):
+   - Authenticates with the Docker registry
+   - Pushes the built image to the registry for deployment
+
+4. **Deploys to Cloud** (`CloudUp`/`CloudDeploy` targets):
+   - Creates or updates VirtoCloud environments
+   - Configures the environment to use the custom Docker image
+   - Handles all cloud deployment automation
+
+### Container Creation Workflows
+
+**Full Container Create and Deploy (New Environment):**
+```console
+vc-build CloudUp -EnvironmentName mystore -DockerUsername mycompany -DockerPassword mypass
+```
+
+**Container Create and Deploy (Existing Environment):**
+```console
+vc-build CloudDeploy -EnvironmentName mystore -DockerUsername mycompany -DockerPassword mypass
+```
+
+**Manual Container Creation Steps:**
+```console
+# 1. Prepare Docker context
+vc-build PrepareDockerContext -DockerUsername mycompany -EnvironmentName mystore
+
+# 2. Build Docker image  
+vc-build BuildImage -DockerImageName mycompany/mystore:latest
+
+# 3. Push to registry
+vc-build PushImage -DockerImageName mycompany/mystore:latest
+```
+
+### Parameters:
+
+- **`EnvironmentName`** - Name of the target environment (required for cloud deployments)
+- **`DockerUsername`** - Docker registry username (required)
+- **`DockerPassword`** - Docker registry password (required for pushing images)
+- **`DockerRegistryUrl`** - Custom Docker registry URL (optional, defaults to Docker Hub)
+- **`DockerImageName`** - Custom Docker image name (optional, auto-generated if not provided)
+- **`DockerImageTag`** - Docker image tags (optional, timestamp-based if not provided)
+- **`DockerfilePath`** - Path to custom Dockerfile (optional)
+- **`DockerBuildContextPath`** - Custom Docker build context path (optional)
+- **`CloudToken`** - VirtoCloud authentication token (required for cloud deployments)
+- **`ServicePlan`** - Cloud service plan (optional, defaults to F1)
+
+### Example:
+
+```console
+# Create and deploy a containerized store to a new cloud environment
+vc-build CloudUp -EnvironmentName mystore -DockerUsername mycompany -DockerPassword mytoken
+
+# Deploy updated container to existing environment  
+vc-build CloudDeploy -EnvironmentName mystore -DockerUsername mycompany -DockerPassword mytoken
+
+# Build custom container with specific image name
+vc-build PrepareDockerContext -DockerUsername mycompany -EnvironmentName mystore
+vc-build BuildImage -DockerImageName myregistry.com/mycompany/mystore:v1.0.0
+```
+
 Console output:
 
 ```console

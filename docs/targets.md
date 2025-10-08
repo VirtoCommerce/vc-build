@@ -1,3 +1,39 @@
+# VirtoCommerce Build Targets
+
+## Container Create (Docker Containerization)
+
+The vc-build tool provides comprehensive Docker containerization capabilities for VirtoCommerce applications. The "Container Create" functionality is implemented through several coordinated targets that work together to build, configure, and deploy containerized applications.
+
+### Complete Container Creation Workflow
+
+The container creation process involves these key targets:
+
+1. **`PrepareDockerContext`** - Prepares the Docker build environment
+2. **`BuildImage`** - Builds the Docker image  
+3. **`PushImage`** - Pushes the image to a registry
+4. **`CloudUp`** / **`CloudDeploy`** - Deploys to VirtoCloud environments
+
+### Quick Start - Container Create Commands
+
+**Create and deploy to new environment:**
+```console
+vc-build CloudUp -EnvironmentName myapp -DockerUsername myuser -DockerPassword mypass
+```
+
+**Deploy to existing environment:**
+```console
+vc-build CloudDeploy -EnvironmentName myapp -DockerUsername myuser -DockerPassword mypass
+```
+
+**Manual container building:**
+```console
+vc-build PrepareDockerContext -DockerUsername myuser -EnvironmentName myapp
+vc-build BuildImage -DockerImageName myuser/myapp:latest
+vc-build PushImage -DockerImageName myuser/myapp:latest
+```
+
+---
+
 ## Init
 Creates `vc-package.json` boilerplate with the latest version number of the platform. The version number can be specified by the `PlatformVersion` parameter.
 
@@ -350,6 +386,31 @@ Shows environment logs.
 vc-build CloudEnvLogs -EnvironmentName <EnvName>
 ```
 ---
+## PrepareDockerContext
+Prepares the Docker build context for containerizing VirtoCommerce applications. This target creates a complete Docker build environment by:
+
+1. **Creating Docker build context directory**: Sets up `artifacts/docker/` directory structure
+2. **Downloading Docker assets**: Downloads Dockerfile and wait-for-it.sh script from VirtoCommerce Docker repository
+3. **Publishing platform**: Compiles and publishes the VirtoCommerce platform to `artifacts/docker/publish/`
+4. **Copying modules**: Builds and copies all discovered modules to the Docker context
+5. **Setting Docker parameters**: Auto-configures Docker image names, tags, and build context paths
+
+This target is automatically triggered by cloud deployment targets and prepares everything needed for Docker image creation.
+
+### Parameters
+- `DockerUsername`: Username for Docker registry (used to generate image name if not specified)
+- `EnvironmentName`: Environment name (used to generate image name if not specified)  
+- `DockerImageName`: Custom Docker image name (optional, auto-generated if not provided)
+- `DockerImageTag`: Custom Docker image tags (optional, timestamp-based tag generated if not provided)
+- `DockerfileUrl`: URL to custom Dockerfile (optional, defaults to VirtoCommerce platform Dockerfile)
+- `WaitScriptUrl`: URL to wait-for-it.sh script (optional, defaults to VirtoCommerce script)
+
+### Usage
+```console
+vc-build PrepareDockerContext -DockerUsername myuser -EnvironmentName dev
+vc-build PrepareDockerContext -DockerImageName myregistry/myapp -DockerImageTag latest
+```
+---
 ## CloudDown
 Deletes the environment. Accepts parameters like `Organization` (optional), `EnvironmentName` (required).
 
@@ -360,17 +421,57 @@ vc-build CloudDown -Organization <OrgName> -EnvironmentName <EnvName>
 ```
 ---
 ## CloudDeploy
-Deploys a custom image to the existing environment.
+Deploys a custom Docker image to an existing VirtoCommerce cloud environment. This target performs the complete container creation and deployment workflow:
+
+1. **Prepares Docker context** (via `PrepareDockerContext` target)
+2. **Builds Docker image** (via `BuildImage` target) 
+3. **Pushes image to registry** (via `PushImage` target)
+4. **Updates environment** with new Docker image coordinates
+
+This is the complete "Container Create" workflow that builds and deploys a containerized VirtoCommerce application.
+
+### Parameters
+- `EnvironmentName`: Target environment name (required)
+- `DockerUsername`: Docker Hub username (required for image naming and registry access)
+- `DockerPassword`: Docker registry password (required for pushing images)
+- `DockerRegistryUrl`: Docker registry URL (optional, defaults to Docker Hub)
+- `DockerImageName`: Custom image name (optional, auto-generated from username/environment)
+- `DockerImageTag`: Image tags (optional, timestamp-based if not provided)
+- `CloudToken`: VirtoCloud authentication token (required)
+- `Organization`: Organization name (optional)
 
 ### Usage
 ```console
-vc-build CloudDeploy -EnvironmentName <EnvName> -DockerUsername <username of docker hub>
+vc-build CloudDeploy -EnvironmentName myenv -DockerUsername myuser -DockerPassword mypass
+vc-build CloudDeploy -EnvironmentName prod -DockerUsername myorg -DockerPassword mypass -DockerImageTag v1.0.0
 ```
 ---
 ## CloudUp
-Deploys a custom image to a new environment.
+Creates a new environment and deploys a custom Docker image to it. This target combines environment creation with the complete container creation and deployment workflow:
+
+1. **Prepares Docker context** (via `PrepareDockerContext` target)
+2. **Builds Docker image** (via `BuildImage` target)
+3. **Pushes image to registry** (via `PushImage` target) 
+4. **Creates new environment** (via `CloudInit` target)
+5. **Configures environment** with the custom Docker image
+
+This is the complete "Container Create and Deploy" workflow for new environments.
+
+### Parameters
+- `EnvironmentName`: New environment name (required)
+- `DockerUsername`: Docker Hub username (required for image naming and registry access)
+- `DockerPassword`: Docker registry password (required for pushing images)
+- `DockerRegistryUrl`: Docker registry URL (optional, defaults to Docker Hub)
+- `DockerImageName`: Custom image name (optional, auto-generated from username/environment)
+- `DockerImageTag`: Image tags (optional, timestamp-based if not provided)
+- `CloudToken`: VirtoCloud authentication token (required)
+- `ServicePlan`: Cloud service plan (optional, defaults to F1)
+- `ClusterName`: Target cluster name (optional)
+- `DbProvider`: Database provider (optional)
+- `DbName`: Database name (optional)
 
 ### Usage
 ```console
-vc-build CloudUp -EnvironmentName <EnvName> -DockerUsername <username of docker hub>
+vc-build CloudUp -EnvironmentName newenv -DockerUsername myuser -DockerPassword mypass
+vc-build CloudUp -EnvironmentName production -DockerUsername myorg -DockerPassword mypass -ServicePlan Standard -DockerImageTag v2.0.0
 ```
