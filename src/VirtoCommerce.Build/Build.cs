@@ -1370,14 +1370,15 @@ internal partial class Build : NukeBuild
                 ignoredFiles.AddRange(ModuleIgnoreFile.ReadAllLines());
             }
 
-            ignoredFiles.AddRange(await GetIgnoreListFromDependencies(ModuleManifest.Dependencies));
+            var manifests = await GetAllModuleManifests();
+            ignoredFiles.AddRange(await GetIgnoreListFromDependencies(ModuleManifest.Dependencies, manifests));
 
-            ignoredFiles = ignoredFiles.Select(x => x.Trim()).Distinct().ToList();
+            ignoredFiles = ignoredFiles.Select(x => x.Trim()).Distinct().OrderBy(x => x).ToList();
 
-            var keepFiles = Array.Empty<string>();
+            List<string> keepFiles = [];
             if (ModuleKeepFile.FileExists())
             {
-                keepFiles = ModuleKeepFile.ReadAllLines().ToArray();
+                keepFiles = ModuleKeepFile.ReadAllLines().Select(x => x.Trim()).Distinct().OrderBy(x => x).ToList();
             }
 
             ArtifactPacker.CompressModule(options => options.WithSourceDirectory(ModuleOutputDirectory)
@@ -1395,88 +1396,103 @@ internal partial class Build : NukeBuild
         }
     }
 
-    private static async Task<string[]> GetIgnoreListFromDependencies(ManifestDependency[] moduleManifestDependencies)
+    private static async Task<List<ExternalModuleManifest>> GetAllModuleManifests()
     {
         const string defaultModuleManifest = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/modules_v3.json";
-        var result = new List<string>();
         var json = await HttpTasks.HttpDownloadStringAsync(defaultModuleManifest);
-        var modules = JsonConvert.DeserializeObject<List<ExternalModuleManifest>>(json);
 
-        foreach (var dependency in moduleManifestDependencies)
+        return JsonConvert.DeserializeObject<List<ExternalModuleManifest>>(json);
+    }
+
+    private static async Task<HashSet<string>> GetIgnoreListFromDependencies(ManifestDependency[] dependencies, List<ExternalModuleManifest> manifests)
+    {
+        var result = new HashSet<string>();
+
+        foreach (var dependency in dependencies)
         {
-            var module = modules.FirstOrDefault(m => m.Id == dependency.Id);
-            var versionDescription = module?.Versions?.FirstOrDefault(v => string.IsNullOrEmpty(v.SemanticVersion.Prerelease));
-            if (versionDescription == null)
-            {
-                continue;
-            }
-            var zipUrl = GetModuleZipUrl(dependency, versionDescription);
-            using var moduleArchive = await GetModuleZip(dependency, zipUrl);
-            if (moduleArchive == null)
+            var manifest = manifests.FirstOrDefault(x => x.Id == dependency.Id);
+            if (manifest == null)
             {
                 continue;
             }
 
-            var moduleBinaries = GetModuleBinaryFiles(moduleArchive);
-            result.AddRange(moduleBinaries);
+            var zipPath = await DownloadModuleZip(dependency, manifest);
+            if (!string.IsNullOrEmpty(zipPath) && File.Exists(zipPath))
+            {
+                result.AddRange(GetModuleBinaryFiles(zipPath));
+            }
         }
-        return result.Distinct().ToArray();
+
+        return result;
     }
 
-    private static string GetCacheModulePath(ManifestDependency dependency)
+    private static async Task<string> DownloadModuleZip(ManifestDependency dependency, ExternalModuleManifest manifest)
     {
-        var cacheFileName = $"{dependency.Id}_{dependency.Version}.zip";
-        return Path.Combine(ModulesCachePath, cacheFileName);
-    }
+        var zipUrl = GetModuleZipUrl(dependency, manifest);
+        if (string.IsNullOrEmpty(zipUrl))
+        {
+            return null;
+        }
 
-    private static List<string> GetModuleBinaryFiles(ZipArchive zipArchive)
-    {
-        return zipArchive.Entries
-            .Where(IsBinaryFile)
-            .Select(x => Path.GetFileName(x.FullName))
-            .ToList();
-    }
+        var zipFileName = $"{dependency.Id}_{dependency.Version}.zip";
+        var zipPath = Path.Combine(ModulesCachePath, zipFileName);
+        string result = null;
 
-    private static bool IsBinaryFile(ZipArchiveEntry x)
-    {
-        return x.FullName.EndsWithOrdinalIgnoreCase(".dll") || x.FullName.EndsWithOrdinalIgnoreCase(".so");
-    }
+        const int maxAttemptsCount = 3;
 
-    private static string GetModuleZipUrl(ManifestDependency dependency, ExternalModuleManifestVersion versionDescription)
-    {
-        return Version.TryParse(dependency.Version, out var _)
-            ? versionDescription.PackageUrl.Replace(versionDescription.Version, dependency.Version)
-            : $"{PrereleasesBlobContainer}{dependency.Id}_{dependency.Version}.zip";
-    }
-
-    private static async Task<ZipArchive> GetModuleZip(ManifestDependency dependency, string packageUrl)
-    {
-        const int attemptsNumber = 3;
-        var zipPath = GetCacheModulePath(dependency);
-        ZipArchive result = null;
-
-        for (var attempt = 0; attempt < attemptsNumber; attempt++)
+        for (var attempt = 0; attempt < maxAttemptsCount; attempt++)
         {
             try
             {
                 if (!File.Exists(zipPath))
                 {
-                    await HttpTasks.HttpDownloadFileAsync(packageUrl, zipPath);
+                    await HttpTasks.HttpDownloadFileAsync(zipUrl, zipPath);
                 }
 
-                result = ZipFile.OpenRead(zipPath);
+                using var _ = ZipFile.OpenRead(zipPath);
+                result = zipPath;
                 break;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 if (File.Exists(zipPath))
                 {
                     File.Delete(zipPath);
                 }
+
+                Log.Warning("Cannot download module zip. {Exception}", ex.Message);
             }
         }
 
         return result;
+    }
+
+    private static string GetModuleZipUrl(ManifestDependency dependency, ExternalModuleManifest manifest)
+    {
+        var version = manifest.Versions?.FirstOrDefault(x => string.IsNullOrEmpty(x.SemanticVersion.Prerelease));
+        if (version is null)
+        {
+            return null;
+        }
+
+        return Version.TryParse(dependency.Version, out _)
+            ? version.PackageUrl.Replace(version.Version, dependency.Version)
+            : $"{PrereleasesBlobContainer}{dependency.Id}_{dependency.Version}.zip";
+    }
+
+    private static IEnumerable<string> GetModuleBinaryFiles(string zipPath)
+    {
+        using var archive = ZipFile.OpenRead(zipPath);
+
+        return archive.Entries
+            .Where(IsBinaryFile)
+            .Select(x => Path.GetFileName(x.FullName));
+
+        static bool IsBinaryFile(ZipArchiveEntry entry)
+        {
+            return entry.FullName.EndsWithOrdinalIgnoreCase(".dll") ||
+                   entry.FullName.EndsWithOrdinalIgnoreCase(".so");
+        }
     }
 
     private static string[] GetGlobalIgnoreList(string moduleIgnoreUrlTemplate)
