@@ -1488,7 +1488,8 @@ internal partial class Build : NukeBuild
 
         return archive.Entries
             .Where(IsBinaryFile)
-            .Select(x => Path.GetFileName(x.FullName));
+            .Select(x => Path.GetFileName(x.FullName))
+            .ToList();
 
         static bool IsBinaryFile(ZipArchiveEntry entry)
         {
