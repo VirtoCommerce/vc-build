@@ -1482,7 +1482,7 @@ internal partial class Build : NukeBuild
             : $"{PrereleasesBlobContainer}{dependency.Id}_{dependency.Version}.zip";
     }
 
-    private static IEnumerable<string> GetModuleBinaryFiles(string zipPath)
+    private static List<string> GetModuleBinaryFiles(string zipPath)
     {
         using var archive = ZipFile.OpenRead(zipPath);
 
