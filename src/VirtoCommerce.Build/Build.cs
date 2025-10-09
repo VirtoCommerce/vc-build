@@ -291,12 +291,14 @@ internal partial class Build : NukeBuild
     {
         get
         {
-            if (string.IsNullOrEmpty(_modulesCachePath))
+            if (string.IsNullOrWhiteSpace(_modulesCachePath))
             {
-                var envVarCachePath = Environment.GetEnvironmentVariable("VCBUILD_CACHE");
-                _modulesCachePath = string.IsNullOrWhiteSpace(envVarCachePath)
-                    ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".vc-build", "cache")
-                    : envVarCachePath;
+                _modulesCachePath = Environment.GetEnvironmentVariable("VCBUILD_CACHE");
+
+                if (string.IsNullOrWhiteSpace(_modulesCachePath))
+                {
+                    _modulesCachePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".vc-build", "cache");
+                }
             }
 
             return _modulesCachePath;
