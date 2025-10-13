@@ -101,7 +101,7 @@ namespace VirtoCommerce.Build
             foreach (var packageGroup in packages
                          .Where(x => !x.IsPlatformPackage)
                          .GroupBy(x => x.Name)
-                         .Where(g => !ModuleManifest.Dependencies.Any(dependency => HasNameMatch(g.Key, dependency.Id))))
+                         .Where(g => !ModuleManifest.Dependencies?.Any(dependency => HasNameMatch(g.Key, dependency.Id)) ?? true))
             {
                 errors.Add(Error.MissingManifestDependency(packageGroup.Key, packageGroup.First().Version));
             }
