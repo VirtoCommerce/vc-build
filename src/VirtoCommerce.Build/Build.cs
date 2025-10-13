@@ -1410,7 +1410,7 @@ internal partial class Build : NukeBuild
     {
         var result = new HashSet<string>();
 
-        foreach (var dependency in dependencies)
+        foreach (var dependency in dependencies ?? [])
         {
             var manifest = manifests.FirstOrDefault(x => x.Id == dependency.Id);
             if (manifest == null)
