@@ -14,9 +14,15 @@ namespace PlatformTools.Extensions
                 return false;
             }
 
-            var fileInfo = new FileInfo(moduleInfo.FullPhysicalPath);
+            var moduleDirectory = Path.GetDirectoryName(moduleInfo.FullPhysicalPath);
+            if (string.IsNullOrEmpty(moduleDirectory))
+            {
+                return false;
+            }
 
-            return fileInfo.LinkTarget != null;
+            var directoryInfo = new DirectoryInfo(moduleDirectory);
+
+            return directoryInfo.LinkTarget != null;
         }
     }
 }
