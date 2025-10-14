@@ -8,21 +8,31 @@ namespace PlatformTools.Extensions
     {
         public static bool IsModuleSymlinked(this ILocalModuleCatalog moduleCatalog, string moduleId)
         {
-            var moduleInfo = moduleCatalog.Modules.OfType<ManifestModuleInfo>().FirstOrDefault(m => m.ModuleName == moduleId);
+            var moduleInfo = moduleCatalog.Modules.OfType<ManifestModuleInfo>()
+                .FirstOrDefault(m => m.ModuleName == moduleId);
             if (moduleInfo == null)
             {
                 return false;
             }
 
-            var moduleDirectory = Path.GetDirectoryName(moduleInfo.FullPhysicalPath);
-            if (string.IsNullOrEmpty(moduleDirectory))
+            var directoryInfo = new DirectoryInfo(moduleInfo.FullPhysicalPath);
+
+            return IsSymlinked(directoryInfo);
+        }
+
+        private static bool IsSymlinked(DirectoryInfo directoryInfo)
+        {
+            if (directoryInfo == null)
             {
                 return false;
             }
 
-            var directoryInfo = new DirectoryInfo(moduleDirectory);
+            if (directoryInfo.LinkTarget != null)
+            {
+                return true;
+            }
 
-            return directoryInfo.LinkTarget != null;
+            return IsSymlinked(directoryInfo.Parent);
         }
     }
 }
