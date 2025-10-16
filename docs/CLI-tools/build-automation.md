@@ -2,7 +2,7 @@ The `vc-build` contains a set of targets that are designed to automate the vario
 
 ![vc-build CLI](../media/cli-tools-2.png)
 
-  
+
 ## Compile
 ```console
 vc-build compile -configuration <Debug|Release>
@@ -12,7 +12,7 @@ Compile .NET Core solution.
 ### Parameters:
 
   - `-configuration <Debug|Release|CONFIGURATION>` - Defines the build configuration. The default configuration for build on build server is `Release`, on the local machine is `Debug`, but you can override the build configuration settings in your project.
-  
+
 
 ## Test
 ```console
@@ -63,13 +63,13 @@ Total                              1:22
 ## Pack
 
 ```console
-vc-build pack -configuration <Debug|Release> 
+vc-build pack -configuration <Debug|Release>
 ```
 
 Builds the module solution and creates NuGet packages for all projects that have the `<IsPackable>` is set to `True` in the `.csproj` file.
 
-The result of this target are NuGet packages that are stored by `artifacts` path of the module's root folder. 
-If execute this target for the platform solution the version is taken from `Directory.Build.props`. 
+The result of this target are NuGet packages that are stored by `artifacts` path of the module's root folder.
+If execute this target for the platform solution the version is taken from `Directory.Build.props`.
 If executes this target for a module solution, the version is taken from the module manifest file.
 
 ## PublishPackages
@@ -77,11 +77,11 @@ If executes this target for a module solution, the version is taken from the mod
 ```console
 vc-build publishPackages -source <SOURCE> -apiKey <API_KEY>
 ```
-Pushes the NuGet packages are discovered in the `artifacts` folder to the server specified by `-source` parameter and publishes it. 
+Pushes the NuGet packages are discovered in the `artifacts` folder to the server specified by `-source` parameter and publishes it.
 
 ### Example:
 ```console
-vc-build publishPackages -source C:\local-nuget 
+vc-build publishPackages -source C:\local-nuget
 ```
 
 ### Parameters:
@@ -90,18 +90,23 @@ vc-build publishPackages -source C:\local-nuget
   - `-apiKey <API_KEY>` - The API key for the server.
 
 
-## Compress 
+## Compress
 
 ```console
 vc-build compress -configuration <Debug|Release>
 ```
-Pack the build artifacts into a distribution bundle zip that is ready to be transferred to a developer platform instance or published. Executing this command in a module root folder will put the resulting zip into the `artifact` folder. 
+Pack the build artifacts into a distribution bundle zip that is ready to be transferred to a developer platform instance or published. Executing this command in a module root folder will put the resulting zip into the `artifact` folder.
 
-This target normally checks and excludes from the resulting zip all files which names are enumerated in these multiple sources: 
+This target excludes from the resulting zip all files whose names are enumerated from multiple sources:
 
 - [global module.ignore](https://raw.githubusercontent.com/VirtoCommerce/vc-platform/dev/module.ignore) file that is managed by the VirtoCommerce team
-- local `module.ignore` file that is taken from the root folder of the module
-  
+- local `.moduleignore` file that is taken from the root folder of the module
+- dependency-derived binary file names (.dll, .so) collected from dependency module zips
+
+### Parameters (since 3.817)
+- `ModulesCachePath`: Path for caching downloaded dependency zips. Defaults to `%USERPROFILE%/.vc-build/cache` or `VCBUILD_CACHE` env var if set.
+- `PrereleasesBlobContainer`: Base URL to download prerelease module packages used to derive dependency ignore lists. Default: `https://vc3prerelease.blob.core.windows.net/packages/`.
+
 ### Example:
 
 ```console

@@ -27,30 +27,48 @@ namespace HelpProvider
                     return false;
                 }
 
-                return string.Compare(target, GetTextContent(heading), true) == 0;
+                return string.Compare(target, GetTextContent(heading), StringComparison.OrdinalIgnoreCase) == 0;
             });
 
             if (targetHelpBlocks == null)
             {
-                Log.Error($"Help is not found for the target {target}");
+                Log.Error("Help is not found for the target {target}", target);
                 return string.Empty;
             }
 
-            var descriptionBlocks = targetHelpBlocks.OfType<LeafBlock>().Select(b =>
-            {
-                var blockText = GetTextContent(b);
-                return string.Join(Environment.NewLine, blockText);
-            }).ToArray();
+            var descriptionParts = new List<string>();
 
-            var description = string.Join(Environment.NewLine, descriptionBlocks);
-
-            var usageBlocks = targetHelpBlocks.OfType<FencedCodeBlock>().Select(b =>
+            foreach (var block in targetHelpBlocks)
             {
-                var blockText = GetFencedText(b);
-                return string.Join(Environment.NewLine, blockText);
-            }).ToArray();
-            var usage = string.Join(Environment.NewLine, usageBlocks);
-            return string.Join(Environment.NewLine, description, usage);
+                switch (block)
+                {
+                    case FencedCodeBlock fencedCodeBlock:
+                        var codeText = GetFencedText(fencedCodeBlock);
+                        if (!string.IsNullOrWhiteSpace(codeText))
+                        {
+                            descriptionParts.Add(codeText);
+                        }
+                        break;
+
+                    case LeafBlock leafBlock:
+                        var blockText = GetTextContent(leafBlock);
+                        if (!string.IsNullOrWhiteSpace(blockText))
+                        {
+                            descriptionParts.Add(blockText);
+                        }
+                        break;
+
+                    case ListBlock listBlock:
+                        var listText = GetListContent(listBlock);
+                        if (!string.IsNullOrWhiteSpace(listText))
+                        {
+                            descriptionParts.Add(listText);
+                        }
+                        break;
+                }
+            }
+
+            return string.Join(Environment.NewLine, descriptionParts);
         }
 
         public static IEnumerable<string> GetTargets()
@@ -58,7 +76,7 @@ namespace HelpProvider
             var rawMd = GetRawMDContent();
             var md = GetParsedHelpFile(rawMd);
             var helpBlocks = SplitMarkdownDocumentBySeparators(md);
-            foreach(var targetHelpBlocks in helpBlocks)
+            foreach (var targetHelpBlocks in helpBlocks)
             {
                 var heading = targetHelpBlocks.FirstOrDefault(b => b is HeadingBlock) as HeadingBlock;
 
@@ -162,6 +180,36 @@ namespace HelpProvider
             });
 
             return string.Join(Environment.NewLine, lines);
+        }
+
+        private static string GetListContent(ListBlock listBlock)
+        {
+            if (listBlock == null)
+            {
+                return string.Empty;
+            }
+
+            var result = new StringBuilder();
+
+            foreach (var listItem in listBlock)
+            {
+                if (listItem is ListItemBlock itemBlock)
+                {
+                    foreach (var block in itemBlock)
+                    {
+                        if (block is ParagraphBlock paragraph)
+                        {
+                            var itemText = GetTextContent(paragraph);
+                            if (!string.IsNullOrWhiteSpace(itemText))
+                            {
+                                result.AppendLine($"- {itemText}");
+                            }
+                        }
+                    }
+                }
+            }
+
+            return result.ToString();
         }
     }
 }
