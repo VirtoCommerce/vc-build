@@ -36,8 +36,13 @@ namespace HelpProvider
                 return string.Empty;
             }
 
-            var descriptionParts = new List<string>();
+            var descriptionParts = ExtractTextFromHelpBlocks(targetHelpBlocks);
+            return string.Join(Environment.NewLine, descriptionParts);
+        }
 
+        private static List<string> ExtractTextFromHelpBlocks(IList<Block> targetHelpBlocks)
+        {
+            var result = new List<string>();
             foreach (var block in targetHelpBlocks)
             {
                 switch (block)
@@ -46,7 +51,7 @@ namespace HelpProvider
                         var codeText = GetFencedText(fencedCodeBlock);
                         if (!string.IsNullOrWhiteSpace(codeText))
                         {
-                            descriptionParts.Add(codeText);
+                            result.Add(codeText);
                         }
                         break;
 
@@ -54,7 +59,7 @@ namespace HelpProvider
                         var blockText = GetTextContent(leafBlock);
                         if (!string.IsNullOrWhiteSpace(blockText))
                         {
-                            descriptionParts.Add(blockText);
+                            result.Add(blockText);
                         }
                         break;
 
@@ -62,13 +67,13 @@ namespace HelpProvider
                         var listText = GetListContent(listBlock);
                         if (!string.IsNullOrWhiteSpace(listText))
                         {
-                            descriptionParts.Add(listText);
+                            result.Add(listText);
                         }
                         break;
                 }
             }
 
-            return string.Join(Environment.NewLine, descriptionParts);
+            return result;
         }
 
         public static IEnumerable<string> GetTargets()
@@ -193,18 +198,22 @@ namespace HelpProvider
 
             foreach (var listItem in listBlock)
             {
-                if (listItem is ListItemBlock itemBlock)
+                if (listItem is not ListItemBlock itemBlock)
                 {
-                    foreach (var block in itemBlock)
+                    continue;
+                }
+
+                foreach (var block in itemBlock)
+                {
+                    if (block is not ParagraphBlock paragraph)
                     {
-                        if (block is ParagraphBlock paragraph)
-                        {
-                            var itemText = GetTextContent(paragraph);
-                            if (!string.IsNullOrWhiteSpace(itemText))
-                            {
-                                result.AppendLine($"- {itemText}");
-                            }
-                        }
+                        continue;
+                    }
+
+                    var itemText = GetTextContent(paragraph);
+                    if (!string.IsNullOrWhiteSpace(itemText))
+                    {
+                        result.AppendLine($"- {itemText}");
                     }
                 }
             }
