@@ -9,13 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optimize module dependency handling with caching (VCI-1127)
 - Automatic exclusion for dependency assemblies (VCI-1127)
 - Version validity check in version matching (VCI-1173)
+- Parameter `DisableIgnoreDependencyFiles` to disable auto-exclusion of dependency binaries during Compress
 
 ### Changed
 - Symlink detection refactored to recursively check parent directories via `DirectoryInfo.LinkTarget` (VCI-1180)
 - Help output and targets documentation improved (VCI-1177)
+- Compress now auto-excludes dependency binaries (.dll, .so); can be disabled with `-DisableIgnoreDependencyFiles`
+- Compress now validates dependency versions by triggering `MatchVersions`; can be skipped with `-skip MatchVersions`
 
 ### Fixed
-- Install target no longer fails when there is no GithubReleases source (VCI-1176)
+- Install target no longer fails when there are no modules in GithubReleases source (VCI-1176)
 - Fix failures in MatchVersions and Compress when there is no dependency data (VCI-1181)
 - Fixed deprecation warnings in CI workflow (Vcst-2719)
 
