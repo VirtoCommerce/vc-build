@@ -106,6 +106,7 @@ This target excludes from the resulting zip all files whose names are enumerated
 ### Parameters (since 3.817)
 - `ModulesCachePath`: Path for caching downloaded dependency zips. Defaults to `%USERPROFILE%/.vc-build/cache` or `VCBUILD_CACHE` env var if set.
 - `PrereleasesBlobContainer`: Base URL to download prerelease module packages used to derive dependency ignore lists. Default: `https://vc3prerelease.blob.core.windows.net/packages/`.
+- `DisableIgnoreDependencyFiles`: When true, disables automatic exclusion of dependency binary files from the archive.
 
 ### Example:
 

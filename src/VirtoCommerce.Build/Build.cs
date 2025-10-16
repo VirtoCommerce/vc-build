@@ -194,6 +194,9 @@ internal partial class Build : NukeBuild
     public static string PrereleasesBlobContainer { get; set; } =
         "https://vc3prerelease.blob.core.windows.net/packages/";
 
+    [Parameter("Disable auto ignore files")]
+    public static bool DisableIgnoreDependencyFiles { get; set; }
+
     protected static GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
 
     protected static AbsolutePath SourceDirectory => RootDirectory / "src";
@@ -1373,7 +1376,10 @@ internal partial class Build : NukeBuild
             }
 
             var manifests = await GetAllModuleManifests();
-            ignoredFiles.AddRange(await GetIgnoreListFromDependencies(ModuleManifest.Dependencies, manifests));
+            if (!DisableIgnoreDependencyFiles)
+            {
+                ignoredFiles.AddRange(await GetIgnoreListFromDependencies(ModuleManifest.Dependencies, manifests));
+            }
 
             ignoredFiles = ignoredFiles.Select(x => x.Trim()).Distinct().OrderBy(x => x).ToList();
 
