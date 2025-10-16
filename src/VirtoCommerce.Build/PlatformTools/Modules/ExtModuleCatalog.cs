@@ -42,14 +42,19 @@ namespace PlatformTools.Modules
 
         public static IOptions<ExternalModuleCatalogOptions> GetOptions(string authToken, IList<string> manifestUrls)
         {
+            manifestUrls ??= new List<string>();
             var options = new ExternalModuleCatalogOptions
             {
-                ModulesManifestUrl = new Uri(manifestUrls[0]),
                 AuthorizationToken = authToken,
                 IncludePrerelease = false,
-                AutoInstallModuleBundles = Array.Empty<string>(),
+                AutoInstallModuleBundles = [],
                 ExtraModulesManifestUrls = manifestUrls.Select(m => new Uri(m)).ToArray(),
             };
+
+            if (manifestUrls.Count > 0)
+            {
+                options.ModulesManifestUrl = new Uri(manifestUrls[0]);
+            }
 
             return Options.Create(options);
         }

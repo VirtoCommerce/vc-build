@@ -11,6 +11,11 @@ vc-build install -module <module>:<version>
 
 This command downloads and installs the platform or modules into the relevant folder with the versions transferred as command parameters or defined in `vc-package.json`.
 
+### Notes (since 3.817)
+- More resilient module source handling:
+  - `GithubReleases` source initializes with empty lists by default.
+  - Missing or empty `Sources` in `vc-package.json` no longer cause failures; sensible defaults are applied.
+
 ### Example of the vc-package.json file:
 ```console
 {
@@ -169,6 +174,9 @@ If no args are specified, the platform and all modules in the specified location
 This command also updates the installed dependency versions in the `vc-package.json` file.
 Since the version 3.15.0 this target updates to stable bundles by default. If you want to update to the latest available versions you can add -Edge parameter.
 You can specify the bundle to update your environment to specific versions using -v <bundle name> parameter.
+
+### Notes (since 3.817)
+- Improved resilience when module source lists are missing or empty.
 
 ### Examples:
 ```console

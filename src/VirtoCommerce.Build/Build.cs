@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -189,6 +190,13 @@ internal partial class Build : NukeBuild
     [Parameter("Http tasks timeout in seconds")]
     public static int HttpTimeout { get; set; } = 180;
 
+    [Parameter("Prereleases Blob Container")]
+    public static string PrereleasesBlobContainer { get; set; } =
+        "https://vc3prerelease.blob.core.windows.net/packages/";
+
+    [Parameter("Disable auto ignore files")]
+    public static bool DisableIgnoreDependencyFiles { get; set; }
+
     protected static GitRepository GitRepository => GitRepository.FromLocalDirectory(RootDirectory / ".git");
 
     protected static AbsolutePath SourceDirectory => RootDirectory / "src";
@@ -279,6 +287,28 @@ internal partial class Build : NukeBuild
         nameof(SonarAuthToken),
         nameof(DockerPassword)
         };
+
+    private static string _modulesCachePath;
+    [Parameter("Modules cache path")]
+    public static string ModulesCachePath
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(_modulesCachePath))
+            {
+                _modulesCachePath = Environment.GetEnvironmentVariable("VCBUILD_CACHE");
+
+                if (string.IsNullOrWhiteSpace(_modulesCachePath))
+                {
+                    _modulesCachePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".vc-build", "cache");
+                }
+            }
+
+            return _modulesCachePath;
+        }
+        set => _modulesCachePath = value;
+    }
+
     private static string GetSafeCmdArguments()
     {
         var safeArgs = EnvironmentInfo.CommandLineArguments.Join(" ");
@@ -1323,32 +1353,40 @@ internal partial class Build : NukeBuild
         }
     }
 
-    private void CompressExecuteMethod()
+    private static async Task CompressExecuteMethod()
     {
-        const int MajorMinorPatch = 3;
+        const int majorMinorPatch = 3;
+
         if (IsModule)
         {
             const string moduleIgnoreUrlTemplate = "https://raw.githubusercontent.com/VirtoCommerce/vc-platform/{0}/module.ignore";
             if (string.IsNullOrEmpty(GlobalModuleIgnoreFileUrl))
             {
-                var platformVersionString = Version.TryParse(ModuleManifest.PlatformVersion, out var platformVersion) ? platformVersion.ToString(MajorMinorPatch) : "dev";
+                var platformVersionString = Version.TryParse(ModuleManifest.PlatformVersion, out var platformVersion) ? platformVersion.ToString(majorMinorPatch) : "dev";
 
                 GlobalModuleIgnoreFileUrl = string.Format(moduleIgnoreUrlTemplate, platformVersionString);
             }
 
-            string[] ignoredFiles = GetGlobalIgnoreList(moduleIgnoreUrlTemplate);
+            List<string> ignoredFiles = [];
+            ignoredFiles.AddRange(GetGlobalIgnoreList(moduleIgnoreUrlTemplate));
 
             if (ModuleIgnoreFile.FileExists())
             {
-                ignoredFiles = ignoredFiles.Concat(ModuleIgnoreFile.ReadAllLines()).ToArray();
+                ignoredFiles.AddRange(ModuleIgnoreFile.ReadAllLines());
             }
 
-            ignoredFiles = ignoredFiles.Select(x => x.Trim()).Distinct().ToArray();
+            var manifests = await GetAllModuleManifests();
+            if (!DisableIgnoreDependencyFiles)
+            {
+                ignoredFiles.AddRange(await GetIgnoreListFromDependencies(ModuleManifest.Dependencies, manifests));
+            }
 
-            var keepFiles = Array.Empty<string>();
+            ignoredFiles = ignoredFiles.Select(x => x.Trim()).Distinct().OrderBy(x => x).ToList();
+
+            List<string> keepFiles = [];
             if (ModuleKeepFile.FileExists())
             {
-                keepFiles = ModuleKeepFile.ReadAllLines().ToArray();
+                keepFiles = ModuleKeepFile.ReadAllLines().Select(x => x.Trim()).Distinct().OrderBy(x => x).ToList();
             }
 
             ArtifactPacker.CompressModule(options => options.WithSourceDirectory(ModuleOutputDirectory)
@@ -1366,6 +1404,106 @@ internal partial class Build : NukeBuild
         }
     }
 
+    private static async Task<List<ExternalModuleManifest>> GetAllModuleManifests()
+    {
+        const string defaultModuleManifest = "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/modules_v3.json";
+        var json = await HttpTasks.HttpDownloadStringAsync(defaultModuleManifest);
+
+        return JsonConvert.DeserializeObject<List<ExternalModuleManifest>>(json);
+    }
+
+    private static async Task<HashSet<string>> GetIgnoreListFromDependencies(ManifestDependency[] dependencies, List<ExternalModuleManifest> manifests)
+    {
+        var result = new HashSet<string>();
+
+        foreach (var dependency in dependencies ?? [])
+        {
+            var manifest = manifests.FirstOrDefault(x => x.Id == dependency.Id);
+            if (manifest == null)
+            {
+                continue;
+            }
+
+            var zipPath = await DownloadModuleZip(dependency, manifest);
+            if (!string.IsNullOrEmpty(zipPath) && File.Exists(zipPath))
+            {
+                result.AddRange(GetModuleBinaryFiles(zipPath));
+            }
+        }
+
+        return result;
+    }
+
+    private static async Task<string> DownloadModuleZip(ManifestDependency dependency, ExternalModuleManifest manifest)
+    {
+        var zipUrl = GetModuleZipUrl(dependency, manifest);
+        if (string.IsNullOrEmpty(zipUrl))
+        {
+            return null;
+        }
+
+        var zipFileName = $"{dependency.Id}_{dependency.Version}.zip";
+        var zipPath = Path.Combine(ModulesCachePath, zipFileName);
+        string result = null;
+
+        const int maxAttemptsCount = 3;
+
+        for (var attempt = 0; attempt < maxAttemptsCount; attempt++)
+        {
+            try
+            {
+                if (!File.Exists(zipPath))
+                {
+                    await HttpTasks.HttpDownloadFileAsync(zipUrl, zipPath);
+                }
+
+                using var _ = ZipFile.OpenRead(zipPath);
+                result = zipPath;
+                break;
+            }
+            catch (Exception ex)
+            {
+                if (File.Exists(zipPath))
+                {
+                    File.Delete(zipPath);
+                }
+
+                Log.Warning("Cannot download module zip. {Exception}", ex.Message);
+            }
+        }
+
+        return result;
+    }
+
+    private static string GetModuleZipUrl(ManifestDependency dependency, ExternalModuleManifest manifest)
+    {
+        var version = manifest.Versions?.FirstOrDefault(x => string.IsNullOrEmpty(x.SemanticVersion.Prerelease));
+        if (version is null)
+        {
+            return null;
+        }
+
+        return Version.TryParse(dependency.Version, out _)
+            ? version.PackageUrl.Replace(version.Version, dependency.Version)
+            : $"{PrereleasesBlobContainer}{dependency.Id}_{dependency.Version}.zip";
+    }
+
+    private static List<string> GetModuleBinaryFiles(string zipPath)
+    {
+        using var archive = ZipFile.OpenRead(zipPath);
+
+        return archive.Entries
+            .Where(IsBinaryFile)
+            .Select(x => Path.GetFileName(x.FullName))
+            .ToList();
+
+        static bool IsBinaryFile(ZipArchiveEntry entry)
+        {
+            return entry.FullName.EndsWithOrdinalIgnoreCase(".dll") ||
+                   entry.FullName.EndsWithOrdinalIgnoreCase(".so");
+        }
+    }
+
     private static string[] GetGlobalIgnoreList(string moduleIgnoreUrlTemplate)
     {
         string[] ignoredFiles;
@@ -1376,7 +1514,7 @@ internal partial class Build : NukeBuild
             {
                 responseString = HttpTasks.HttpDownloadString(string.Format(moduleIgnoreUrlTemplate, "dev"));
             }
-            ignoredFiles = responseString.SplitLineBreaks();
+            ignoredFiles = responseString.SplitLineBreaks(StringSplitOptions.RemoveEmptyEntries);
         }
         else
         {
