@@ -1,7 +1,10 @@
 ## Init
 Creates `vc-package.json` boilerplate with the latest version number of the platform. The version number can be specified by the `PlatformVersion` parameter.
 
-For example:
+### Parameters
+- `PlatformVersion`: Specify the platform version (optional, defaults to latest)
+
+### Usage
 ```console
 vc-build Init
 vc-build Init -PlatformVersion 3.52.0
@@ -62,6 +65,9 @@ vc-build ShowDiff -edge
 ## InstallModules
 Installs modules according to `vc-package.json` and solves dependencies.
 
+### Parameters
+- `DiscoveryPath`: Override modules discovery path
+
 ### Usage
 ```console
 vc-build InstallModules
@@ -70,6 +76,9 @@ vc-build InstallModules -DiscoveryPath ../modules
 ---
 ## ValidateDependencies
 Validates module dependencies against the installed platform version and other modules. Checks for version conflicts and missing dependencies. This target is automatically triggered by the Install and Update targets.
+
+### Parameters
+- `DiscoveryPath`: Override modules discovery path
 
 ### Usage
 ```console
@@ -88,6 +97,9 @@ vc-build InstallPlatform
 ## Uninstall
 Removes specified modules.
 
+### Parameters
+- `Module`: Array of module names to remove (required)
+
 ### Usage
 ```console
 vc-build uninstall -Module VirtoCommerce.Cart VirtoCommerce.Catalog
@@ -103,6 +115,9 @@ vc-build clean
 ---
 ## Restore
 Executes `dotnet restore`.
+
+### Parameters
+- `NugetConfig`: Path to NuGet configuration file (optional)
 
 ### Usage
 ```console
@@ -129,6 +144,9 @@ vc-build pack
 ## Test
 Executes unit tests and generates a coverage report. Can filter tests with `-TestsFilter`.
 
+### Parameters
+- `TestsFilter`: Filter expression for test execution (optional, defaults to "Category!=IntegrationTest")
+
 ### Usage
 ```console
 vc-build Test
@@ -138,6 +156,10 @@ vc-build Test -TestsFilter "Category!=IntegrationTest"
 ## PublishPackages
 Publishes NuGet packages in the `./artifacts` directory with `-Source` and `-ApiKey` parameters.
 
+### Parameters
+- `ApiKey`: API key for the specified source (required)
+- `Source`: NuGet source URL (optional, defaults to "https://api.nuget.org/v3/index.json")
+
 ### Usage
 ```console
 vc-build PublishPackages -ApiKey %SomeApiKey%
@@ -145,6 +167,9 @@ vc-build PublishPackages -ApiKey %SomeApiKey%
 ---
 ## QuickRelease
 Creates a release branch from `dev`, merges it into `master`, increments the version in the `dev` branch, and removes the `release/*` branch.
+
+### Parameters
+- `Force`: Force operation without confirmation prompts
 
 ### Usage
 ```console
@@ -154,6 +179,11 @@ vc-build QuickRelease -Force
 ---
 ## QuickHotfix
 Creates a hotfix branch from the main branch, increments the patch version, merges the current branch into the created hotfix branch, and merges it back into the main branch.
+
+### Parameters
+- `MainBranch`: Main branch name (optional, defaults to "master")
+- `CustomVersionPrefix`: Custom version prefix to use
+
 ### Usage
 ```console
 vc-build QuickHotfix
@@ -189,6 +219,8 @@ Behavior changes since 3.817
 - `ModulesCachePath`: Path for caching downloaded dependency zips. Defaults to `%USERPROFILE%/.vc-build/cache` or `VCBUILD_CACHE` env var if set.
 - `PrereleasesBlobContainer`: Base URL to download prerelease module packages (used to derive dependency ignore lists). Default: `https://vc3prerelease.blob.core.windows.net/packages/`.
 - `DisableIgnoreDependencyFiles`: When true, disables automatic exclusion of dependency binary files from the archive.
+- `Configuration`: Build configuration (optional, defaults to Release)
+- `NugetConfig`: Path to NuGet configuration file (optional)
 
 ### Usage
 ```console
@@ -223,6 +255,16 @@ vc-build PublishModuleManifest
 ## SonarQubeStart
 Starts the Sonar scanner by executing `dotnet sonarscanner begin`. Accepts parameters like `SonarBranchName`, `SonarPRBase`, `SonarPRBranch`, `SonarPRNumber`, `SonarGithubRepo`, `SonarPRProvider`, `SonarAuthToken`.
 
+### Parameters
+- `SonarBranchName`: Branch name for SonarQube analysis
+- `SonarPRBase`: Pull request base branch for SonarQube
+- `SonarPRBranch`: Pull request branch for SonarQube
+- `SonarPRNumber`: Pull request number for SonarQube
+- `SonarGithubRepo`: GitHub repository for SonarQube
+- `SonarPRProvider`: Pull request provider for SonarQube
+- `SonarAuthToken`: Authentication token for SonarQube (required)
+- `RepoName`: Repository name
+
 ### Usage
 ```console
 vc-build SonarQubeStart -SonarBranchName dev -SonarAuthToken *** -RepoName vc-module-marketing
@@ -231,6 +273,9 @@ vc-build SonarQubeStart -SonarBranchName dev -SonarAuthToken *** -RepoName vc-mo
 ## SonarQubeEnd
 Executes `dotnet sonarscanner end`. Accepts `SonarAuthToken` parameter.
 
+### Parameters
+- `SonarAuthToken`: Authentication token for SonarQube (required)
+
 ### Usage
 ```console
 vc-build SonarQubeEnd -SonarAuthToken %SonarToken%
@@ -238,6 +283,11 @@ vc-build SonarQubeEnd -SonarAuthToken %SonarToken%
 ---
 ## Release
 Creates a GitHub release. Accepts parameters like `GitHubUser`, `GitHubToken`, `ReleaseBranch`.
+
+### Parameters
+- `GitHubUser`: GitHub username (required)
+- `GitHubToken`: GitHub authentication token (required)
+- `ReleaseBranch`: Release branch name (optional)
 
 ### Usage
 ```console
@@ -254,6 +304,11 @@ vc-build ClearTemp
 ---
 ## DockerLogin
 Executes `docker login`. Accepts parameters like `DockerRegistryUrl`, `DockerUsername`, `DockerPassword`.
+
+### Parameters
+- `DockerRegistryUrl`: Docker registry URL (optional, defaults to Docker Hub)
+- `DockerUsername`: Docker username (required)
+- `DockerPassword`: Docker password (required)
 
 ### Usage
 ```console
@@ -320,6 +375,13 @@ vc-build PushImage -DockerImageName myregistry.com/myapp -DockerRegistryUrl myre
 ## BuildAndPush
 Builds and pushes a Docker image. Accepts parameters like `DockerRegistryUrl`, `DockerUsername`, `DockerPassword`, `DockerfilePath`, `DockerImageFullName`.
 
+### Parameters
+- `DockerRegistryUrl`: Docker registry URL (optional, defaults to Docker Hub)
+- `DockerUsername`: Docker username (required)
+- `DockerPassword`: Docker password (required)
+- `DockerfilePath`: Path to Dockerfile (required)
+- `DockerImageFullName`: Full Docker image name with tag (required)
+
 ### Usage
 ```console
 vc-build BuildAndPush -DockerRegistryUrl https://myregistry.com -DockerUsername user -DockerPassword 12345 -DockerfilePath ./dockerfile -DockerImageFullName myimage:dev
@@ -328,6 +390,12 @@ vc-build BuildAndPush -DockerRegistryUrl https://myregistry.com -DockerUsername 
 ## Configure
 Validates and updates a connection string in `appsettings.json`. Accepts parameters like `Sql`, `Redis`, `AzureBlob`, `AppsettingsPath` (default is `./appsettings.json`).
 
+### Parameters
+- `Sql`: SQL Server connection string
+- `Redis`: Redis connection string
+- `AzureBlob`: Azure Blob Storage connection string
+- `AppsettingsPath`: Path to appsettings.json file (optional, defaults to "./appsettings.json")
+
 ### Usage
 ```console
 vc-build Configure -Sql "MsSql connection string" -Redis "Redis connection string" -AzureBlob "Container connection string"
@@ -335,6 +403,11 @@ vc-build Configure -Sql "MsSql connection string" -Redis "Redis connection strin
 ---
 ## CloudEnvUpdate
 Updates applications in the cloud. Accepts the following parameters: `CloudToken`, `Manifest`, `RoutesFile` (optional).
+
+### Parameters
+- `CloudToken`: VirtoCloud authentication token (required)
+- `Manifest`: Path to application manifest file (required)
+- `RoutesFile`: Path to routes file (optional)
 
 ### Usage
 ```console
@@ -345,6 +418,12 @@ vc-build CloudEnvUpdate -CloudToken <your token> -Manifest <path to application 
 ## CloudEnvSetParameter
 Updates parameters of the cloud environment. Accepts parameters like `CloudToken`, `EnvironmentName`, `HelmParameters` (Array), `Organization` (optional).
 
+### Parameters
+- `CloudToken`: VirtoCloud authentication token (required)
+- `EnvironmentName`: Environment name (required)
+- `HelmParameters`: Array of Helm parameters in key=value format (required)
+- `Organization`: Organization name (optional)
+
 ### Usage
 ```console
 vc-build CloudEnvSetParameter -CloudToken <your token> -EnvironmentName <environment name> -HelmParameters platform.config.paramname=somevalue123
@@ -353,6 +432,12 @@ vc-build CloudEnvSetParameter -CloudToken <your token> -EnvironmentName <environ
 ## CloudEnvStatus
 Waits for health and/or sync statuses of the environment. Accepts parameters like `CloudToken`, `EnvironmentName`, `HealthStatus`, `SyncStatus`.
 
+### Parameters
+- `CloudToken`: VirtoCloud authentication token (required)
+- `EnvironmentName`: Environment name (required)
+- `HealthStatus`: Expected health status to wait for
+- `SyncStatus`: Expected sync status to wait for
+
 ### Usage
 ```console
 vc-build CloudEnvStatus -CloudToken <your token> -EnvironmentName <environment name> -HealthStatus Healthy -SyncStatus Progressing
@@ -360,6 +445,10 @@ vc-build CloudEnvStatus -CloudToken <your token> -EnvironmentName <environment n
 ---
 ## CloudAuth
 Saves a token for accessing the VirtoCloud portal, eliminating the need to use the `CloudToken` parameter with every call to targets in the Cloud group. Accepts parameters like `AzureAD` (optional), `CloudToken` (optional).
+
+### Parameters
+- `AzureAD`: Use Azure AD authentication (optional)
+- `CloudToken`: Provide token directly (optional)
 
 ### Usage
 ```console
@@ -370,6 +459,10 @@ vc-build CloudAuth -CloudToken <token>
 ---
 ## CloudInit
 Creates a new environment. Accepts the `ServicePlan` parameter to specify the service plan (default value is `F1`).
+
+### Parameters
+- `EnvironmentName`: New environment name (required)
+- `ServicePlan`: Service plan name (optional, defaults to "F1")
 
 ### Usage
 ```console
@@ -388,6 +481,9 @@ vc-build CloudEnvList
 ## CloudEnvRestart
 Restarts the environment.
 
+### Parameters
+- `EnvironmentName`: Environment name to restart (required)
+
 ### Usage
 ```console
 vc-build CloudEnvRestart -EnvironmentName <EnvName>
@@ -396,6 +492,9 @@ vc-build CloudEnvRestart -EnvironmentName <EnvName>
 ## CloudEnvLogs
 Shows environment logs.
 
+### Parameters
+- `EnvironmentName`: Environment name to show logs for (required)
+
 ### Usage
 ```console
 vc-build CloudEnvLogs -EnvironmentName <EnvName>
@@ -403,6 +502,10 @@ vc-build CloudEnvLogs -EnvironmentName <EnvName>
 ---
 ## CloudDown
 Deletes the environment. Accepts parameters like `Organization` (optional), `EnvironmentName` (required).
+
+### Parameters
+- `EnvironmentName`: Environment name to delete (required)
+- `Organization`: Organization name (optional)
 
 ### Usage
 ```console
@@ -464,4 +567,3 @@ This is the complete "Container Create and Deploy" workflow for new environments
 ```console
 vc-build CloudUp -EnvironmentName newenv -DockerUsername myuser -DockerPassword mypass
 vc-build CloudUp -EnvironmentName production -DockerUsername myorg -DockerPassword mypass -ServicePlan Standard -DockerImageTag v2.0.0
-```
