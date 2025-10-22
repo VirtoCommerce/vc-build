@@ -7,19 +7,19 @@ Check out [the project source code](https://github.com/VirtoCommerce/vc-build) f
 
 ## The key features:
 
-[Build automation](./build-automation.md) 
+[Build automation](./build-automation.md)
 
 - build and bundle a module project (both managed and scripted parts)
 - discover and run all the unit tests from the solution
 - create and publish NuGet packages for projects from your solution, this can be helpful if you intend to re-use a module's logic in another project, you will be able to quickly publish the needed version as a NuGet package. In the private or public NuGet registry
 - include targets that allow performing various additional quality checks such as static code analysis (currently we support out-of-the-box integration with SonarCloud)
 
-[Packages management](./package-management.md) 
+[Packages management](./package-management.md)
 
-- install, update, uninstall modules 
+- install, update, uninstall modules
 - install and update a platform application
 - prepare backend package with specific versions of the platform and modules from the manifest file
-  
+
 [The platform cold start optimization and data migration (WIP)](./cold-start-and-data-migration.md)
 
 - platform start optimization (slow run on Azure case)
@@ -40,7 +40,7 @@ dotnet tool install VirtoCommerce.GlobalTool  -g
 
 ```
 
-## Updating 
+## Updating
 Run this command to update `VirtoCommerce.GlobalTool` to the latest version:
 
 ```console
@@ -102,3 +102,6 @@ Target with name 'help' does not exist. Available targets are:
   - ValidateSwaggerSchema
   - WebPackBuild
 ```
+
+## Environment variables (since 3.817)
+- `VCBUILD_CACHE`: Overrides the default cache directory used by `ModulesCachePath` for dependency zip downloads.

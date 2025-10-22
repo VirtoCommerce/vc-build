@@ -79,7 +79,7 @@ namespace PlatformTools
                     };
                     return new List<ModuleSource>() { githubReleases };
                 case MixedPackageManifest mm:
-                    return mm.Sources;
+                    return mm.Sources ?? [];
                 default:
                     return new List<ModuleSource>();
             }
@@ -88,7 +88,8 @@ namespace PlatformTools
         public static GithubReleases GetGithubModulesSource(ManifestBase manifest)
         {
             var sources = GetModuleSources(manifest);
-            return (GithubReleases)sources.Find(s => s.Name == nameof(GithubReleases));
+            var githubSource = (GithubReleases)sources.Find(s => s.Name == nameof(GithubReleases));
+            return githubSource ?? new GithubReleases();
         }
 
         public static List<string> GetGithubModuleManifests(ManifestBase manifest)

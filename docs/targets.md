@@ -215,6 +215,17 @@ vc-build WebPackBuild
 ---
 ## Compress
 Compresses an artifact to an archive and filters excess files.
+Behavior changes since 3.817
+- Automatically excludes binary files (.dll, .so) originating from module dependencies:
+- Downloads dependency module zips (stable or prerelease) and aggregates binary filenames to ignore.
+- Merges ignore sources: global `module.ignore`, local `.moduleignore`, and dependency-derived entries; trims, de-duplicates, and sorts.
+- Improved stability when ignore inputs are empty or missing.
+
+### Parameters
+- `ModulesCachePath`: Path for caching downloaded dependency zips. Defaults to `%USERPROFILE%/.vc-build/cache` or `VCBUILD_CACHE` env var if set.
+- `PrereleasesBlobContainer`: Base URL to download prerelease module packages (used to derive dependency ignore lists). Default: `https://vc3prerelease.blob.core.windows.net/packages/`.
+- `DisableIgnoreDependencyFiles`: When true, disables automatic exclusion of dependency binary files from the archive.
+-
 
 ### Usage
 ```console
