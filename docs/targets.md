@@ -1,39 +1,3 @@
-# VirtoCommerce Build Targets
-
-## Container Create (Docker Containerization)
-
-The vc-build tool provides comprehensive Docker containerization capabilities for VirtoCommerce applications. The "Container Create" functionality is implemented through several coordinated targets that work together to build, configure, and deploy containerized applications.
-
-### Complete Container Creation Workflow
-
-The container creation process involves these key targets:
-
-1. **`PrepareDockerContext`** - Prepares the Docker build environment
-2. **`BuildImage`** - Builds the Docker image  
-3. **`PushImage`** - Pushes the image to a registry
-4. **`CloudUp`** / **`CloudDeploy`** - Deploys to VirtoCloud environments
-
-### Quick Start - Container Create Commands
-
-**Create and deploy to new environment:**
-```console
-vc-build CloudUp -EnvironmentName myapp -DockerUsername myuser -DockerPassword mypass
-```
-
-**Deploy to existing environment:**
-```console
-vc-build CloudDeploy -EnvironmentName myapp -DockerUsername myuser -DockerPassword mypass
-```
-
-**Manual container building:**
-```console
-vc-build PrepareDockerContext -DockerUsername myuser -EnvironmentName myapp
-vc-build BuildImage -DockerImageName myuser/myapp:latest
-vc-build PushImage -DockerImageName myuser/myapp:latest
-```
-
----
-
 ## Init
 Creates `vc-package.json` boilerplate with the latest version number of the platform. The version number can be specified by the `PlatformVersion` parameter.
 
@@ -225,7 +189,6 @@ Behavior changes since 3.817
 - `ModulesCachePath`: Path for caching downloaded dependency zips. Defaults to `%USERPROFILE%/.vc-build/cache` or `VCBUILD_CACHE` env var if set.
 - `PrereleasesBlobContainer`: Base URL to download prerelease module packages (used to derive dependency ignore lists). Default: `https://vc3prerelease.blob.core.windows.net/packages/`.
 - `DisableIgnoreDependencyFiles`: When true, disables automatic exclusion of dependency binary files from the archive.
--
 
 ### Usage
 ```console
@@ -297,20 +260,61 @@ Executes `docker login`. Accepts parameters like `DockerRegistryUrl`, `DockerUse
 vc-build dockerlogin -DockerRegistryUrl https://myregistry.com -DockerUsername user -DockerPassword 12345
 ```
 ---
-## BuildImage
-Builds a Docker image. Accepts parameters like `DockerfilePath`, `DockerImageFullName`.
+## PrepareDockerContext
+Prepares the Docker build context for containerizing VirtoCommerce applications. This target creates a complete Docker build environment by:
+
+1. **Creating Docker build context directory**: Sets up `artifacts/docker/` directory structure
+2. **Downloading Docker assets**: Downloads Dockerfile and wait-for-it.sh script from VirtoCommerce Docker repository
+3. **Publishing platform**: Compiles and publishes the VirtoCommerce platform to `artifacts/docker/publish/`
+4. **Copying modules**: Builds and copies all discovered modules to the Docker context
+5. **Setting Docker parameters**: Auto-configures Docker image names, tags, and build context paths
+
+This target is automatically triggered by cloud deployment targets and prepares everything needed for Docker image creation.
+
+### Parameters
+- `DockerUsername`: Username for Docker registry (used to generate image name if not specified)
+- `EnvironmentName`: Environment name (used to generate image name if not specified)  
+- `DockerImageName`: Custom Docker image name (optional, auto-generated if not provided)
+- `DockerImageTag`: Custom Docker image tags (optional, timestamp-based tag generated if not provided)
+- `DockerfileUrl`: URL to custom Dockerfile (optional, defaults to VirtoCommerce platform Dockerfile)
+- `WaitScriptUrl`: URL to wait-for-it.sh script (optional, defaults to VirtoCommerce script)
 
 ### Usage
 ```console
-vc-build buildimage -DockerfilePath ./dockerfile -DockerImageFullName myimage:dev
+vc-build PrepareDockerContext -DockerUsername myuser -EnvironmentName dev
+vc-build PrepareDockerContext -DockerImageName myregistry/myapp -DockerImageTag latest
+```
+---
+## BuildImage
+Builds a Docker image from the prepared Docker context. Uses the Dockerfile and published application files to create a containerized VirtoCommerce application.
+
+### Parameters
+- `DockerImageName`: Docker image name (required)
+- `DockerImageTag`: Docker image tags (optional, defaults to timestamp-based tag)
+- `DockerfilePath`: Path to Dockerfile (optional, defaults to `artifacts/docker/Dockerfile`)
+- `DockerBuildContext`: Docker build context path (optional, defaults to `artifacts/docker/`)
+
+### Usage
+```console
+vc-build BuildImage -DockerImageName myuser/myapp
+vc-build BuildImage -DockerImageName myregistry/myapp -DockerImageTag v1.0.0
+vc-build BuildImage -DockerImageName myapp -DockerfilePath ./custom.dockerfile
 ```
 ---
 ## PushImage
-Pushes a Docker image to the remote registry. Accepts `DockerImageFullName` parameter.
+Pushes a Docker image to the specified registry. Requires Docker login credentials for private registries.
+
+### Parameters
+- `DockerImageName`: Docker image name to push (required)
+- `DockerImageTag`: Image tags to push (optional, pushes all tags if not specified)
+- `DockerRegistryUrl`: Docker registry URL (optional, defaults to Docker Hub)
+- `DockerUsername`: Registry username (required for authentication)
+- `DockerPassword`: Registry password (required for authentication)
 
 ### Usage
 ```console
-vc-build PushImage -DockerImageFullName myimage:dev
+vc-build PushImage -DockerImageName myuser/myapp -DockerUsername myuser -DockerPassword mypass
+vc-build PushImage -DockerImageName myregistry.com/myapp -DockerRegistryUrl myregistry.com
 ```
 ---
 ## BuildAndPush
@@ -395,31 +399,6 @@ Shows environment logs.
 ### Usage
 ```console
 vc-build CloudEnvLogs -EnvironmentName <EnvName>
-```
----
-## PrepareDockerContext
-Prepares the Docker build context for containerizing VirtoCommerce applications. This target creates a complete Docker build environment by:
-
-1. **Creating Docker build context directory**: Sets up `artifacts/docker/` directory structure
-2. **Downloading Docker assets**: Downloads Dockerfile and wait-for-it.sh script from VirtoCommerce Docker repository
-3. **Publishing platform**: Compiles and publishes the VirtoCommerce platform to `artifacts/docker/publish/`
-4. **Copying modules**: Builds and copies all discovered modules to the Docker context
-5. **Setting Docker parameters**: Auto-configures Docker image names, tags, and build context paths
-
-This target is automatically triggered by cloud deployment targets and prepares everything needed for Docker image creation.
-
-### Parameters
-- `DockerUsername`: Username for Docker registry (used to generate image name if not specified)
-- `EnvironmentName`: Environment name (used to generate image name if not specified)  
-- `DockerImageName`: Custom Docker image name (optional, auto-generated if not provided)
-- `DockerImageTag`: Custom Docker image tags (optional, timestamp-based tag generated if not provided)
-- `DockerfileUrl`: URL to custom Dockerfile (optional, defaults to VirtoCommerce platform Dockerfile)
-- `WaitScriptUrl`: URL to wait-for-it.sh script (optional, defaults to VirtoCommerce script)
-
-### Usage
-```console
-vc-build PrepareDockerContext -DockerUsername myuser -EnvironmentName dev
-vc-build PrepareDockerContext -DockerImageName myregistry/myapp -DockerImageTag latest
 ```
 ---
 ## CloudDown
