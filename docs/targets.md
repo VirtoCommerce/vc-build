@@ -567,3 +567,5 @@ This is the complete "Container Create and Deploy" workflow for new environments
 ```console
 vc-build CloudUp -EnvironmentName newenv -DockerUsername myuser -DockerPassword mypass
 vc-build CloudUp -EnvironmentName production -DockerUsername myorg -DockerPassword mypass -ServicePlan Standard -DockerImageTag v2.0.0
+```
+---

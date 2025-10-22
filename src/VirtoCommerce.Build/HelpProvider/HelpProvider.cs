@@ -193,18 +193,22 @@ namespace HelpProvider
 
             foreach (var listItem in listBlock)
             {
-                if (listItem is ListItemBlock itemBlock)
+                if (listItem is not ListItemBlock itemBlock)
                 {
-                    foreach (var block in itemBlock)
+                    continue;
+                }
+
+                foreach (var block in itemBlock)
+                {
+                    if (block is not ParagraphBlock paragraph)
                     {
-                        if (block is ParagraphBlock paragraph)
-                        {
-                            var itemText = GetInlineContent(paragraph.Inline);
-                            if (!string.IsNullOrWhiteSpace(itemText))
-                            {
-                                result.AppendLine($"- {itemText}");
-                            }
-                        }
+                        continue;
+                    }
+
+                    var itemText = GetInlineContent(paragraph.Inline);
+                    if (!string.IsNullOrWhiteSpace(itemText))
+                    {
+                        result.AppendLine($"- {itemText}");
                     }
                 }
             }
@@ -214,6 +218,8 @@ namespace HelpProvider
 
         private static string GetInlineContent(ContainerInline containerInline)
         {
+            const int ItalicDelimitersNumber = 1;
+            const int BoldDelimitersNumber = 2;
             if (containerInline == null)
             {
                 return string.Empty;
@@ -237,14 +243,8 @@ namespace HelpProvider
 
                     case EmphasisInline emphasis:
                         var emphasisContent = GetInlineContent(emphasis);
-                        if (emphasis.DelimiterChar == '*' && emphasis.DelimiterCount == 2)
+                        if (emphasis.DelimiterChar == '*' && emphasis.DelimiterCount is BoldDelimitersNumber or ItalicDelimitersNumber)
                         {
-                            // Bold text - remove the formatting for console output
-                            result.Append(emphasisContent);
-                        }
-                        else if (emphasis.DelimiterChar == '*' && emphasis.DelimiterCount == 1)
-                        {
-                            // Italic text
                             result.Append(emphasisContent);
                         }
                         break;
