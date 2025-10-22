@@ -36,13 +36,8 @@ namespace HelpProvider
                 return string.Empty;
             }
 
-            var descriptionParts = ExtractTextFromHelpBlocks(targetHelpBlocks);
-            return string.Join(Environment.NewLine, descriptionParts);
-        }
+            var descriptionParts = new List<string>();
 
-        private static List<string> ExtractTextFromHelpBlocks(IList<Block> targetHelpBlocks)
-        {
-            var result = new List<string>();
             foreach (var block in targetHelpBlocks)
             {
                 switch (block)
@@ -51,7 +46,7 @@ namespace HelpProvider
                         var codeText = GetFencedText(fencedCodeBlock);
                         if (!string.IsNullOrWhiteSpace(codeText))
                         {
-                            result.Add(codeText);
+                            descriptionParts.Add(codeText);
                         }
                         break;
 
@@ -59,7 +54,7 @@ namespace HelpProvider
                         var blockText = GetTextContent(leafBlock);
                         if (!string.IsNullOrWhiteSpace(blockText))
                         {
-                            result.Add(blockText);
+                            descriptionParts.Add(blockText);
                         }
                         break;
 
@@ -67,13 +62,13 @@ namespace HelpProvider
                         var listText = GetListContent(listBlock);
                         if (!string.IsNullOrWhiteSpace(listText))
                         {
-                            result.Add(listText);
+                            descriptionParts.Add(listText);
                         }
                         break;
                 }
             }
 
-            return result;
+            return string.Join(Environment.NewLine, descriptionParts);
         }
 
         public static IEnumerable<string> GetTargets()
@@ -198,24 +193,81 @@ namespace HelpProvider
 
             foreach (var listItem in listBlock)
             {
-                if (listItem is not ListItemBlock itemBlock)
+                if (listItem is ListItemBlock itemBlock)
                 {
-                    continue;
-                }
-
-                foreach (var block in itemBlock)
-                {
-                    if (block is not ParagraphBlock paragraph)
+                    foreach (var block in itemBlock)
                     {
-                        continue;
-                    }
-
-                    var itemText = GetTextContent(paragraph);
-                    if (!string.IsNullOrWhiteSpace(itemText))
-                    {
-                        result.AppendLine($"- {itemText}");
+                        if (block is ParagraphBlock paragraph)
+                        {
+                            var itemText = GetInlineContent(paragraph.Inline);
+                            if (!string.IsNullOrWhiteSpace(itemText))
+                            {
+                                result.AppendLine($"- {itemText}");
+                            }
+                        }
                     }
                 }
+            }
+
+            return result.ToString();
+        }
+
+        private static string GetInlineContent(ContainerInline containerInline)
+        {
+            if (containerInline == null)
+            {
+                return string.Empty;
+            }
+
+            var result = new StringBuilder();
+            var inline = containerInline.FirstChild;
+
+            while (inline != null)
+            {
+                switch (inline)
+                {
+                    case LiteralInline literal:
+                        var inlineContent = literal.Content;
+                        result.Append(inlineContent.Text.AsSpan(inlineContent.Start, inlineContent.Length));
+                        break;
+
+                    case CodeInline codeInline:
+                        result.Append($"`{codeInline.Content}`");
+                        break;
+
+                    case EmphasisInline emphasis:
+                        var emphasisContent = GetInlineContent(emphasis);
+                        if (emphasis.DelimiterChar == '*' && emphasis.DelimiterCount == 2)
+                        {
+                            // Bold text - remove the formatting for console output
+                            result.Append(emphasisContent);
+                        }
+                        else if (emphasis.DelimiterChar == '*' && emphasis.DelimiterCount == 1)
+                        {
+                            // Italic text
+                            result.Append(emphasisContent);
+                        }
+                        break;
+
+                    case LineBreakInline:
+                        result.AppendLine();
+                        break;
+
+                    case LinkInline link:
+                        var linkText = GetInlineContent(link);
+                        result.Append(linkText);
+                        break;
+
+                    default:
+                        // Handle other inline types by extracting their text content
+                        if (inline is ContainerInline container)
+                        {
+                            result.Append(GetInlineContent(container));
+                        }
+                        break;
+                }
+
+                inline = inline.NextSibling;
             }
 
             return result.ToString();
