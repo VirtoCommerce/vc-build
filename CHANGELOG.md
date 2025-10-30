@@ -3,6 +3,48 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [3.817.0] - 2025-09-15
+### Added
+- Optimize module dependency handling with caching (VCI-1127)
+- Automatic exclusion for dependency assemblies (VCI-1127)
+- Version validity check in version matching (VCI-1173)
+- Parameter `DisableIgnoreDependencyFiles` to disable auto-exclusion of dependency binaries during Compress
+
+### Changed
+- Symlink detection refactored to recursively check parent directories via `DirectoryInfo.LinkTarget` (VCI-1180)
+- Help output and targets documentation improved (VCI-1177)
+- Compress now auto-excludes dependency binaries (.dll, .so); can be disabled with `-DisableIgnoreDependencyFiles`
+- Compress now validates dependency versions by triggering `MatchVersions`; can be skipped with `-skip MatchVersions`
+
+### Fixed
+- Install target no longer fails when there are no modules in GithubReleases source (VCI-1176)
+- Fix failures in MatchVersions and Compress when there is no dependency data (VCI-1181)
+- Fixed deprecation warnings in CI workflow (Vcst-2719)
+
+## [3.816.0] - 2025-09-15
+### Added
+- `DisableMatchVersions` parameter (VCI-1116)
+
+### Changed
+- Platform dependencies updated to 3.854.13
+
+## [3.815.0] - 2025-08-22
+### Changed
+- `Compress` no longer triggers `MatchVersions` automatically (VCI-1116)
+
+## [3.814.0] - 2025-08-22
+### Changed
+- `PublishModuleManifest` adjusted to rebase and remove force parameter (VCI-1104)
+
+## [3.813.0] - 2025-06-19
+### Added
+- Routes file support for Cloud targets (VCI-1081)
+
+## [3.812.0] - 2025-06-09
+### Other
+- Minor updates
+
 ## [3.811.0] - 2025-04-29
 ### Added
 - Automatic uninstallation of modules that are removed from package manifest

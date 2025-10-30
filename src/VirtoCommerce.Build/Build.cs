@@ -647,7 +647,7 @@ internal partial class Build : NukeBuild
     {
         if (webProject != null && (webProject.Directory / "package.json").FileExists())
         {
-            NpmTasks.Npm("ci", webProject.Directory);
+            NpmTasks.NpmCi(settings => settings.SetProcessWorkingDirectory(webProject.Directory));
             NpmTasks.NpmRun(settings =>
                 settings.SetProcessWorkingDirectory(webProject.Directory).SetCommand("webpack:build"));
         }
