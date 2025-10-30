@@ -15,11 +15,15 @@ Downloads and installs the platform or modules into the current folder. Versions
 
 `vc-package.json` maintains the list of installed modules with their versions, allowing `vc-build` to restore the platform and modules on different machines.
 
+**Platform Prerelease Support**: The Install target now supports installation of platform prereleases. When installing a platform with a non-standard version (prerelease version), the system automatically configures the platform asset URL to point to the prereleases blob container.
+
 ### Parameters
 - `PackageManifestPath`, `DiscoveryPath`, `ProbingPath`: Override paths.
 - `SkipDependencySolving`: Skip dependency solving.
 - `GithubToken`, `AzureToken`, `GitLabToken`: Pass tokens for authorization.
 - `-Edge`: Install the latest available versions.
+- `Version`: Platform or module version to install (supports both stable and prerelease versions)
+- `Platform`: Install the platform (when combined with Version parameter, supports prereleases)
 
 Since version 3.17.0, stable versions of modules are installed by default.
 
@@ -28,7 +32,7 @@ Since version 3.17.0, stable versions of modules are installed by default.
 vc-build install
 vc-build install -GitLabToken $GITLAB_TOKEN
 vc-build install -platform -version <version>
-vc-build install -platform -PlatformAssetUrl https://github.com/VirtoCommerce/vc-platform/releases/download/3.216.13/VirtoCommerce.Platform.3.216.13.zip
+vc-build install -platform -version <prerelease-version>
 vc-build install -module <module> -version <version>
 vc-build install -module <module>:<version>
 vc-build install -PackageManifestPath some_directory/vc-package.json -DiscoveryPath ../modules -ProbingPath platform_dir/app_data/modules -SkipDependencySolving
