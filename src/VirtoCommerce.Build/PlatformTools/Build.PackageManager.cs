@@ -135,8 +135,16 @@ namespace VirtoCommerce.Build
                  }
                  else if (PlatformParameter)
                  {
-                     var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
+                     var isValidVersion = Version.TryParse(VersionToInstall, out var _);
+                     var releaseTag = isValidVersion ? VersionToInstall : null;
+                     var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, releaseTag);
                      packageManifest.PlatformVersion = platformRelease.TagName;
+
+                     if (!isValidVersion)
+                     {
+                         ((MixedPackageManifest)packageManifest).PlatformAssetUrl =
+                             $"{PrereleasesBlobContainer}VirtoCommerce.Platform.{VersionToInstall}.zip";
+                     }
                  }
 
                  PackageManager.ToFile(packageManifest, PackageManifestPath);
