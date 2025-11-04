@@ -1,0 +1,138 @@
+@startuml Framework Comparison
+!theme aws-orange
+title CLI Framework Comparison: Nuke.Build vs Cocona vs System.CommandLine
+
+left to right direction
+
+package "Current Nuke.Build" as nuke {
+  rectangle "Framework Characteristics" as nuke_char {
+  rectangle "Declarative Targets" as nuke_decl
+    rectangle "Built-in Dependencies" as nuke_deps
+    rectangle "Limited Flexibility" as nuke_flex
+    rectangle "Build-Specific DSL" as nuke_dsl
+  }
+  
+  rectangle "Architecture Issues" as nuke_issues {
+    rectangle "Monolithic Build Class" as nuke_mono
+  rectangle "Mixed Business Logic" as nuke_mixed
+    rectangle "Hard to Test" as nuke_test
+    rectangle "Framework Lock-in" as nuke_lock
+  }
+}
+
+package "Cocona Alternative" as cocona {
+  rectangle "Framework Characteristics" as cocona_char {
+    rectangle "Attribute-Based Commands" as cocona_attr
+    rectangle "Built-in DI Support" as cocona_di
+    rectangle "High Flexibility" as cocona_flex
+    rectangle "Modern CLI Framework" as cocona_modern
+  }
+  
+  rectangle "Architecture Benefits" as cocona_benefits {
+    rectangle "Command Groups" as cocona_groups
+    rectangle "Clean Service Layer" as cocona_services
+    rectangle "Easy Testing" as cocona_test
+    rectangle "Minimal Framework" as cocona_minimal
+  }
+}
+
+package "System.CommandLine Option" as syscmd {
+  rectangle "Framework Characteristics" as syscmd_char {
+    rectangle "Microsoft Official" as syscmd_official
+    rectangle "Rich CLI Features" as syscmd_rich
+    rectangle "Standard DI Integration" as syscmd_di
+ rectangle "Enterprise Ready" as syscmd_enterprise
+  }
+  
+  rectangle "Architecture Benefits" as syscmd_benefits {
+    rectangle "Handler Pattern" as syscmd_handlers
+    rectangle "Microsoft.Extensions.DI" as syscmd_msdi
+    rectangle "Excellent Testability" as syscmd_test
+    rectangle "Long-term Support" as syscmd_support
+  }
+}
+
+' Comparison relationships
+nuke -[#red]-> cocona : "Migration Option 1"
+nuke -[#blue]-> syscmd : "Migration Option 2"
+
+' Detailed comparisons
+note top of nuke_char
+  <b><color:red>Nuke.Build Issues:</color></b>
+  • Build-automation focused
+  • Complex target dependencies
+  • Framework-specific patterns
+  • Limited CLI capabilities
+end note
+
+note top of cocona_char
+  <b><color:orange>Cocona Benefits:</color></b>
+  • Modern and lightweight
+  • Good DI integration
+  • Flexible command structure
+  • Active development
+end note
+
+note top of syscmd_char
+  <b><color:green>System.CommandLine Benefits:</color></b>
+  • Official Microsoft framework
+  • Production-ready and stable
+  • Excellent documentation
+  • Standard ecosystem integration
+end note
+
+note bottom
+  <b>Feature Comparison Matrix</b>
+  
+  <b>Learning Curve:</b>
+  • Nuke.Build: Medium (DSL learning required)
+  • Cocona: Low (simple attributes)
+  • System.CommandLine: Low-Medium (standard patterns)
+  
+  <b>Dependency Injection:</b>
+  • Nuke.Build: Limited (static parameters)
+  • Cocona: Built-in (integrated DI)
+  • System.CommandLine: Standard (MS.Ext.DI)
+  
+  <b>Help Generation:</b>
+  • Nuke.Build: Basic (target listing)
+  • Cocona: Good (attribute-based)
+  • System.CommandLine: Excellent (rich help)
+  
+  <b>Tab Completion:</b>
+  • Nuke.Build: No
+  • Cocona: Limited
+  • System.CommandLine: Built-in
+  
+  <b>Error Messages:</b>
+  • Nuke.Build: Basic
+  • Cocona: Good
+  • System.CommandLine: Excellent
+  
+  <b>Validation:</b>
+  • Nuke.Build: Basic
+  • Cocona: Good
+  • System.CommandLine: Rich
+  
+  <b>Microsoft Support:</b>
+  • Nuke.Build: No
+  • Cocona: No
+• System.CommandLine: Yes (Official)
+  
+  <b>Long-term Viability:</b>
+  • Nuke.Build: Build-specific
+  • Cocona: Good
+  • System.CommandLine: Excellent
+  
+  <b>Enterprise Ready:</b>
+  • Nuke.Build: No
+  • Cocona: Yes
+  • System.CommandLine: Yes
+  
+  <b>Testing Support:</b>
+  • Nuke.Build: Poor (framework-dependent)
+  • Cocona: Good (DI-based)
+  • System.CommandLine: Excellent (handler pattern)
+end note
+
+@enduml

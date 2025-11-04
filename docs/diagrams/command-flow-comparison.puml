@@ -1,0 +1,152 @@
+@startuml Command Flow Comparison
+!theme aws-orange
+title Command Execution Flow: Nuke.Build vs Cocona
+
+participant "CLI User" as user
+participant "Program" as prog1 #lightblue
+participant "NukeBuild" as nuke #lightcoral
+participant "ExecutionEngine" as engine #lightcoral
+participant "Install Target" as target #orange
+participant "PackageManager" as pm1 #yellow
+
+participant "Program" as prog2 #lightgreen
+participant "CoconaApp" as cocona #lightgreen
+participant "PackageCommands" as cmd #lightgreen
+participant "IPackageManagerService" as svc #lightgreen
+participant "PackageManagerService" as impl #lightgreen
+
+== Current Nuke.Build Flow ==
+
+user -> prog1 : vc-build Install -module Core
+activate prog1
+
+prog1 -> nuke : Execute<Build>(x => x.Install)
+activate nuke
+
+nuke -> engine : ExecuteTarget(Install)
+activate engine
+
+engine -> target : Executes(() => { ... })
+activate target
+
+note over target
+  Complex business logic
+  embedded directly in target:
+  
+  var packageManifest = await OpenOrCreateManifest(...);
+  var githubModuleSources = PackageManager.GetGithubModuleManifests(...);
+  var modules = PackageManager.GetGithubModules(...);
+  var localModuleCatalog = LocalModuleCatalog.GetCatalog(...);
+  // 50+ lines of mixed logic...
+end note
+
+target -> pm1 : GetGithubModules(packageManifest)
+activate pm1
+pm1 --> target : List<ModuleItem>
+deactivate pm1
+
+target -> pm1 : ToFile(packageManifest, path)
+activate pm1
+pm1 --> target : void
+deactivate pm1
+
+target --> engine : execution result
+deactivate target
+
+engine --> nuke : execution result
+deactivate engine
+
+nuke --> prog1 : exit code
+deactivate nuke
+
+prog1 --> user : exit code
+deactivate prog1
+
+== Future Cocona Flow ==
+
+user -> prog2 : vc-build package install --modules Core
+activate prog2
+
+prog2 -> cocona : RunAsync(args)
+activate cocona
+
+cocona -> cmd : InstallAsync(InstallOptions)
+activate cmd
+
+note over cmd
+  Lightweight command handler:
+  
+  try {
+    await _packageService.InstallAsync(options);
+    return 0;
+  } catch (Exception ex) {
+    _logger.LogError(ex, "Install failed");
+    return 1;
+  }
+end note
+
+cmd -> svc : InstallAsync(options)
+activate svc
+
+svc -> impl : InstallAsync(options)
+activate impl
+
+note over impl
+  Clean service implementation:
+  
+  _telemetry.TrackEvent("Package.Install", options);
+  
+  var manifest = await _packageManager.OpenOrCreateManifest(...);
+  var catalog = await _moduleCatalog.GetCatalog(...);
+  
+  await ProcessModules(options, manifest, catalog);
+  
+  await _packageManager.SaveManifest(manifest);
+end note
+
+impl -> pm1 : OpenOrCreateManifest(path)
+activate pm1
+pm1 --> impl : ManifestBase
+deactivate pm1
+
+impl -> pm1 : SaveManifest(manifest)
+activate pm1
+pm1 --> impl : void
+deactivate pm1
+
+impl --> svc : void
+deactivate impl
+
+svc --> cmd : void
+deactivate svc
+
+cmd --> cocona : 0 (success)
+deactivate cmd
+
+cocona --> prog2 : 0
+deactivate cocona
+
+prog2 --> user : 0
+deactivate prog2
+
+== Key Differences ==
+
+note over nuke, pm1
+  <b><color:red>Current Issues:</color></b>
+  • Business logic mixed in targets
+  • Hard to unit test
+  • Framework-dependent execution
+  • Monolithic structure
+  • Static dependencies
+end note
+
+note over prog2, impl
+  <b><color:green>Future Benefits:</color></b>
+  • Clean separation of concerns
+  • Easily unit testable
+  • Framework-agnostic services
+  • Modular architecture
+  • Dependency injection
+end note
+
+@enduml

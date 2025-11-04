@@ -1,0 +1,272 @@
+@startuml System.CommandLine Architecture
+!theme aws-orange
+title Future VirtoCommerce.Build Architecture (System.CommandLine + Microsoft.Extensions.DI)
+
+package "Entry Point" {
+  class Program {
+    +Main(args: string[]): Task<int>
+    +ConfigureServices(): IServiceProvider
+    +CreateRootCommand(): RootCommand
+    +RegisterCommands(): void
+    +IsLegacyNukeCall(): bool
+  }
+}
+
+package "System.CommandLine Framework" {
+  class RootCommand {
+    +AddCommand(): void
+    +AddGlobalOption(): void
+    +SetHandler(): void
+  }
+  
+  class Command {
+  +AddOption(): void
+    +AddArgument(): void
+    +SetHandler(): void
+  }
+  
+  class CommandLineBuilder {
+    +UseDefaults(): CommandLineBuilder
+    +UseHelp(): CommandLineBuilder
+    +UseParseErrorReporting(): CommandLineBuilder
+    +Build(): Parser
+  }
+  
+  class Parser {
+ +InvokeAsync(): Task<int>
+    +Parse(): ParseResult
+  }
+  
+  class InvocationContext {
+    +ParseResult: ParseResult
+    +Console: IConsole
+    +GetCancellationToken(): CancellationToken
+  }
+}
+
+package "Microsoft.Extensions.DI" {
+  interface IServiceProvider {
+    +GetService<T>(): T
+ +GetRequiredService<T>(): T
+  }
+  
+  class ServiceCollection {
+    +AddSingleton<T>(): IServiceCollection
+    +AddScoped<T>(): IServiceCollection
+    +AddTransient<T>(): IServiceCollection
+  }
+  
+  class ServiceProvider {
+    +GetService<T>(): T
+    +CreateScope(): IServiceScope
+  }
+}
+
+package "Command Definitions" {
+  class BuildCommand {
+    +Name: "build"
+    +Description: "Build automation commands"
+    +CleanSubCommand: Command
+    +RestoreSubCommand: Command
+    +CompileSubCommand: Command
+  +TestSubCommand: Command
+  }
+  
+  class PackageCommand {
+    +Name: "package"
+    +Description: "Package management commands"
+    +InstallSubCommand: Command
+    +UpdateSubCommand: Command
+    +UninstallSubCommand: Command
+  }
+  
+  class CloudCommand {
+    +Name: "cloud"
+    +Description: "Cloud operations commands"
+    +UpSubCommand: Command
+    +DeploySubCommand: Command
+    +AuthSubCommand: Command
+  }
+  
+  class DockerCommand {
+    +Name: "docker"
+    +Description: "Docker operations commands"
+    +BuildImageSubCommand: Command
+    +PushImageSubCommand: Command
+    +PrepareContextSubCommand: Command
+  }
+}
+
+package "Command Handlers" {
+  class BuildHandlers {
+    +HandleCleanAsync(): Task<int>
+    +HandleRestoreAsync(): Task<int>
+    +HandleCompileAsync(): Task<int>
+    +HandleTestAsync(): Task<int>
+    --
+    -_artifactService: IArtifactManagerService
+    -_logger: ILogger
+    -_telemetry: ITelemetryService
+  }
+  
+  class PackageHandlers {
+    +HandleInstallAsync(): Task<int>
+  +HandleUpdateAsync(): Task<int>
++HandleUninstallAsync(): Task<int>
+    --
+    -_packageService: IPackageManagerService
+    -_logger: ILogger
+    -_telemetry: ITelemetryService
+  }
+  
+  class CloudHandlers {
+    +HandleUpAsync(): Task<int>
+    +HandleDeployAsync(): Task<int>
+    +HandleAuthAsync(): Task<int>
+    --
+    -_cloudService: ICloudManagerService
+    -_dockerService: IDockerManagerService
+    -_logger: ILogger
+  }
+  
+  class DockerHandlers {
+    +HandleBuildImageAsync(): Task<int>
+    +HandlePushImageAsync(): Task<int>
+    +HandlePrepareContextAsync(): Task<int>
+    --
+    -_dockerService: IDockerManagerService
+    -_logger: ILogger
+  }
+}
+
+package "Business Services" {
+  interface IArtifactManagerService {
+    +CleanSolutionAsync(): Task
+    +RestoreSolutionAsync(): Task
+    +CompileSolutionAsync(): Task
+    +TestSolutionAsync(): Task
+  }
+  
+  interface IPackageManagerService {
+    +InstallAsync(): Task
+    +UpdateAsync(): Task
+    +UninstallAsync(): Task
+    +ValidateDependenciesAsync(): Task
+  }
+  
+  interface ICloudManagerService {
+    +AuthAsync(): Task
+    +CreateEnvironmentAsync(): Task
+    +DeployAsync(): Task
+    +DeleteEnvironmentAsync(): Task
+  }
+  
+  interface IDockerManagerService {
+    +PrepareContextAsync(): Task
+  +BuildImageAsync(): Task
+    +PushImageAsync(): Task
+  +LoginAsync(): Task
+  }
+}
+
+package "Service Implementations" {
+  class ArtifactManagerService implements IArtifactManagerService {
+    -_logger: ILogger<ArtifactManagerService>
+    -_telemetry: ITelemetryService
+    -_dotNetService: IDotNetService
+    +CleanSolutionAsync(): Task
+    +CompileSolutionAsync(): Task
+  }
+  
+  class PackageManagerService implements IPackageManagerService {
+    -_logger: ILogger<PackageManagerService>
+    -_httpClient: HttpClient
+    -_githubManager: IGithubManager
+    +InstallAsync(): Task
+    +UpdateAsync(): Task
+  }
+  
+  class CloudManagerService implements ICloudManagerService {
+    -_cloudClient: VirtoCloudClient
+    -_dockerService: IDockerManagerService
+    +CreateEnvironmentAsync(): Task
+    +DeployAsync(): Task
+  }
+}
+
+package "Infrastructure Services" {
+  interface ITelemetryService {
+    +TrackEvent(): void
+    +TrackException(): void
+    +Flush(): void
+  }
+  
+  interface IHelpService {
+    +GetCommandHelp(): string
+    +GetAvailableCommands(): IEnumerable<string>
+  }
+  
+  class TelemetryService implements ITelemetryService
+  class HelpService implements IHelpService
+}
+
+' Relationships
+Program --> RootCommand : creates
+Program --> ServiceCollection : configures
+Program --> CommandLineBuilder : uses
+CommandLineBuilder --> Parser : builds
+Parser --> InvocationContext : provides
+
+Program --> BuildCommand : registers
+Program --> PackageCommand : registers
+Program --> CloudCommand : registers
+Program --> DockerCommand : registers
+
+BuildCommand --> BuildHandlers : sets handlers
+PackageCommand --> PackageHandlers : sets handlers
+CloudCommand --> CloudHandlers : sets handlers
+DockerCommand --> DockerHandlers : sets handlers
+
+BuildHandlers --> IArtifactManagerService : injects
+PackageHandlers --> IPackageManagerService : injects
+CloudHandlers --> ICloudManagerService : injects
+DockerHandlers --> IDockerManagerService : injects
+
+IArtifactManagerService <|-- ArtifactManagerService
+IPackageManagerService <|-- PackageManagerService
+ICloudManagerService <|-- CloudManagerService
+
+ServiceCollection --> IServiceProvider : builds
+IServiceProvider <|-- ServiceProvider
+
+BuildHandlers --> ITelemetryService : uses
+PackageHandlers --> ITelemetryService : uses
+TelemetryService --> ITelemetryService : implements
+HelpService --> IHelpService : implements
+
+note right of Program
+  System.CommandLine provides:
+  • Rich command-line parsing
+  • Built-in help generation
+  • Tab completion support
+  • Validation and error handling
+  
+  Microsoft.Extensions.DI provides:
+  • Standard DI container
+  • Service lifetime management
+  • Configuration binding
+end note
+
+note bottom of "Command Handlers"
+  Handlers are registered with
+  System.CommandLine using
+  SetHandler() with DI resolution:
+  
+  command.SetHandler(async (context) => {
+    var service = serviceProvider
+      .GetRequiredService<IService>();
+    return await handler.HandleAsync(context);
+  });
+end note
+
+@enduml

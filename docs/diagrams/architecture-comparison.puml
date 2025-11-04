@@ -1,0 +1,108 @@
+@startuml Architecture Comparison
+!theme aws-orange
+title Architecture Comparison: Nuke.Build vs Cocona
+
+left to right direction
+
+package "Current Nuke.Build" as nuke {
+  rectangle "Monolithic Build Class" as mono {
+    rectangle "Target Properties" as targets {
+      rectangle "Clean => _" as clean1
+      rectangle "Install => _" as install1
+      rectangle "CloudUp => _" as cloud1
+    }
+    
+    rectangle "Mixed Business Logic" as logic1 {
+    rectangle "Embedded in Targets" as embed1
+   rectangle "Tightly Coupled" as couple1
+      rectangle "Hard to Test" as test1
+    }
+    
+    rectangle "Parameter Fields" as params1 {
+      rectangle "[Parameter] Fields" as fields1
+      rectangle "Static Properties" as static1
+    }
+  }
+  
+  rectangle "Nuke Framework" as framework1 {
+    rectangle "ExecutionEngine" as engine1
+    rectangle "Target Dependencies" as deps1
+    rectangle "Built-in Orchestration" as orch1
+  }
+  
+  rectangle "External Tools" as tools1 {
+    rectangle "DotNetTasks" as dotnet1
+    rectangle "GitTasks" as git1
+    rectangle "HttpTasks" as http1
+  }
+}
+
+package "Future Cocona" as cocona {
+  rectangle "Modular Command Structure" as modular {
+    rectangle "Command Groups" as groups {
+      rectangle "BuildCommands" as build2
+      rectangle "PackageCommands" as package2
+  rectangle "CloudCommands" as cloud2
+    }
+    
+ rectangle "Service Layer" as services {
+      rectangle "IArtifactManagerService" as artifact2
+      rectangle "IPackageManagerService" as package_svc2
+      rectangle "ICloudManagerService" as cloud_svc2
+    }
+    
+    rectangle "Command Options" as options2 {
+      rectangle "[Option] Attributes" as opt_attr2
+    rectangle "Type-Safe Properties" as type_safe2
+    }
+  }
+  
+  rectangle "Cocona Framework" as framework2 {
+    rectangle "CoconaApp" as app2
+    rectangle "Command Parser" as parser2
+    rectangle "Dependency Injection" as di2
+  }
+  
+  rectangle "Abstracted Dependencies" as deps2 {
+    rectangle "IDotNetService" as dotnet2
+    rectangle "IGitManagerService" as git2
+    rectangle "IHttpService" as http2
+  }
+}
+
+' Comparison arrows and notes
+nuke -[#red]-> cocona : "MIGRATION"
+
+note top of mono
+  <b><color:red>Problems:</color></b>
+  • Mixed concerns
+  • Hard to test
+  • Tight coupling
+  • Monolithic structure
+end note
+
+note top of modular
+  <b><color:green>Solutions:</color></b>
+  • Separation of concerns
+  • Testable services
+  • Loose coupling
+  • Modular structure
+end note
+
+note bottom of framework1
+  <b>Nuke Framework</b>
+  • Declarative targets
+  • Built-in dependencies
+  • Limited flexibility
+  • Framework lock-in
+end note
+
+note bottom of framework2
+  <b>Cocona Framework</b>
+  • Imperative commands
+  • Explicit dependencies
+  • High flexibility
+  • Minimal framework
+end note
+
+@enduml

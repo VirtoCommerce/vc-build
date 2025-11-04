@@ -1,0 +1,201 @@
+@startuml Current Nuke.Build Architecture
+!theme aws-orange
+title Current VirtoCommerce.Build Architecture (Nuke.Build)
+
+package "Entry Point" {
+  class Program {
+    +Main(args: string[]): int
+    +RegisterMSBuildLocator()
+    +CheckHelpRequested()
+    +CreateNukeDirectory()
+  }
+}
+
+package "Nuke Framework" {
+  abstract class NukeBuild {
+    +Execute<T>()
+    +OnTargetRunning()
+    +OnBuildCreated()
+  }
+  
+  class ExecutionEngine {
+    +ExecuteTargets()
+    +ResolveDependencies()
+    +HandleParameters()
+  }
+  
+  class ParameterSystem {
+    +BindParameters()
+    +ValidateParameters()
+  }
+}
+
+package "Build System" {
+  class Build extends NukeBuild {
+    +Clean: Target
+    +Restore: Target
+    +Compile: Target
+    +Test: Target
+    +Pack: Target
+    +Install: Target
+    +CloudUp: Target
+    +Compress: Target
+    --
+    +Configuration: Configuration
+    +ApiKey: string
+    +GitHubToken: string
+    +DockerUsername: string
+    ...
+  }
+}
+
+package "Target Implementations" {
+  class "Clean Target" {
+ +Executes(() => CleanSolution())
+    +Before(Restore)
+  }
+  
+  class "Install Target" {
+    +Triggers(InstallPlatform, InstallModules)
+    +DependsOn(Backup)
+    +Executes(async () => {...})
+  }
+  
+  class "CloudUp Target" {
+    +DependsOn(PrepareDockerContext)
+    +Executes(async () => {...})
+  }
+
+  class "Compress Target" {
+    +DependsOn(MatchVersions, Clean, Test)
+    +Executes(CompressExecuteMethod)
+  }
+}
+
+package "Business Logic (Mixed)" {
+  class PackageManager {
+    +FromFile(): ManifestBase
+    +ToFile()
+    +GetGithubModules()
+ +CreatePackageManifest()
+  }
+  
+  class GithubManager {
+    +GetPlatformRelease()
+    +CreateRelease()
+  }
+  
+  class ExtModuleCatalog {
+  +GetCatalog()
+    +CompleteListWithDependencies()
+}
+  
+  class ArtifactPacker {
+    +CompressModule()
+    +CompressPlatform()
+  }
+  
+  class LocalModuleCatalog {
+    +GetCatalog()
+    +IsModuleSymlinked()
+  }
+}
+
+package "Cloud & Docker" {
+  class VirtoCloudClient {
+    +CreateEnvironmentAsync()
+    +UpdateEnvironmentAsync()
+    +GetEnvironmentsAsync()
+  }
+  
+  class DockerManager {
+    +PrepareContext()
+    +BuildImage()
+    +PushImage()
+  }
+}
+
+package "Infrastructure" {
+  class HelpProvider {
+    +GetTargetDescription()
+    +GetTargets()
+  }
+  
+  class TelemetryClient {
+    +TrackEvent()
+    +TrackException()
+    +Flush()
+  }
+  
+  class Logger {
+    +Information()
+    +Error()
+    +Warning()
+  }
+}
+
+package "External Tools" {
+  class DotNetTasks {
+    +DotNetBuild()
+    +DotNetRestore()
+    +DotNetTest()
+  }
+  
+  class GitTasks {
+    +Git()
+    +GitCurrentBranch()
+  }
+  
+  class NpmTasks {
+    +NpmCi()
+    +NpmRun()
+  }
+  
+  class HttpTasks {
+    +HttpDownloadFileAsync()
+    +HttpDownloadStringAsync()
+  }
+}
+
+' Relationships
+Program --> NukeBuild : creates
+NukeBuild --> ExecutionEngine : uses
+ExecutionEngine --> ParameterSystem : coordinates
+ExecutionEngine --> Build : executes
+Build --> "Clean Target" : contains
+Build --> "Install Target" : contains
+Build --> "CloudUp Target" : contains
+Build --> "Compress Target" : contains
+
+"Clean Target" --> DotNetTasks : calls
+"Install Target" --> PackageManager : uses
+"Install Target" --> ExtModuleCatalog : uses
+"Install Target" --> LocalModuleCatalog : uses
+"CloudUp Target" --> VirtoCloudClient : uses
+"CloudUp Target" --> DockerManager : uses
+"Compress Target" --> ArtifactPacker : uses
+
+PackageManager --> HttpTasks : uses
+GithubManager --> HttpTasks : uses
+DockerManager --> GitTasks : uses
+
+Build --> HelpProvider : uses
+Build --> TelemetryClient : uses
+Build --> Logger : uses
+
+note right of Build
+  All business logic is mixed
+  within target implementations.
+  No clear separation of concerns.
+  
+  Targets are tightly coupled
+  to Nuke framework.
+end note
+
+note bottom of ExecutionEngine
+  Framework controls execution flow.
+  Target dependencies are resolved
+  automatically but inflexibly.
+end note
+
+@enduml
