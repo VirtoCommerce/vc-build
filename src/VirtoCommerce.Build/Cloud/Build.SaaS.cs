@@ -148,7 +148,6 @@ internal partial class Build
 
             await cloudClient.UpdateEnvironmentAsync(env);
         });
-
     public Target CloudEnvUpdate => _ => _
         .Executes(async () =>
         {

@@ -120,8 +120,4 @@
   <ItemGroup>
     <ProjectReference Include="..\Virtocloud.Client\src\VirtoCloud.Client\VirtoCloud.Client.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Commands\" />
-  </ItemGroup>
 </Project>

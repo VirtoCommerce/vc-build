@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.CommandLine;
 using System.Globalization;
 using System.IO;
 using System.IO.Compression;
@@ -983,15 +984,50 @@ internal partial class Build : NukeBuild
         CheckHelpRequested(args);
 
         CreateNukeDirectory();
-        int exitCode = 0;
+        var exitCode = 0;
 
         try
         {
-            exitCode = Execute<Build>(x => x.Compile);
+            var rootCommand = new RootCommand();
+            rootCommand.SetAction((parseResult) =>
+            {
+                if (parseResult.Errors.Count > 0)
+                {
+                    Console.Write(string.Join(Environment.NewLine, parseResult.Errors));
+                }
+                Console.WriteLine("Root Command");
+            });
+            var compressCommand = new Command("compress", "Compress the output files");
+            var configurationOption = new Option<string>("configuration", ["c"])
+            {
+                Description = "Build configuration",
+            };
+            compressCommand.Add(configurationOption);
+            compressCommand.SetAction(async (parseResult) =>
+            {
+                var configuration = parseResult.GetValue<string>(configurationOption);
+                Console.WriteLine($"Compress {configuration}");
+                await CompressExecuteMethod();
+
+            });
+            rootCommand.Add(compressCommand);
+            var result = rootCommand.Parse(args);
+            if (result.Errors.Count > 0)
+            {
+                exitCode = Execute<Build>(x => x.Compile);
+            }
+            else
+            {
+                return result.Invoke();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
         }
         finally
         {
-            TelemetryClient.Flush();
+            //TelemetryClient.Flush();
         }
 
         ClearTempOnExit();
