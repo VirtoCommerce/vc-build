@@ -27,7 +27,7 @@ namespace VirtoCommerce.Build
             .Executes(() =>
              {
                  var allPackages = new List<PackageItem>();
-                 var allProjects = Solution.AllProjects;
+                 var allProjects = Solution.AllProjects.Where(x => !x.Name.EndsWith(".Tests"));
 
                  foreach (var project in allProjects)
                  {
