@@ -46,24 +46,10 @@ public static class CloudInitAction
                 Log.Information("Organization: {Organization}", organization);
             }
 
-            // Set the cloud parameters for the existing Nuke.Build infrastructure
-            Build.EnvironmentName = environmentName;
-            Build.ServicePlan = servicePlan;
+            Log.Information("Delegating to CloudInit method");
 
-            if (!string.IsNullOrEmpty(clusterName))
-            {
-                Build.ClusterName = clusterName;
-            }
-
-            if (!string.IsNullOrEmpty(organization))
-            {
-                Build.Organization = organization;
-            }
-
-            Log.Information("Delegating to existing CloudInit target");
-
-            // Execute the existing CloudInit target logic
-            return Build.Execute<Build>(x => x.CloudInit);
+            // Call CloudInit method directly
+            await Build.CloudInitMethod(environmentName, servicePlan, clusterName, organization);
         }
         catch (Exception ex)
         {
@@ -71,5 +57,7 @@ public static class CloudInitAction
             Console.Error.WriteLine($"Error executing cloud init: {ex.Message}");
             return 1;
         }
+
+        return 0;
     }
 }
