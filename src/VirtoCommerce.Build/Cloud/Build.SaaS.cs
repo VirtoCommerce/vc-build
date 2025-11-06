@@ -51,22 +51,7 @@ internal partial class Build
     [Parameter("SaaS Portal")] public string CloudUrl { get; set; } = "https://portal.virtocommerce.cloud";
     [Parameter("SaaS Token")] public string CloudToken { get; set; }
     [Parameter("Path for the file with SaaS Token")] public string CloudTokenFile { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "vc-build", "cloud");
-    [Parameter("SaaS Auth Provider")]
-    public string CloudAuthProvider
-    {
-        get
-        {
-            if (AzureAD)
-            {
-                return nameof(AzureAD);
-            }
-
-            return cloudAuthProvider;
-        }
-        set { cloudAuthProvider = value; }
-    }
     [Parameter("Use Azure AD as SaaS Auth Provider")] public bool AzureAD = false;
-    private string cloudAuthProvider = "GitHub";
     private string environmentName;
 
     [Parameter("App Project Name")] public string AppProject { get => SaaSOrganizationName; set => SaaSOrganizationName = value?.ToLowerInvariant(); }
@@ -301,37 +286,41 @@ internal partial class Build
         });
 
     public Target CloudAuth => _ => _
-        .Executes(async () =>
+        .Executes(async () => await CloudAuthMethod(CloudUrl, CloudTokenFile, CloudToken, AzureAD));
+
+    public static async Task CloudAuthMethod(string cloudUrl, string cloudTokenFile, string cloudToken, bool azureAd)
+    {
+        string apiKey;
+        if (string.IsNullOrWhiteSpace(cloudToken))
         {
-            string apiKey;
-            if (string.IsNullOrWhiteSpace(CloudToken))
+            var port = "60123";
+            var listenerPrefix = $"http://localhost:{port}/";
+            var listener = new HttpListener()
             {
-                var port = "60123";
-                var listenerPrefix = $"http://localhost:{port}/";
-
-                var listener = new HttpListener()
-                {
-                    Prefixes = { listenerPrefix }
-                };
-                listener.Start();
-
-                Log.Information("Openning browser window");
-                var authUrl = $"{CloudUrl}/externalsignin?authenticationType={CloudAuthProvider}&returnUrl=/api/saas/token/{port}";
-                Process.Start(new ProcessStartInfo(authUrl) { UseShellExecute = true });
-
-                var context = await listener.GetContextAsync();
-                context.Response.StatusCode = (int)HttpStatusCode.OK;
-                apiKey = context.Request.QueryString["apiKey"];
-                context.Response.Redirect($"{CloudUrl}/vcbuild/login/success");
-                context.Response.Close();
-            }
-            else
+                Prefixes = { listenerPrefix }
+            };
+            listener.Start();
+            Log.Information("Opening browser window");
+            if (azureAd)
             {
-                apiKey = CloudToken;
+                cloudAuthProvider = "AzureAD";
             }
-
-            SaveCloudToken(apiKey);
-        });
+            var authUrl = $"{cloudUrl}/externalsignin?authenticationType={cloudAuthProvider}&returnUrl=/api/saas/token/{port}";
+            Process.Start(new ProcessStartInfo(authUrl) { UseShellExecute = true });
+            var context = await listener.GetContextAsync();
+            context.Response.StatusCode = (int)HttpStatusCode.OK;
+            apiKey = context.Request.QueryString["apiKey"];
+            context.Response.Redirect($"{cloudUrl}/vcbuild/login/success");
+            context.Response.Close();
+        }
+        else
+        {
+            apiKey = cloudToken;
+        }
+        AbsolutePath cloudTokenDir = Path.GetDirectoryName(cloudTokenFile);
+        cloudTokenDir.CreateDirectory();
+        await File.WriteAllTextAsync(cloudTokenFile, apiKey);
+    }
 
     public Target CloudDownloadManifest => _ => _
         .Executes(async () =>
@@ -355,13 +344,6 @@ internal partial class Build
 
         Assert.Fail("Parameter CloudToken is required.");
         return string.Empty; // for sonar
-    }
-
-    private void SaveCloudToken(string token)
-    {
-        AbsolutePath cloudTokenDir = Path.GetDirectoryName(CloudTokenFile);
-        cloudTokenDir.CreateDirectory();
-        File.WriteAllText(CloudTokenFile, token);
     }
 
     public Target CloudDown => _ => _

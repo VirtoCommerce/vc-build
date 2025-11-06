@@ -1,4 +1,7 @@
+using System;
 using System.CommandLine;
+using System.IO;
+using VirtoCommerce.Build.Commands.Cloud.Actions;
 
 namespace Commands.Cloud
 {
@@ -13,7 +16,10 @@ namespace Commands.Cloud
         /// <returns>Configured cloud command</returns>
         public static Command CreateCloudCommand()
         {
-            var cloudCommand = new Command("cloud", "Cloud environment management commands");
+            var cloudCommand = new Command("cloud")
+            {
+                Description = "Cloud environment management commands"
+            };
 
             // Add authentication command
             cloudCommand.Add(CreateAuthCommand());
@@ -40,13 +46,36 @@ namespace Commands.Cloud
         /// </summary>
         public static Command CreateAuthCommand()
         {
-            var authCommand = new Command("auth", "Authenticate with VirtoCloud");
+            var authCommand = new Command("auth")
+            {
+                Description = "Authenticate with VirtoCloud"
+            };
 
-            var azureAdOption = new Option<bool>("--azure-ad", "Use Azure AD authentication");
-            var tokenOption = new Option<string>("--token", "Provide authentication token directly");
+            var cloudUrl = new Option<string>("--url")
+            {
+                Description = "VirtoCloud URL",
+                DefaultValueFactory = _ => "https://portal.virtocommerce.cloud"
+            };
 
+            var azureAdOption = new Option<bool>("--azure-ad")
+            {
+                Description = "Use Azure AD authentication"
+            };
+            var tokenOption = new Option<string>("--token")
+            {
+                Description = "Provide authentication token directly"
+            };
+
+            var tokenFileOption = new Option<string>("--toke-file")
+            {
+                Description = "Path to file containing authentication token",
+                DefaultValueFactory = _ => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "vc-build", "cloud")
+            };
+
+            authCommand.Add(cloudUrl);
             authCommand.Add(azureAdOption);
             authCommand.Add(tokenOption);
+            authCommand.Add(tokenFileOption);
 
             authCommand.SetAction(CloudAuthAction.ExecuteAsync);
 
@@ -58,12 +87,30 @@ namespace Commands.Cloud
         /// </summary>
         public static Command CreateInitCommand()
         {
-            var initCommand = new Command("init", "Create a new cloud environment");
+            var initCommand = new Command("init")
+            {
+                Description = "Create a new cloud environment"
+            };
 
-            var environmentNameOption = new Option<string>("--environment-name", "Name of the new environment");
-            var servicePlanOption = new Option<string>("--service-plan", () => "F1", "Service plan for the environment");
-            var clusterNameOption = new Option<string>("--cluster-name", "Target cluster name");
-            var organizationOption = new Option<string>("--organization", "Organization name");
+            var environmentNameOption = new Option<string>("--environment-name")
+            {
+                Description = "Name of the new environment",
+                Required = true
+            };
+            var servicePlanOption = new Option<string>("--service-plan")
+            {
+                Description = "Service plan for the environment",
+                DefaultValueFactory = _ => "F1"
+            };
+
+            var clusterNameOption = new Option<string>("--cluster-name")
+            {
+                Description = "Target cluster name"
+            };
+            var organizationOption = new Option<string>("--organization")
+            {
+                Description = "Organization name"
+            };
 
             initCommand.Add(environmentNameOption);
             initCommand.Add(servicePlanOption);
@@ -80,18 +127,56 @@ namespace Commands.Cloud
         /// </summary>
         public static Command CreateUpCommand()
         {
-            var upCommand = new Command("up", "Create a new environment and deploy custom Docker image");
+            var upCommand = new Command("up")
+            {
+                Description = "Create a new environment and deploy custom Docker image"
+            };
 
-            var environmentNameOption = new Option<string>("--environment-name", "Name of the new environment");
-            var dockerUsernameOption = new Option<string>("--docker-username", "Docker Hub username");
-            var dockerPasswordOption = new Option<string>("--docker-password", "Docker registry password") { Required = true };
-            var servicePlanOption = new Option<string>("--service-plan", () => "F1", "Service plan for the environment");
-            var dockerRegistryUrlOption = new Option<string>("--docker-registry-url", "Docker registry URL");
-            var dockerImageNameOption = new Option<string>("--docker-image-name", "Custom Docker image name");
-            var dockerImageTagOption = new Option<string>("--docker-image-tag", "Docker image tag");
-            var clusterNameOption = new Option<string>("--cluster-name", "Target cluster name");
-            var dbProviderOption = new Option<string>("--db-provider", "Database provider");
-            var dbNameOption = new Option<string>("--db-name", "Database name");
+            var environmentNameOption = new Option<string>("--environment-name")
+            {
+                Description = "Name of the new environment",
+                Required = true
+            };
+            var dockerUsernameOption = new Option<string>("--docker-username")
+            {
+                Description = "Docker Hub username",
+                Required = true
+            };
+            var dockerPasswordOption = new Option<string>("--docker-password")
+            {
+                Description = "Docker registry password",
+                Required = true
+            };
+            var servicePlanOption = new Option<string>("--service-plan")
+            {
+                Description = "Service plan for the environment",
+                DefaultValueFactory = _ => "F1"
+            };
+
+            var dockerRegistryUrlOption = new Option<string>("--docker-registry-url")
+            {
+                Description = "Docker registry URL"
+            };
+            var dockerImageNameOption = new Option<string>("--docker-image-name")
+            {
+                Description = "Custom Docker image name"
+            };
+            var dockerImageTagOption = new Option<string>("--docker-image-tag")
+            {
+                Description = "Docker image tag"
+            };
+            var clusterNameOption = new Option<string>("--cluster-name")
+            {
+                Description = "Target cluster name"
+            };
+            var dbProviderOption = new Option<string>("--db-provider")
+            {
+                Description = "Database provider"
+            };
+            var dbNameOption = new Option<string>("--db-name")
+            {
+                Description = "Database name"
+            };
 
             upCommand.Add(environmentNameOption);
             upCommand.Add(dockerUsernameOption);
@@ -114,15 +199,42 @@ namespace Commands.Cloud
         /// </summary>
         public static Command CreateDeployCommand()
         {
-            var deployCommand = new Command("deploy", "Deploy custom Docker image to existing environment");
+            var deployCommand = new Command("deploy")
+            {
+                Description = "Deploy custom Docker image to existing environment"
+            };
 
-            var environmentNameOption = new Option<string>("--environment-name", "Target environment name");
-            var dockerUsernameOption = new Option<string>("--docker-username", "Docker Hub username");
-            var dockerPasswordOption = new Option<string>("--docker-password", "Docker registry password") { Required = true };
-            var dockerRegistryUrlOption = new Option<string>("--docker-registry-url", "Docker registry URL");
-            var dockerImageNameOption = new Option<string>("--docker-image-name", "Custom Docker image name");
-            var dockerImageTagOption = new Option<string>("--docker-image-tag", "Docker image tag");
-            var organizationOption = new Option<string>("--organization", "Organization name");
+            var environmentNameOption = new Option<string>("--environment-name")
+            {
+                Description = "Target environment name",
+                Required = true
+            };
+            var dockerUsernameOption = new Option<string>("--docker-username")
+            {
+                Description = "Docker Hub username",
+                Required = true
+            };
+            var dockerPasswordOption = new Option<string>("--docker-password")
+            {
+                Description = "Docker registry password",
+                Required = true
+            };
+            var dockerRegistryUrlOption = new Option<string>("--docker-registry-url")
+            {
+                Description = "Docker registry URL"
+            };
+            var dockerImageNameOption = new Option<string>("--docker-image-name")
+            {
+                Description = "Custom Docker image name"
+            };
+            var dockerImageTagOption = new Option<string>("--docker-image-tag")
+            {
+                Description = "Docker image tag"
+            };
+            var organizationOption = new Option<string>("--organization")
+            {
+                Description = "Organization name"
+            };
 
             deployCommand.Add(environmentNameOption);
             deployCommand.Add(dockerUsernameOption);
@@ -142,10 +254,20 @@ namespace Commands.Cloud
         /// </summary>
         public static Command CreateDownCommand()
         {
-            var downCommand = new Command("down", "Delete cloud environment");
+            var downCommand = new Command("down")
+            {
+                Description = "Delete cloud environment"
+            };
 
-            var environmentNameOption = new Option<string>("--environment-name", "Environment name to delete");
-            var organizationOption = new Option<string>("--organization", "Organization name");
+            var environmentNameOption = new Option<string>("--environment-name")
+            {
+                Description = "Environment name to delete",
+                Required = true
+            };
+            var organizationOption = new Option<string>("--organization")
+            {
+                Description = "Organization name"
+            };
 
             downCommand.Add(environmentNameOption);
             downCommand.Add(organizationOption);
@@ -160,7 +282,10 @@ namespace Commands.Cloud
         /// </summary>
         public static Command CreateListCommand()
         {
-            var listCommand = new Command("list", "List cloud environments with statuses");
+            var listCommand = new Command("list")
+            {
+                Description = "List cloud environments with statuses"
+            };
 
             listCommand.SetAction(CloudListAction.ExecuteAsync);
 
@@ -172,9 +297,16 @@ namespace Commands.Cloud
         /// </summary>
         public static Command CreateRestartCommand()
         {
-            var restartCommand = new Command("restart", "Restart cloud environment");
+            var restartCommand = new Command("restart")
+            {
+                Description = "Restart cloud environment"
+            };
 
-            var environmentNameOption = new Option<string>("--environment-name", "Environment name to restart");
+            var environmentNameOption = new Option<string>("--environment-name")
+            {
+                Description = "Environment name to restart",
+                Required = true
+            };
 
             restartCommand.Add(environmentNameOption);
 
@@ -188,12 +320,28 @@ namespace Commands.Cloud
         /// </summary>
         public static Command CreateLogsCommand()
         {
-            var logsCommand = new Command("logs", "Show environment logs");
+            var logsCommand = new Command("logs")
+            {
+                Description = "Show environment logs"
+            };
 
-            var environmentNameOption = new Option<string>("--environment-name", "Environment name to show logs for");
-            var filterOption = new Option<string>("--filter", "Log filter");
-            var tailOption = new Option<int>("--tail", "Number of lines to tail");
-            var resourceNameOption = new Option<string>("--resource-name", "Specific resource to show logs for");
+            var environmentNameOption = new Option<string>("--environment-name")
+            {
+                Description = "Environment name to show logs for",
+                Required = true
+            };
+            var filterOption = new Option<string>("--filter")
+            {
+                Description = "Log filter"
+            };
+            var tailOption = new Option<int>("--tail")
+            {
+                Description = "Number of lines to tail"
+            };
+            var resourceNameOption = new Option<string>("--resource-name")
+            {
+                Description = "Specific resource to show logs for"
+            };
 
             logsCommand.Add(environmentNameOption);
             logsCommand.Add(filterOption);
@@ -210,11 +358,24 @@ namespace Commands.Cloud
         /// </summary>
         public static Command CreateStatusCommand()
         {
-            var statusCommand = new Command("status", "Wait for environment health and sync status");
+            var statusCommand = new Command("status")
+            {
+                Description = "Wait for environment health and sync status"
+            };
 
-            var environmentNameOption = new Option<string>("--environment-name", "Environment name");
-            var healthStatusOption = new Option<string>("--health-status", "Expected health status to wait for");
-            var syncStatusOption = new Option<string>("--sync-status", "Expected sync status to wait for");
+            var environmentNameOption = new Option<string>("--environment-name")
+            {
+                Description = "Environment name",
+                Required = true
+            };
+            var healthStatusOption = new Option<string>("--health-status")
+            {
+                Description = "Expected health status to wait for"
+            };
+            var syncStatusOption = new Option<string>("--sync-status")
+            {
+                Description = "Expected sync status to wait for"
+            };
 
             statusCommand.Add(environmentNameOption);
             statusCommand.Add(healthStatusOption);
@@ -230,11 +391,25 @@ namespace Commands.Cloud
         /// </summary>
         public static Command CreateSetParameterCommand()
         {
-            var setParamCommand = new Command("set-parameter", "Update cloud environment parameters");
+            var setParamCommand = new Command("set-parameter")
+            {
+                Description = "Update cloud environment parameters"
+            };
 
-            var environmentNameOption = new Option<string>("--environment-name", "Environment name");
-            var helmParametersOption = new Option<string[]>("--helm-parameters", "Helm parameters in key=value format");
-            var organizationOption = new Option<string>("--organization", "Organization name");
+            var environmentNameOption = new Option<string>("--environment-name")
+            {
+                Description = "Environment name",
+                Required = true
+            };
+            var helmParametersOption = new Option<string[]>("--helm-parameters")
+            {
+                Description = "Helm parameters in key=value format",
+                Required = true
+            };
+            var organizationOption = new Option<string>("--organization")
+            {
+                Description = "Organization name"
+            };
 
             setParamCommand.Add(environmentNameOption);
             setParamCommand.Add(helmParametersOption);
@@ -250,10 +425,20 @@ namespace Commands.Cloud
         /// </summary>
         public static Command CreateUpdateCommand()
         {
-            var updateCommand = new Command("update", "Update applications in the cloud");
+            var updateCommand = new Command("update")
+            {
+                Description = "Update applications in the cloud"
+            };
 
-            var manifestOption = new Option<string>("--manifest", "Path to application manifest file");
-            var routesFileOption = new Option<string>("--routes-file", "Path to routes file");
+            var manifestOption = new Option<string>("--manifest")
+            {
+                Description = "Path to application manifest file",
+                Required = true
+            };
+            var routesFileOption = new Option<string>("--routes-file")
+            {
+                Description = "Path to routes file"
+            };
 
             updateCommand.Add(manifestOption);
             updateCommand.Add(routesFileOption);
