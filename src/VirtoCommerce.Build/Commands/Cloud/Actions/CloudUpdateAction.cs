@@ -35,7 +35,9 @@ public static class CloudUpdateAction
 
             Log.Information("Manifest path: {Manifest}", manifest);
             if (!string.IsNullOrEmpty(routesFile))
+            {
                 Log.Information("Routes file: {RoutesFile}", routesFile);
+            }
 
             Log.Information("Delegating to CloudEnvUpdate method");
 

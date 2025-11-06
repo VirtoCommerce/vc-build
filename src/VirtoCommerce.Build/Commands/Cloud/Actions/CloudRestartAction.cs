@@ -11,7 +11,7 @@ namespace VirtoCommerce.Build.Commands.Cloud.Actions;
 public static class CloudRestartAction
 {
     /// <summary>
-    ///  Executes the cloud restart command
+    ///     Executes the cloud restart command
     /// </summary>
     /// <param name="parseResult">Command line parse result</param>
     /// <returns>Task representing the operation</returns>

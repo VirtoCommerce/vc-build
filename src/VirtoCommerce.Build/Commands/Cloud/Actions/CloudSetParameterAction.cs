@@ -6,7 +6,7 @@ using Serilog;
 namespace VirtoCommerce.Build.Commands.Cloud.Actions;
 
 /// <summary>
-///   Action for cloud set-parameter command
+///     Action for cloud set-parameter command
 /// </summary>
 public static class CloudSetParameterAction
 {
@@ -24,7 +24,8 @@ public static class CloudSetParameterAction
             var helmParameters = parseResult.GetValue<string[]>("--helm-parameters");
             var organization = parseResult.GetValue<string>("--organization");
 
-            Log.Information("Executing cloud set-parameter command for environment: {EnvironmentName}", environmentName);
+            Log.Information("Executing cloud set-parameter command for environment: {EnvironmentName}",
+                environmentName);
 
             // Validate required parameters
             if (string.IsNullOrEmpty(environmentName))
@@ -43,7 +44,9 @@ public static class CloudSetParameterAction
 
             Log.Information("Helm parameters: {HelmParameters}", string.Join(", ", helmParameters));
             if (!string.IsNullOrEmpty(organization))
+            {
                 Log.Information("Organization: {Organization}", organization);
+            }
 
             Log.Information("Delegating to CloudEnvSetParameter method");
 

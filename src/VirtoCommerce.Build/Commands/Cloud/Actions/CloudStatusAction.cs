@@ -35,9 +35,14 @@ public static class CloudStatusAction
             }
 
             if (!string.IsNullOrEmpty(healthStatus))
+            {
                 Log.Information("Expected health status: {HealthStatus}", healthStatus);
+            }
+
             if (!string.IsNullOrEmpty(syncStatus))
+            {
                 Log.Information("Expected sync status: {SyncStatus}", syncStatus);
+            }
 
             Log.Information("Delegating to CloudEnvStatus method");
 

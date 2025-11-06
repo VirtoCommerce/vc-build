@@ -52,14 +52,16 @@ public static class CloudDeployAction
                 return 1;
             }
 
-            Log.Information("Docker configuration - Username: {DockerUsername}, Registry: {DockerRegistry}, Image: {DockerImage}:{DockerTag}",
-                  dockerUsername, dockerRegistryUrl ?? "default", dockerImageName ?? "auto-generated", dockerImageTag ?? "auto-generated");
+            Log.Information(
+                "Docker configuration - Username: {DockerUsername}, Registry: {DockerRegistry}, Image: {DockerImage}:{DockerTag}",
+                dockerUsername, dockerRegistryUrl ?? "default", dockerImageName ?? "auto-generated",
+                dockerImageTag ?? "auto-generated");
 
             Log.Information("Delegating to CloudDeploy workflow");
 
             // Call CloudDeploy workflow directly
             await Build.CloudDeployMethod(environmentName, dockerUsername, dockerPassword,
-                 dockerRegistryUrl, dockerImageName, dockerImageTag, organization);
+                dockerRegistryUrl, dockerImageName, dockerImageTag, organization);
         }
         catch (Exception ex)
         {

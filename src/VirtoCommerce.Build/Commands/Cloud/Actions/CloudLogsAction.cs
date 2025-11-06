@@ -36,11 +36,19 @@ public static class CloudLogsAction
             }
 
             if (!string.IsNullOrEmpty(filter))
+            {
                 Log.Information("Log filter: {Filter}", filter);
+            }
+
             if (tail > 0)
+            {
                 Log.Information("Tail lines: {Tail}", tail);
+            }
+
             if (!string.IsNullOrEmpty(resourceName))
+            {
                 Log.Information("Resource name: {ResourceName}", resourceName);
+            }
 
             Log.Information("Delegating to CloudEnvLogs method");
 
