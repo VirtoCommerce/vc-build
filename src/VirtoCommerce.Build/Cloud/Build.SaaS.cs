@@ -25,12 +25,12 @@ internal partial class Build
     // Missing auth provider variable
     private static string _cloudAuthProvider = "GitHub";
 
-    private string _saasOrganizationName;
+    private static string _saasOrganizationName;
 
     [Parameter("Use Azure AD as SaaS Auth Provider")]
     public bool AzureAD;
 
-    private string environmentName;
+    private static string _environmentName;
     [Parameter("ArgoCD Server")] public string ArgoServer { get; set; }
     [Parameter("ArgoCD Token")] public string ArgoToken { get; set; }
 
@@ -60,33 +60,33 @@ internal partial class Build
     [Parameter("Number of attempts before fail")]
     public int AttemptsNumber { get; set; } = 100;
 
-    [Parameter("SaaS Portal")] public string CloudUrl { get; set; } = "https://portal.virtocommerce.cloud";
-    [Parameter("SaaS Token")] public string CloudToken { get; set; }
+    [Parameter("SaaS Portal")] public static string CloudUrl { get; set; } = "https://portal.virtocommerce.cloud";
+    [Parameter("SaaS Token")] public static string CloudToken { get; set; }
 
     [Parameter("Path for the file with SaaS Token")]
-    public string CloudTokenFile { get; set; } =
+    public static string CloudTokenFile { get; set; } =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "vc-build", "cloud");
 
     [Parameter("App Project Name")]
     public string AppProject { get => SaaSOrganizationName; set => SaaSOrganizationName = value?.ToLowerInvariant(); }
 
     [Parameter("Cloud Environment Name")]
-    public string EnvironmentName { get => environmentName; set => environmentName = value?.ToLowerInvariant(); }
+    public static string EnvironmentName { get => _environmentName; set => _environmentName = value?.ToLowerInvariant(); }
 
     [Parameter("Cloud Environment Service Plan")]
-    public string ServicePlan { get; set; } = "F1";
+    public static string ServicePlan { get; set; } = "F1";
 
     [Parameter("Cloud Environment Cluster Name")]
-    public string ClusterName { get; set; }
+    public static string ClusterName { get; set; }
 
     [Parameter("Cloud Environment Db Provider")]
-    public string DbProvider { get; set; }
+    public static string DbProvider { get; set; }
 
     [Parameter("Cloud Environment Db Name")]
-    public string DbName { get; set; }
+    public static string DbName { get; set; }
 
     [Parameter("Organization name", Name = "Organization")]
-    public string SaaSOrganizationName
+    public static string SaaSOrganizationName
     {
         get => _saasOrganizationName;
         set => _saasOrganizationName = value?.ToLowerInvariant();
@@ -199,7 +199,7 @@ internal partial class Build
             .Executes(async () => await PrepareDockerContextMethod());
     }
 
-    private async Task PrepareDockerContextMethod()
+    private static async Task PrepareDockerContextMethod()
     {
         var dockerBuildContext = ArtifactsDirectory / "docker";
         var platformDirectory = dockerBuildContext / "publish";
@@ -227,7 +227,7 @@ internal partial class Build
             DockerImageName = $"{DockerUsername}/{EnvironmentName.ToLowerInvariant()}";
         }
 
-        DockerImageTag ??= new[] { DateTime.Now.ToString("MMddyyHHmmss") };
+        DockerImageTag ??= [DateTime.Now.ToString("MMddyyHHmmss")];
         DockerfilePath = dockerfilePath;
         DiscoveryPath = modulesPath;
         ProbingPath = Path.Combine(platformDirectory, "app_data", "modules");
@@ -248,9 +248,8 @@ internal partial class Build
         {
             var nukeDir = Path.Combine(RootDirectory, ".nuke");
             var directories = Directory.GetDirectories(RootDirectory).Where(d =>
-                !PathConstruction.IsDescendantPath(modulesSourcePath, d)
-                && !PathConstruction.IsDescendantPath(nukeDir, d)
-                && !PathConstruction.IsDescendantPath(ArtifactsDirectory, d)).ToArray();
+                !modulesSourcePath.Contains(d) && !PathConstruction.IsDescendantPath(nukeDir, d)
+                                               && !ArtifactsDirectory.Contains(d)).ToArray();
             var files = Directory.GetFiles(RootDirectory);
 
             foreach (var dir in directories)
@@ -355,7 +354,7 @@ internal partial class Build
         return new SaaSDeploymentApi(config);
     }
 
-    private async Task<string> GetCloudTokenAsync()
+    private static async Task<string> GetCloudTokenAsync()
     {
         if (!string.IsNullOrEmpty(CloudToken))
         {
@@ -425,7 +424,7 @@ internal partial class Build
 
         if (!string.IsNullOrEmpty(dockerImageTag))
         {
-            DockerImageTag = new[] { dockerImageTag };
+            DockerImageTag = [dockerImageTag];
         }
 
         ServicePlan = servicePlan;
@@ -439,7 +438,7 @@ internal partial class Build
         // Call the BuildAndPush target with proper type specification
         Execute<Build>(x => x.BuildAndPush);
 
-        await CloudInitMethodInternal(environmentName, servicePlan, clusterName, null);
+        await CloudInitMethod(environmentName, servicePlan, clusterName, null);
     }
 
     public static async Task CloudDeployMethod(string environmentName, string dockerUsername, string dockerPassword,
@@ -466,7 +465,7 @@ internal partial class Build
 
         if (!string.IsNullOrEmpty(dockerImageTag))
         {
-            DockerImageTag = new[] { dockerImageTag };
+            DockerImageTag = [dockerImageTag];
         }
 
         // Execute the workflow: PrepareDockerContext -> BuildAndPush -> Update Environment
@@ -500,7 +499,7 @@ internal partial class Build
             envName = $"{organization}-{environmentName}";
         }
 
-        await cloudClient.EnvironmentsDeleteAsync(new List<string> { envName });
+        await cloudClient.EnvironmentsDeleteAsync([envName]);
     }
 
     public static async Task CloudEnvListMethod()
@@ -532,7 +531,7 @@ internal partial class Build
         var env = await cloudClient.EnvironmentsGetEnvironmentAsync(environmentName);
         env.NotNull($"Environment {environmentName} not found.");
 
-        var parameterName = "platform.system.reload";
+        const string parameterName = "platform.system.reload";
         env.Helm.Parameters[parameterName] = DateTime.Now.ToString();
 
         await cloudClient.EnvironmentsUpdateAsync(env);
@@ -565,10 +564,10 @@ internal partial class Build
         var cloudClient = new VirtoCloudClient(CloudUrl, await GetCloudTokenAsync());
         for (var i = 0; i < AttemptsNumber; i++)
         {
-            Log.Information($"Attempt #{i + 1}");
+            Log.Information("Attempt #{I}", i + 1);
             var env = await cloudClient.GetEnvironmentAsync(environmentName);
             Log.Information(
-                $"Actual Health Status is {env.Status} - expected is {healthStatus ?? "Not expected"}\n Actual Sync Status is {env.SyncStatus} - expected is {syncStatus ?? "Not expected"}");
+                "Actual Health Status is {EnvStatus} - expected is {NotExpected}\n Actual Sync Status is {EnvSyncStatus} - expected is {S}", env.Status, healthStatus ?? "Not expected", env.SyncStatus, syncStatus ?? "Not expected");
             if (CheckAppServiceStatus(healthStatus, env.Status) &&
                 CheckAppServiceStatus(syncStatus, env.SyncStatus))
             {
@@ -581,6 +580,11 @@ internal partial class Build
 
         Assert.True(isSuccess,
             $"Statuses {healthStatus} {syncStatus} were not obtained for the number of attempts: {AttemptsNumber}");
+    }
+
+    private static bool CheckAppServiceStatus(string expected, string actual)
+    {
+        return expected == actual || string.IsNullOrEmpty(expected);
     }
 
     public static async Task CloudEnvSetParameterMethod(string environmentName, string[] helmParameters,
@@ -599,7 +603,7 @@ internal partial class Build
         {
             var parts = p.Split('=', 2);
             return new HelmParameter { Name = parts[0], Value = parts.Length > 1 ? parts[1] : "" };
-        }).ToArray() ?? Array.Empty<HelmParameter>();
+        }).ToArray() ?? [];
 
         var isProgressing = await WaitForEnvironmentState(
             async () => await cloudClient.GetEnvironmentAsync(environmentName, organization),
@@ -619,6 +623,24 @@ internal partial class Build
         }
 
         await cloudClient.UpdateEnvironmentAsync(env);
+    }
+
+    private static async Task<bool> WaitForEnvironmentState(Func<Task<CloudEnvironment>> cloudEnvProvider, Func<CloudEnvironment, bool> condition, int delay, int attempts)
+    {
+        for (var i = 0; i < attempts; i++)
+        {
+            var env = await cloudEnvProvider();
+            Log.Information("Attempt #{I}", i + 1);
+            Log.Information("Health Status is {EnvStatus}\nSync Status is {EnvSyncStatus}", env.Status, env.SyncStatus);
+            if (condition(env))
+            {
+                return true;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(delay));
+        }
+
+        return false;
     }
 
     public static async Task CloudEnvUpdateMethod(string manifest, string routesFile)
