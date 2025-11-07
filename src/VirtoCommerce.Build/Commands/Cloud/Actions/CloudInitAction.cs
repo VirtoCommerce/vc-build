@@ -24,6 +24,10 @@ public static class CloudInitAction
             var servicePlan = parseResult.GetValue<string>("--service-plan") ?? "F1";
             var clusterName = parseResult.GetValue<string>("--cluster-name");
             var organization = parseResult.GetValue<string>("--organization");
+            var dbProvider = parseResult.GetValue<string>("--db-provider");
+            var dbName = parseResult.GetValue<string>("--db-name");
+            var appProject = parseResult.GetValue<string>("--app-project");
+            var cloudUrl = parseResult.GetValue<string>("--url");
 
             Log.Information("Executing cloud init command for environment: {EnvironmentName}", environmentName);
 
@@ -46,10 +50,21 @@ public static class CloudInitAction
                 Log.Information("Organization: {Organization}", organization);
             }
 
+            if (!string.IsNullOrEmpty(dbProvider))
+            {
+                Log.Information("Database provider: {DbProvider}", dbProvider);
+            }
+
+            if (!string.IsNullOrEmpty(dbName))
+            {
+                Log.Information("Database name: {DbName}", dbName);
+            }
+
             Log.Information("Delegating to CloudInit method");
 
-            // Call CloudInit method directly
-            await Build.CloudInitMethod(environmentName, servicePlan, clusterName, organization);
+            // Call CloudInit method directly with all parameters including database options
+            await Build.CloudInitMethod(environmentName, servicePlan, clusterName, organization,
+                appProject, dbProvider, dbName, cloudUrl);
         }
         catch (Exception ex)
         {

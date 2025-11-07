@@ -403,42 +403,8 @@ internal partial class Build
         string clusterName, string dbProvider, string dbName)
     {
         var build = new Build();
-        await CloudUpMethodInternal(environmentName, dockerUsername, dockerPassword, servicePlan,
+        await CloudUpMethod(environmentName, dockerUsername, dockerPassword, servicePlan,
             dockerRegistryUrl, dockerImageName, dockerImageTag, clusterName, dbProvider, dbName);
-    }
-
-    public static async Task CloudUpMethodInternal(string environmentName, string dockerUsername, string dockerPassword,
-        string servicePlan, string dockerRegistryUrl, string dockerImageName, string dockerImageTag,
-        string clusterName, string dbProvider, string dbName)
-    {
-        // Set the parameters for PrepareDockerContext and build workflow
-        EnvironmentName = environmentName;
-        DockerUsername = dockerUsername;
-        DockerPassword = dockerPassword;
-        DockerRegistryUrl = dockerRegistryUrl;
-
-        if (!string.IsNullOrEmpty(dockerImageName))
-        {
-            DockerImageName = dockerImageName;
-        }
-
-        if (!string.IsNullOrEmpty(dockerImageTag))
-        {
-            DockerImageTag = [dockerImageTag];
-        }
-
-        ServicePlan = servicePlan;
-        ClusterName = clusterName;
-        DbProvider = dbProvider;
-        DbName = dbName;
-
-        // Execute the workflow: PrepareDockerContext -> BuildAndPush -> CloudInit
-        await PrepareDockerContextMethod();
-
-        // Call the BuildAndPush target with proper type specification
-        Execute<Build>(x => x.BuildAndPush);
-
-        await CloudInitMethod(environmentName, servicePlan, clusterName, null);
     }
 
     public static async Task CloudDeployMethod(string environmentName, string dockerUsername, string dockerPassword,

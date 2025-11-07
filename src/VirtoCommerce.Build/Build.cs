@@ -12,6 +12,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Xml;
+using Commands.Cloud;
 using Extensions;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Extensibility;
@@ -1011,6 +1012,9 @@ internal partial class Build : NukeBuild
 
             });
             rootCommand.Add(compressCommand);
+
+            rootCommand.Add(CloudCommandsFabric.CreateCloudCommand());
+
             var result = rootCommand.Parse(args);
             if (result.Errors.Count > 0)
             {

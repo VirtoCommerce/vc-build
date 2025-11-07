@@ -66,7 +66,7 @@ namespace Commands.Cloud
                 Description = "Provide authentication token directly"
             };
 
-            var tokenFileOption = new Option<string>("--toke-file")
+            var tokenFileOption = new Option<string>("--token-file")
             {
                 Description = "Path to file containing authentication token",
                 DefaultValueFactory = _ => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "vc-build", "cloud")
@@ -111,11 +111,32 @@ namespace Commands.Cloud
             {
                 Description = "Organization name"
             };
+            var dbProviderOption = new Option<string>("--db-provider")
+            {
+                Description = "Database provider"
+            };
+            var dbNameOption = new Option<string>("--db-name")
+            {
+                Description = "Database name"
+            };
+            var appProjectOption = new Option<string>("--app-project")
+            {
+                Description = "Application project name"
+            };
+            var cloudUrlOption = new Option<string>("--url")
+            {
+                Description = "VirtoCloud URL",
+                DefaultValueFactory = _ => "https://portal.virtocommerce.cloud"
+            };
 
             initCommand.Add(environmentNameOption);
             initCommand.Add(servicePlanOption);
             initCommand.Add(clusterNameOption);
             initCommand.Add(organizationOption);
+            initCommand.Add(dbProviderOption);
+            initCommand.Add(dbNameOption);
+            initCommand.Add(appProjectOption);
+            initCommand.Add(cloudUrlOption);
 
             initCommand.SetAction(CloudInitAction.ExecuteAsync);
 
