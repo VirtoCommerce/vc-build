@@ -2,26 +2,38 @@ using System;
 using System.CommandLine;
 using System.Threading.Tasks;
 using Serilog;
+using VirtoCommerce.Build;
 
-namespace VirtoCommerce.Build.Commands.Cloud.Actions;
+namespace Commands.Cloud;
 
-/// <summary>
-///     Action for cloud down command
-/// </summary>
-public static class CloudDownAction
+public class CloudDownCommand : Command
 {
-    /// <summary>
-    ///     Executes the cloud down command
-    /// </summary>
-    /// <param name="parseResult">Command line parse result</param>
-    /// <returns>Task representing the operation</returns>
+    public const string EnvironmentNameOption = "--environment-name";
+    public const string OrganizationOption = "--organization";
+
+    public CloudDownCommand() : base("down", "Delete cloud environment")
+    {
+        var environmentNameOption = new Option<string>(EnvironmentNameOption)
+        {
+            Description = "Environment name to delete",
+            Required = true
+        };
+
+        var organizationOption = new Option<string>(OrganizationOption) { Description = "Organization name" };
+
+        Add(environmentNameOption);
+        Add(organizationOption);
+
+        SetAction(ExecuteAsync);
+    }
+
     public static async Task<int> ExecuteAsync(ParseResult parseResult)
     {
         try
         {
             // Extract option values from ParseResult using correct API
-            var environmentName = parseResult.GetValue<string>("--environment-name");
-            var organization = parseResult.GetValue<string>("--organization");
+            var environmentName = parseResult.GetValue<string>(EnvironmentNameOption);
+            var organization = parseResult.GetValue<string>(OrganizationOption);
 
             Log.Information("Executing cloud down command for environment: {EnvironmentName}", environmentName);
 

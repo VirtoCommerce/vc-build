@@ -2,27 +2,49 @@ using System;
 using System.CommandLine;
 using System.Threading.Tasks;
 using Serilog;
+using VirtoCommerce.Build;
 
-namespace VirtoCommerce.Build.Commands.Cloud.Actions;
+namespace Commands.Cloud;
 
-/// <summary>
-///     Action for cloud status command
-/// </summary>
-public static class CloudStatusAction
+public class CloudStatusCommand : Command
 {
-    /// <summary>
-    ///     Executes the cloud status command
-    /// </summary>
-    /// <param name="parseResult">Command line parse result</param>
-    /// <returns>Task representing the operation</returns>
+    public const string EnvironmentNameOption = "--environment-name";
+    public const string HealthStatusOption = "--health-status";
+    public const string SyncStatusOption = "--sync-status";
+
+    public CloudStatusCommand() : base("status", "Wait for environment health and sync status")
+    {
+        var environmentNameOption = new Option<string>(EnvironmentNameOption)
+        {
+            Description = "Environment name",
+            Required = true
+        };
+
+        var healthStatusOption = new Option<string>(HealthStatusOption)
+        {
+            Description = "Expected health status to wait for"
+        };
+
+        var syncStatusOption = new Option<string>(SyncStatusOption)
+        {
+            Description = "Expected sync status to wait for"
+        };
+
+        Add(environmentNameOption);
+        Add(healthStatusOption);
+        Add(syncStatusOption);
+
+        SetAction(ExecuteAsync);
+    }
+
     public static async Task<int> ExecuteAsync(ParseResult parseResult)
     {
         try
         {
             // Extract option values from ParseResult using correct API
-            var environmentName = parseResult.GetValue<string>("--environment-name");
-            var healthStatus = parseResult.GetValue<string>("--health-status");
-            var syncStatus = parseResult.GetValue<string>("--sync-status");
+            var environmentName = parseResult.GetValue<string>(EnvironmentNameOption);
+            var healthStatus = parseResult.GetValue<string>(HealthStatusOption);
+            var syncStatus = parseResult.GetValue<string>(SyncStatusOption);
 
             Log.Information("Executing cloud status command for environment: {EnvironmentName}", environmentName);
 

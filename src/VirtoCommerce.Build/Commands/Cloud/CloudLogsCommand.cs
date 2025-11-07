@@ -2,28 +2,51 @@ using System;
 using System.CommandLine;
 using System.Threading.Tasks;
 using Serilog;
+using VirtoCommerce.Build;
 
-namespace VirtoCommerce.Build.Commands.Cloud.Actions;
+namespace Commands.Cloud;
 
-/// <summary>
-///     Action for cloud logs command
-/// </summary>
-public static class CloudLogsAction
+public class CloudLogsCommand : Command
 {
-    /// <summary>
-    ///     Executes the cloud logs command
-    /// </summary>
-    /// <param name="parseResult">Command line parse result</param>
-    /// <returns>Task representing the operation</returns>
+    public const string EnvironmentNameOption = "--environment-name";
+    public const string FilterOption = "--filter";
+    public const string TailOption = "--tail";
+    public const string ResourceNameOption = "--resource-name";
+
+    public CloudLogsCommand() : base("logs", "Show environment logs")
+    {
+        var environmentNameOption = new Option<string>(EnvironmentNameOption)
+        {
+            Description = "Environment name to show logs for",
+            Required = true
+        };
+
+        var filterOption = new Option<string>(FilterOption) { Description = "Log filter" };
+
+        var tailOption = new Option<int>(TailOption) { Description = "Number of lines to tail" };
+
+        var resourceNameOption = new Option<string>(ResourceNameOption)
+        {
+            Description = "Specific resource to show logs for"
+        };
+
+        Add(environmentNameOption);
+        Add(filterOption);
+        Add(tailOption);
+        Add(resourceNameOption);
+
+        SetAction(ExecuteAsync);
+    }
+
     public static async Task<int> ExecuteAsync(ParseResult parseResult)
     {
         try
         {
             // Extract option values from ParseResult using correct API
-            var environmentName = parseResult.GetValue<string>("--environment-name");
-            var filter = parseResult.GetValue<string>("--filter");
-            var tail = parseResult.GetValue<int>("--tail");
-            var resourceName = parseResult.GetValue<string>("--resource-name");
+            var environmentName = parseResult.GetValue<string>(EnvironmentNameOption);
+            var filter = parseResult.GetValue<string>(FilterOption);
+            var tail = parseResult.GetValue<int>(TailOption);
+            var resourceName = parseResult.GetValue<string>(ResourceNameOption);
 
             Log.Information("Executing cloud logs command for environment: {EnvironmentName}", environmentName);
 

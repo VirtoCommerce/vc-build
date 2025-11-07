@@ -1013,7 +1013,7 @@ internal partial class Build : NukeBuild
             });
             rootCommand.Add(compressCommand);
 
-            rootCommand.Add(CloudCommandsFabric.CreateCloudCommand());
+            rootCommand.Add(new CloudCommand());
 
             var result = rootCommand.Parse(args);
             if (result.Errors.Count > 0)

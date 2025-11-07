@@ -2,26 +2,23 @@ using System;
 using System.CommandLine;
 using System.Threading.Tasks;
 using Serilog;
+using VirtoCommerce.Build;
 
-namespace VirtoCommerce.Build.Commands.Cloud.Actions;
+namespace Commands.Cloud;
 
-/// <summary>
-///     Action for cloud list command
-/// </summary>
-public static class CloudListAction
+public class CloudListCommand : Command
 {
-    /// <summary>
-    ///     Executes the cloud list command
-    /// </summary>
-    /// <param name="parseResult">Command line parse result</param>
-    /// <returns>Task representing the operation</returns>
+    public CloudListCommand() : base("list", "List cloud environments with statuses")
+    {
+        SetAction(ExecuteAsync);
+    }
+
     public static async Task<int> ExecuteAsync(ParseResult parseResult)
     {
         try
         {
             Log.Information("Executing cloud list command");
 
-            // Call CloudEnvList method directly
             await Build.CloudEnvListMethod();
         }
         catch (Exception ex)

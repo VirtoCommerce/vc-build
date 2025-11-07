@@ -2,27 +2,47 @@ using System;
 using System.CommandLine;
 using System.Threading.Tasks;
 using Serilog;
+using VirtoCommerce.Build;
 
-namespace VirtoCommerce.Build.Commands.Cloud.Actions;
+namespace Commands.Cloud;
 
-/// <summary>
-///     Action for cloud set-parameter command
-/// </summary>
-public static class CloudSetParameterAction
+public class CloudSetParameterCommand : Command
 {
-    /// <summary>
-    ///     Executes the cloud set-parameter command
-    /// </summary>
-    /// <param name="parseResult">Command line parse result</param>
-    /// <returns>Task representing the operation</returns>
+    public const string EnvironmentNameOption = "--environment-name";
+    public const string HelmParametersOption = "--helm-parameters";
+    public const string OrganizationOption = "--organization";
+
+    public CloudSetParameterCommand() : base("set-parameter", "Update cloud environment parameters")
+    {
+        var environmentNameOption = new Option<string>(EnvironmentNameOption)
+        {
+            Description = "Environment name",
+            Required = true
+        };
+
+        var helmParametersOption = new Option<string[]>(HelmParametersOption)
+        {
+            Description = "Helm parameters in key=value format",
+            Required = true
+        };
+
+        var organizationOption = new Option<string>(OrganizationOption) { Description = "Organization name" };
+
+        Add(environmentNameOption);
+        Add(helmParametersOption);
+        Add(organizationOption);
+
+        SetAction(ExecuteAsync);
+    }
+
     public static async Task<int> ExecuteAsync(ParseResult parseResult)
     {
         try
         {
             // Extract option values from ParseResult using correct API
-            var environmentName = parseResult.GetValue<string>("--environment-name");
-            var helmParameters = parseResult.GetValue<string[]>("--helm-parameters");
-            var organization = parseResult.GetValue<string>("--organization");
+            var environmentName = parseResult.GetValue<string>(EnvironmentNameOption);
+            var helmParameters = parseResult.GetValue<string[]>(HelmParametersOption);
+            var organization = parseResult.GetValue<string>(OrganizationOption);
 
             Log.Information("Executing cloud set-parameter command for environment: {EnvironmentName}",
                 environmentName);
@@ -43,6 +63,7 @@ public static class CloudSetParameterAction
             }
 
             Log.Information("Helm parameters: {HelmParameters}", string.Join(", ", helmParameters));
+
             if (!string.IsNullOrEmpty(organization))
             {
                 Log.Information("Organization: {Organization}", organization);

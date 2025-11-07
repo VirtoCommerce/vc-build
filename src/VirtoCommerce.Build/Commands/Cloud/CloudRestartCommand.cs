@@ -2,25 +2,33 @@ using System;
 using System.CommandLine;
 using System.Threading.Tasks;
 using Serilog;
+using VirtoCommerce.Build;
 
-namespace VirtoCommerce.Build.Commands.Cloud.Actions;
+namespace Commands.Cloud;
 
-/// <summary>
-///     Action for cloud restart command
-/// </summary>
-public static class CloudRestartAction
+public class CloudRestartCommand : Command
 {
-    /// <summary>
-    ///     Executes the cloud restart command
-    /// </summary>
-    /// <param name="parseResult">Command line parse result</param>
-    /// <returns>Task representing the operation</returns>
+    public const string EnvironmentNameOption = "--environment-name";
+
+    public CloudRestartCommand() : base("restart", "Restart cloud environment")
+    {
+        var environmentNameOption = new Option<string>(EnvironmentNameOption)
+        {
+            Description = "Environment name to restart",
+            Required = true
+        };
+
+        Add(environmentNameOption);
+
+        SetAction(ExecuteAsync);
+    }
+
     public static async Task<int> ExecuteAsync(ParseResult parseResult)
     {
         try
         {
             // Extract option values from ParseResult using correct API
-            var environmentName = parseResult.GetValue<string>("--environment-name");
+            var environmentName = parseResult.GetValue<string>(EnvironmentNameOption);
 
             Log.Information("Executing cloud restart command for environment: {EnvironmentName}", environmentName);
 
