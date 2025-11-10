@@ -1,0 +1,298 @@
+@startuml Future Cocona Architecture
+!theme aws-orange
+title Future VirtoCommerce.Build Architecture (Cocona)
+
+package "Entry Point" {
+  class Program {
+    +Main(args: string[]): Task<int>
+    +ConfigureServices()
+  +ConfigureCommands()
+    +IsLegacyNukeCall(): bool
+    +RunLegacyCompatibilityMode(): Task<int>
+  }
+}
+
+package "Cocona Framework" {
+  class CoconaApp {
+ +CreateBuilder()
+    +AddCommand()
+    +AddSubCommand()
+    +RunAsync(): Task<int>
+  }
+  
+  class CommandParser {
+    +ParseArguments()
+    +ValidateOptions()
+    +GenerateHelp()
+  }
+  
+  class ServiceProvider {
+    +GetService<T>()
+    +CreateScope()
+  }
+}
+
+package "Dependency Injection" {
+  interface IServiceCollection {
+    +AddSingleton<T>()
+    +AddScoped<T>()
+    +AddTransient<T>()
+  }
+  
+  class ServiceCollectionExtensions {
+    +AddVirtoCommerceBuild()
+    +AddTelemetry()
+    +AddLogging()
+  }
+}
+
+package "Command Groups" {
+  class BuildCommands {
+    +CleanAsync(): Task<int>
+    +RestoreAsync(): Task<int>
+    +CompileAsync(): Task<int>
+  +TestAsync(): Task<int>
+  +PackAsync(): Task<int>
+    +CompressAsync(): Task<int>
+  }
+  
+  class PackageCommands {
++InitAsync(): Task<int>
+    +InstallAsync(): Task<int>
+    +UpdateAsync(): Task<int>
+    +UninstallAsync(): Task<int>
+    +ShowDiffAsync(): Task<int>
+  }
+  
+  class CloudCommands {
+    +AuthAsync(): Task<int>
+    +UpAsync(): Task<int>
+ +DeployAsync(): Task<int>
+    +DownAsync(): Task<int>
++EnvListAsync(): Task<int>
+  }
+  
+  class DockerCommands {
+    +PrepareContextAsync(): Task<int>
+    +BuildImageAsync(): Task<int>
+    +PushImageAsync(): Task<int>
+    +LoginAsync(): Task<int>
+  }
+  
+  class UtilityCommands {
+    +HelpAsync(): Task<int>
+    +ClearTempAsync(): Task<int>
+    +ValidateManifestAsync(): Task<int>
+  }
+}
+
+package "Business Services" {
+  interface IArtifactManagerService {
+    +CleanSolutionAsync(): Task
+    +RestoreSolutionAsync(): Task
+    +CompileSolutionAsync(): Task
+    +TestSolutionAsync(): Task
+    +PackSolutionAsync(): Task
+    +CompressAsync(): Task
+  }
+  
+  interface IPackageManagerService {
+    +InitAsync(): Task
+    +InstallAsync(): Task
+    +UpdateAsync(): Task
+    +UninstallAsync(): Task
+    +ValidateDependenciesAsync(): Task
+  }
+  
+  interface ICloudManagerService {
+    +AuthAsync(): Task
+    +CreateEnvironmentAsync(): Task
+    +DeployAsync(): Task
+    +DeleteEnvironmentAsync(): Task
+    +ListEnvironmentsAsync(): Task
+  }
+  
+  interface IDockerManagerService {
+    +PrepareContextAsync(): Task
+    +BuildImageAsync(): Task
+    +PushImageAsync(): Task
+    +LoginAsync(): Task
+  }
+  
+  interface IGitManagerService {
+    +GetCurrentBranchAsync(): Task<string>
+    +CheckoutAsync(): Task
+    +PushAsync(): Task
+    +CreateBranchAsync(): Task
+  }
+}
+
+package "Service Implementations" {
+  class ArtifactManagerService implements IArtifactManagerService {
+    -_logger: ILogger
+    -_telemetry: ITelemetryService
+    -_dotNetService: IDotNetService
++CleanSolutionAsync(): Task
+    +CompileSolutionAsync(): Task
+  }
+  
+  class PackageManagerService implements IPackageManagerService {
+    -_logger: ILogger
+    -_httpClient: HttpClient
+    -_githubManager: IGithubManager
+    +InstallAsync(): Task
+    +UpdateAsync(): Task
+  }
+  
+  class CloudManagerService implements ICloudManagerService {
+    -_cloudClient: VirtoCloudClient
+    -_dockerService: IDockerManagerService
+    +CreateEnvironmentAsync(): Task
+    +DeployAsync(): Task
+  }
+  
+  class DockerManagerService implements IDockerManagerService {
+    -_processRunner: IProcessRunner
+    -_fileSystem: IFileSystem
+    +BuildImageAsync(): Task
+    +PushImageAsync(): Task
+  }
+}
+
+package "Infrastructure Services" {
+  interface ITelemetryService {
+    +TrackEvent(): void
+    +TrackException(): void
+    +Flush(): void
+  }
+  
+  interface IHelpService {
+    +GetCommandHelp(): string
+    +GetAvailableCommands(): IEnumerable<string>
+  }
+  
+  interface IConfigurationService {
+    +GetValue<T>(): T
+    +SetValue<T>(): void
+  }
+  
+  class TelemetryService implements ITelemetryService {
+    -_telemetryClient: TelemetryClient
+  }
+  
+  class HelpService implements IHelpService {
+    -_helpProvider: HelpProvider
+  }
+}
+
+package "Core Business Logic (Migrated)" {
+  class PackageManager {
+    +FromFile(): ManifestBase
+    +ToFile(): void
+    +GetGithubModules(): List<ModuleItem>
+  }
+  
+  class GithubManager {
+  +GetPlatformRelease(): Task<Release>
+  +CreateRelease(): Task<Release>
+  }
+  
+  class ExtModuleCatalog {
+  +GetCatalog(): Task<IModuleCatalog>
+  }
+  
+  class ArtifactPacker {
+    +CompressModule(): Task
+    +CompressPlatform(): Task
+  }
+
+  class VirtoCloudClient {
+    +CreateEnvironmentAsync(): Task
+ +UpdateEnvironmentAsync(): Task
+  }
+}
+
+package "External Adapters" {
+  interface IDotNetService {
+    +BuildAsync(): Task
+    +RestoreAsync(): Task
++TestAsync(): Task
+  }
+  
+  interface IProcessRunner {
+    +RunAsync(): Task<ProcessResult>
+  }
+  
+  interface IFileSystem {
+    +ReadAllTextAsync(): Task<string>
+    +WriteAllTextAsync(): Task
+    +DirectoryExists(): bool
+  }
+  
+  class DotNetService implements IDotNetService
+  class ProcessRunner implements IProcessRunner
+  class FileSystemService implements IFileSystem
+}
+
+' Relationships
+Program --> CoconaApp : creates
+Program --> IServiceCollection : configures
+CoconaApp --> CommandParser : uses
+CoconaApp --> ServiceProvider : uses
+
+CommandParser --> BuildCommands : routes to
+CommandParser --> PackageCommands : routes to
+CommandParser --> CloudCommands : routes to
+CommandParser --> DockerCommands : routes to
+CommandParser --> UtilityCommands : routes to
+
+BuildCommands --> IArtifactManagerService : injects
+PackageCommands --> IPackageManagerService : injects
+CloudCommands --> ICloudManagerService : injects
+DockerCommands --> IDockerManagerService : injects
+
+IArtifactManagerService <|-- ArtifactManagerService
+IPackageManagerService <|-- PackageManagerService
+ICloudManagerService <|-- CloudManagerService
+IDockerManagerService <|-- DockerManagerService
+
+ArtifactManagerService --> ITelemetryService : uses
+ArtifactManagerService --> IDotNetService : uses
+PackageManagerService --> PackageManager : uses
+PackageManagerService --> GithubManager : uses
+CloudManagerService --> VirtoCloudClient : uses
+DockerManagerService --> IProcessRunner : uses
+
+ITelemetryService <|-- TelemetryService
+IHelpService <|-- HelpService
+IDotNetService <|-- DotNetService
+IProcessRunner <|-- ProcessRunner
+IFileSystem <|-- FileSystemService
+
+note right of Program
+  Clean separation of entry point,
+  command routing, and business logic.
+  
+  Backward compatibility layer
+  maps legacy commands to new structure.
+end note
+
+note bottom of "Service Implementations"
+  Business logic is cleanly separated
+  into testable services with
+  dependency injection.
+  
+  Each service has a single
+  responsibility.
+end note
+
+note left of "Command Groups"
+  Commands are organized into
+  logical groups with consistent
+  parameter handling.
+  
+  Each command is lightweight
+  and delegates to services.
+end note
+
+@enduml
