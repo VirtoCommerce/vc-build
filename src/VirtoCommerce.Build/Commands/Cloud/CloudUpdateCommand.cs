@@ -34,6 +34,9 @@ public class CloudUpdateCommand : Command
             // Extract option values from ParseResult using correct API
             var manifest = parseResult.GetValue<string>(ManifestOption);
             var routesFile = parseResult.GetValue<string>(RoutesFileOption);
+            var cloudUrl = parseResult.GetValue<string>(CloudCommand.CloudUrlOption);
+            var cloudToken = parseResult.GetValue<string>(CloudCommand.CloudTokenOption);
+            var organization = parseResult.GetValue<string>(CloudCommand.OrganizationOption);
 
             Log.Information("Executing cloud update command");
 
@@ -41,7 +44,6 @@ public class CloudUpdateCommand : Command
             if (string.IsNullOrEmpty(manifest))
             {
                 Log.Error("Manifest file path is required for cloud update");
-                Console.Error.WriteLine("Error: --manifest is required");
                 return 1;
             }
 
@@ -55,12 +57,11 @@ public class CloudUpdateCommand : Command
             Log.Information("Delegating to CloudEnvUpdate method");
 
             // Call CloudEnvUpdate method directly
-            await Build.CloudEnvUpdateMethod(manifest, routesFile);
+            await Build.CloudEnvUpdateMethod(manifest, routesFile, organization, cloudUrl, cloudToken);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error executing cloud update command");
-            Console.Error.WriteLine($"Error executing cloud update: {ex.Message}");
             return 1;
         }
 

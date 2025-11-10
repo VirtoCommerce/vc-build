@@ -19,12 +19,12 @@ public class CloudListCommand : Command
         {
             Log.Information("Executing cloud list command");
 
-            await Build.CloudEnvListMethod();
+            var cloudUrl = parseResult.GetValue<string>(CloudCommand.CloudUrlOption);
+            await Build.CloudEnvListMethod(cloudUrl);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error executing cloud list command");
-            Console.Error.WriteLine($"Error executing cloud list: {ex.Message}");
             return 1;
         }
 

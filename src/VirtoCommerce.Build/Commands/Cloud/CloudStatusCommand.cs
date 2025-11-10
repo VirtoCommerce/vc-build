@@ -45,6 +45,7 @@ public class CloudStatusCommand : Command
             var environmentName = parseResult.GetValue<string>(EnvironmentNameOption);
             var healthStatus = parseResult.GetValue<string>(HealthStatusOption);
             var syncStatus = parseResult.GetValue<string>(SyncStatusOption);
+            var cloudUrl = parseResult.GetValue<string>(CloudCommand.CloudUrlOption);
 
             Log.Information("Executing cloud status command for environment: {EnvironmentName}", environmentName);
 
@@ -52,7 +53,6 @@ public class CloudStatusCommand : Command
             if (string.IsNullOrEmpty(environmentName))
             {
                 Log.Error("Environment name is required for cloud status");
-                Console.Error.WriteLine("Error: --environment-name is required");
                 return 1;
             }
 
@@ -69,12 +69,11 @@ public class CloudStatusCommand : Command
             Log.Information("Delegating to CloudEnvStatus method");
 
             // Call CloudEnvStatus method directly
-            await Build.CloudEnvStatusMethod(environmentName, healthStatus, syncStatus);
+            await Build.CloudEnvStatusMethod(cloudUrl, environmentName, healthStatus, syncStatus);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error executing cloud status command");
-            Console.Error.WriteLine($"Error executing cloud status: {ex.Message}");
             return 1;
         }
 

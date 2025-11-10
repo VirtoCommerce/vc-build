@@ -10,7 +10,6 @@ public class CloudSetParameterCommand : Command
 {
     public const string EnvironmentNameOption = "--environment-name";
     public const string HelmParametersOption = "--helm-parameters";
-    public const string OrganizationOption = "--organization";
 
     public CloudSetParameterCommand() : base("set-parameter", "Update cloud environment parameters")
     {
@@ -26,11 +25,8 @@ public class CloudSetParameterCommand : Command
             Required = true
         };
 
-        var organizationOption = new Option<string>(OrganizationOption) { Description = "Organization name" };
-
         Add(environmentNameOption);
         Add(helmParametersOption);
-        Add(organizationOption);
 
         SetAction(ExecuteAsync);
     }
@@ -42,7 +38,8 @@ public class CloudSetParameterCommand : Command
             // Extract option values from ParseResult using correct API
             var environmentName = parseResult.GetValue<string>(EnvironmentNameOption);
             var helmParameters = parseResult.GetValue<string[]>(HelmParametersOption);
-            var organization = parseResult.GetValue<string>(OrganizationOption);
+            var organization = parseResult.GetValue<string>(CloudCommand.OrganizationOption);
+            var cloudUrl = parseResult.GetValue<string>(CloudCommand.CloudUrlOption);
 
             Log.Information("Executing cloud set-parameter command for environment: {EnvironmentName}",
                 environmentName);
@@ -51,14 +48,12 @@ public class CloudSetParameterCommand : Command
             if (string.IsNullOrEmpty(environmentName))
             {
                 Log.Error("Environment name is required for cloud set-parameter");
-                Console.Error.WriteLine("Error: --environment-name is required");
                 return 1;
             }
 
             if (helmParameters == null || helmParameters.Length == 0)
             {
                 Log.Error("Helm parameters are required for cloud set-parameter");
-                Console.Error.WriteLine("Error: --helm-parameters is required");
                 return 1;
             }
 
@@ -72,12 +67,11 @@ public class CloudSetParameterCommand : Command
             Log.Information("Delegating to CloudEnvSetParameter method");
 
             // Call CloudEnvSetParameter method directly
-            await Build.CloudEnvSetParameterMethod(environmentName, helmParameters, organization);
+            await Build.CloudEnvSetParameterMethod(cloudUrl, environmentName, helmParameters, organization);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error executing cloud set-parameter command");
-            Console.Error.WriteLine($"Error executing cloud set-parameter: {ex.Message}");
             return 1;
         }
 

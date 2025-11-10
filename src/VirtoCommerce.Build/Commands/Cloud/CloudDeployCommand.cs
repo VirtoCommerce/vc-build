@@ -14,7 +14,6 @@ public class CloudDeployCommand : Command
     public const string DockerRegistryUrlOption = "--docker-registry-url";
     public const string DockerImageNameOption = "--docker-image-name";
     public const string DockerImageTagOption = "--docker-image-tag";
-    public const string OrganizationOption = "--organization";
 
     public CloudDeployCommand() : base("deploy", "Deploy custom Docker image to existing environment")
     {
@@ -48,15 +47,12 @@ public class CloudDeployCommand : Command
 
         var dockerImageTagOption = new Option<string>(DockerImageTagOption) { Description = "Docker image tag" };
 
-        var organizationOption = new Option<string>(OrganizationOption) { Description = "Organization name" };
-
         Add(environmentNameOption);
         Add(dockerUsernameOption);
         Add(dockerPasswordOption);
         Add(dockerRegistryUrlOption);
         Add(dockerImageNameOption);
         Add(dockerImageTagOption);
-        Add(organizationOption);
 
         SetAction(ExecuteAsync);
     }
@@ -72,7 +68,9 @@ public class CloudDeployCommand : Command
             var dockerRegistryUrl = parseResult.GetValue<string>(DockerRegistryUrlOption);
             var dockerImageName = parseResult.GetValue<string>(DockerImageNameOption);
             var dockerImageTag = parseResult.GetValue<string>(DockerImageTagOption);
-            var organization = parseResult.GetValue<string>(OrganizationOption);
+            var organization = parseResult.GetValue<string>(CloudCommand.OrganizationOption);
+            var cloudUrl = parseResult.GetValue<string>(CloudCommand.CloudUrlOption);
+            var token = parseResult.GetValue<string>(CloudCommand.CloudTokenOption);
 
             Log.Information("Executing cloud deploy command for environment: {EnvironmentName}", environmentName);
 
@@ -80,21 +78,18 @@ public class CloudDeployCommand : Command
             if (string.IsNullOrEmpty(environmentName))
             {
                 Log.Error("Environment name is required for cloud deploy");
-                Console.Error.WriteLine("Error: --environment-name is required");
                 return 1;
             }
 
             if (string.IsNullOrEmpty(dockerUsername))
             {
                 Log.Error("Docker username is required for cloud deploy");
-                Console.Error.WriteLine("Error: --docker-username is required");
                 return 1;
             }
 
             if (string.IsNullOrEmpty(dockerPassword))
             {
                 Log.Error("Docker password is required for cloud deploy");
-                Console.Error.WriteLine("Error: --docker-password is required");
                 return 1;
             }
 
@@ -107,12 +102,11 @@ public class CloudDeployCommand : Command
 
             // Call CloudDeploy workflow directly
             await Build.CloudDeployMethod(environmentName, dockerUsername, dockerPassword,
-                dockerRegistryUrl, dockerImageName, dockerImageTag, organization);
+                dockerRegistryUrl, dockerImageName, dockerImageTag, organization, cloudUrl, token);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error executing cloud deploy command");
-            Console.Error.WriteLine($"Error executing cloud deploy: {ex.Message}");
             return 1;
         }
 

@@ -47,6 +47,7 @@ public class CloudLogsCommand : Command
             var filter = parseResult.GetValue<string>(FilterOption);
             var tail = parseResult.GetValue<int>(TailOption);
             var resourceName = parseResult.GetValue<string>(ResourceNameOption);
+            var cloudUrl = parseResult.GetValue<string>(CloudCommand.CloudUrlOption);
 
             Log.Information("Executing cloud logs command for environment: {EnvironmentName}", environmentName);
 
@@ -54,7 +55,6 @@ public class CloudLogsCommand : Command
             if (string.IsNullOrEmpty(environmentName))
             {
                 Log.Error("Environment name is required for cloud logs");
-                Console.Error.WriteLine("Error: --environment-name is required");
                 return 1;
             }
 
@@ -76,12 +76,11 @@ public class CloudLogsCommand : Command
             Log.Information("Delegating to CloudEnvLogs method");
 
             // Call CloudEnvLogs method directly
-            await Build.CloudEnvLogsMethod(environmentName, filter, tail, resourceName);
+            await Build.CloudEnvLogsMethod(cloudUrl, environmentName, filter, tail, resourceName);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error executing cloud logs command");
-            Console.Error.WriteLine($"Error executing cloud logs: {ex.Message}");
             return 1;
         }
 

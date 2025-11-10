@@ -17,6 +17,7 @@ using Extensions;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Build.Locator;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Nuke.Common;
@@ -987,8 +988,17 @@ internal partial class Build : NukeBuild
         CreateNukeDirectory();
         var exitCode = 0;
 
+        var services = new ServiceCollection();
+        var serviceProvider = services.BuildServiceProvider();
+
         try
         {
+
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.Console()
+                .CreateLogger();
+
             var rootCommand = new RootCommand();
             rootCommand.SetAction((parseResult) =>
             {

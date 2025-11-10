@@ -29,6 +29,7 @@ public class CloudRestartCommand : Command
         {
             // Extract option values from ParseResult using correct API
             var environmentName = parseResult.GetValue<string>(EnvironmentNameOption);
+            var cloudUrl = parseResult.GetValue<string>(CloudCommand.CloudUrlOption);
 
             Log.Information("Executing cloud restart command for environment: {EnvironmentName}", environmentName);
 
@@ -36,19 +37,17 @@ public class CloudRestartCommand : Command
             if (string.IsNullOrEmpty(environmentName))
             {
                 Log.Error("Environment name is required for cloud restart");
-                Console.Error.WriteLine("Error: --environment-name is required");
                 return 1;
             }
 
             Log.Information("Delegating to CloudEnvRestart method");
 
             // Call CloudEnvRestart method directly
-            await Build.CloudEnvRestartMethod(environmentName);
+            await Build.CloudEnvRestartMethod(cloudUrl, environmentName);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error executing cloud restart command");
-            Console.Error.WriteLine($"Error executing cloud restart: {ex.Message}");
             return 1;
         }
 

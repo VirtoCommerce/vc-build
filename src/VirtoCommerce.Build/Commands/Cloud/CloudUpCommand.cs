@@ -92,6 +92,8 @@ public class CloudUpCommand : Command
             var clusterName = parseResult.GetValue<string>(ClusterNameOption);
             var dbProvider = parseResult.GetValue<string>(DbProviderOption);
             var dbName = parseResult.GetValue<string>(DbNameOption);
+            var cloudUrl = parseResult.GetValue<string>(CloudCommand.CloudUrlOption);
+            var organization = parseResult.GetValue<string>(CloudCommand.OrganizationOption);
 
             Log.Information("Executing cloud up command for environment: {EnvironmentName}", environmentName);
 
@@ -99,21 +101,18 @@ public class CloudUpCommand : Command
             if (string.IsNullOrEmpty(environmentName))
             {
                 Log.Error("Environment name is required for cloud up");
-                Console.Error.WriteLine("Error: --environment-name is required");
                 return 1;
             }
 
             if (string.IsNullOrEmpty(dockerUsername))
             {
                 Log.Error("Docker username is required for cloud up");
-                Console.Error.WriteLine("Error: --docker-username is required");
                 return 1;
             }
 
             if (string.IsNullOrEmpty(dockerPassword))
             {
                 Log.Error("Docker password is required for cloud up");
-                Console.Error.WriteLine("Error: --docker-password is required");
                 return 1;
             }
 
@@ -136,13 +135,12 @@ public class CloudUpCommand : Command
             Log.Information("Delegating to CloudUp workflow");
 
             // Call CloudUp workflow directly
-            await Build.CloudUpMethod(environmentName, dockerUsername, dockerPassword, servicePlan,
-                dockerRegistryUrl, dockerImageName, dockerImageTag, clusterName, dbProvider, dbName);
+            await Build.CloudUpMethod(cloudUrl, environmentName, dockerUsername, dockerPassword, servicePlan,
+                dockerRegistryUrl, dockerImageName, dockerImageTag, clusterName, organization, dbProvider, dbName);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error executing cloud up command");
-            Console.Error.WriteLine($"Error executing cloud up: {ex.Message}");
             return 1;
         }
 

@@ -9,7 +9,6 @@ namespace Commands.Cloud;
 public class CloudDownCommand : Command
 {
     public const string EnvironmentNameOption = "--environment-name";
-    public const string OrganizationOption = "--organization";
 
     public CloudDownCommand() : base("down", "Delete cloud environment")
     {
@@ -19,10 +18,8 @@ public class CloudDownCommand : Command
             Required = true
         };
 
-        var organizationOption = new Option<string>(OrganizationOption) { Description = "Organization name" };
 
         Add(environmentNameOption);
-        Add(organizationOption);
 
         SetAction(ExecuteAsync);
     }
@@ -33,7 +30,8 @@ public class CloudDownCommand : Command
         {
             // Extract option values from ParseResult using correct API
             var environmentName = parseResult.GetValue<string>(EnvironmentNameOption);
-            var organization = parseResult.GetValue<string>(OrganizationOption);
+            var organization = parseResult.GetValue<string>(CloudCommand.OrganizationOption);
+            var cloudUrl = parseResult.GetValue<string>(CloudCommand.CloudUrlOption);
 
             Log.Information("Executing cloud down command for environment: {EnvironmentName}", environmentName);
 
@@ -41,7 +39,6 @@ public class CloudDownCommand : Command
             if (string.IsNullOrEmpty(environmentName))
             {
                 Log.Error("Environment name is required for cloud down");
-                Console.Error.WriteLine("Error: --environment-name is required");
                 return 1;
             }
 
@@ -53,12 +50,11 @@ public class CloudDownCommand : Command
             Log.Information("Delegating to CloudDown method");
 
             // Call CloudDown method directly
-            await Build.CloudDownMethod(environmentName, organization);
+            await Build.CloudDownMethod(cloudUrl, environmentName, organization);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error executing cloud down command");
-            Console.Error.WriteLine($"Error executing cloud down: {ex.Message}");
             return 1;
         }
 

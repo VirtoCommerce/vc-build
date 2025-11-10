@@ -55,10 +55,10 @@ internal partial class Build
     public string SyncStatus { get; set; }
 
     [Parameter("Delay between requests in seconds")]
-    public int Delay { get; set; } = 10;
+    public static int Delay { get; set; } = 10;
 
     [Parameter("Number of attempts before fail")]
-    public int AttemptsNumber { get; set; } = 100;
+    public static int AttemptsNumber { get; set; } = 100;
 
     [Parameter("SaaS Portal")] public static string CloudUrl { get; set; } = "https://portal.virtocommerce.cloud";
     [Parameter("SaaS Token")] public static string CloudToken { get; set; }
@@ -104,28 +104,28 @@ internal partial class Build
     public Target CloudEnvStatus
     {
         get => _ => _
-            .Executes(async () => await CloudEnvStatusMethodInternal(EnvironmentName, HealthStatus, SyncStatus));
+            .Executes(async () => await CloudEnvStatusMethod(CloudUrl, EnvironmentName, HealthStatus, SyncStatus));
     }
 
     public Target CloudEnvSetParameter
     {
         get => _ => _
-            .Executes(async () => await CloudEnvSetParameterMethodInternal(EnvironmentName,
+            .Executes(async () => await CloudEnvSetParameterMethod(CloudUrl, EnvironmentName,
                 HelmParameters?.Select(h => $"{h.Name}={h.Value}").ToArray(), SaaSOrganizationName));
     }
 
     public Target CloudEnvUpdate
     {
         get => _ => _
-            .Executes(async () => await CloudEnvUpdateMethodInternal(Manifest ?? ArgoConfigFile, RoutesFile));
+            .Executes(async () => await CloudEnvUpdateMethod(Manifest ?? ArgoConfigFile, RoutesFile, AppProject, CloudUrl));
     }
 
     public Target CloudDeploy
     {
         get => _ => _
             .DependsOn(PrepareDockerContext, BuildAndPush)
-            .Executes(async () => await CloudDeployMethodInternal(EnvironmentName, DockerUsername, DockerPassword,
-                DockerRegistryUrl, DockerImageName, DockerImageTag?[0], SaaSOrganizationName));
+            .Executes(async () => await CloudDeployMethod(EnvironmentName, DockerUsername, DockerPassword,
+                DockerRegistryUrl, DockerImageName, DockerImageTag?[0], SaaSOrganizationName, CloudUrl, CloudToken));
     }
 
     public Target CloudAuth
@@ -138,20 +138,20 @@ internal partial class Build
     {
         get => _ => _
             .Requires(() => EnvironmentName)
-            .Executes(async () => await CloudDownMethodInternal(EnvironmentName, SaaSOrganizationName));
+            .Executes(async () => await CloudDownMethod(CloudUrl, EnvironmentName, SaaSOrganizationName));
     }
 
     public Target CloudEnvList
     {
         get => _ => _
-            .Executes(async () => await CloudEnvListMethodInternal());
+            .Executes(async () => await CloudEnvListMethod(CloudUrl));
     }
 
     public Target CloudEnvRestart
     {
         get => _ => _
             .Requires(() => EnvironmentName)
-            .Executes(async () => await CloudEnvRestartMethodInternal(EnvironmentName));
+            .Executes(async () => await CloudEnvRestartMethod(CloudUrl, EnvironmentName));
     }
 
     public Target CloudInit
@@ -168,7 +168,7 @@ internal partial class Build
     {
         get => _ => _
             .Requires(() => EnvironmentName)
-            .Executes(async () => await CloudEnvLogsMethodInternal(EnvironmentName, null, 0, null));
+            .Executes(async () => await CloudEnvLogsMethod(CloudUrl, EnvironmentName, null, 0, null));
     }
 
     public Target CloudUp
@@ -398,25 +398,19 @@ internal partial class Build
         await cloudClient.EnvironmentsCreateAsync(model);
     }
 
-    public static async Task CloudUpMethod(string environmentName, string dockerUsername, string dockerPassword,
+    public static async Task CloudUpMethod(string cloudUrl, string environmentName, string dockerUsername, string dockerPassword,
         string servicePlan, string dockerRegistryUrl, string dockerImageName, string dockerImageTag,
-        string clusterName, string dbProvider, string dbName)
+        string clusterName, string organization, string dbProvider, string dbName)
     {
-        var build = new Build();
-        await CloudUpMethod(environmentName, dockerUsername, dockerPassword, servicePlan,
-            dockerRegistryUrl, dockerImageName, dockerImageTag, clusterName, dbProvider, dbName);
+        //PrepareDockerContext, BuildAndPush, CloudInit
+        await PrepareDockerContextMethod();
+        // BuildAndPush
+        await CloudInitMethod(environmentName, servicePlan, clusterName, organization, null, dbProvider, dbName, cloudUrl);
     }
 
     public static async Task CloudDeployMethod(string environmentName, string dockerUsername, string dockerPassword,
-        string dockerRegistryUrl, string dockerImageName, string dockerImageTag, string organization)
-    {
-        var build = new Build();
-        await build.CloudDeployMethodInternal(environmentName, dockerUsername, dockerPassword,
-            dockerRegistryUrl, dockerImageName, dockerImageTag, organization);
-    }
-
-    private async Task CloudDeployMethodInternal(string environmentName, string dockerUsername, string dockerPassword,
-        string dockerRegistryUrl, string dockerImageName, string dockerImageTag, string organization)
+        string dockerRegistryUrl, string dockerImageName, string dockerImageTag, string organization, string cloudUrl,
+        string cloudToken = null)
     {
         // Set the parameters for PrepareDockerContext and build workflow
         EnvironmentName = environmentName;
@@ -440,7 +434,7 @@ internal partial class Build
         // Call the BuildAndPush target with proper type specification
         Execute<Build>(x => x.BuildAndPush);
 
-        var cloudClient = new VirtoCloudClient(CloudUrl, await GetCloudTokenAsync());
+        var cloudClient = new VirtoCloudClient(cloudUrl, cloudToken ?? await GetCloudTokenAsync());
         var env = await cloudClient.GetEnvironmentAsync(environmentName, organization);
 
         var envHelmParameters = env.Helm.Parameters;
@@ -450,15 +444,9 @@ internal partial class Build
         await cloudClient.UpdateEnvironmentAsync(env);
     }
 
-    public static async Task CloudDownMethod(string environmentName, string organization)
+    public static async Task CloudDownMethod(string cloudUrl, string environmentName, string organization)
     {
-        var build = new Build();
-        await build.CloudDownMethodInternal(environmentName, organization);
-    }
-
-    private async Task CloudDownMethodInternal(string environmentName, string organization)
-    {
-        var cloudClient = CreateVirtocloudClient(CloudUrl, await GetCloudTokenAsync());
+        var cloudClient = CreateVirtocloudClient(cloudUrl, await GetCloudTokenAsync());
         var envName = environmentName;
         if (!string.IsNullOrWhiteSpace(organization))
         {
@@ -468,15 +456,9 @@ internal partial class Build
         await cloudClient.EnvironmentsDeleteAsync([envName]);
     }
 
-    public static async Task CloudEnvListMethod()
+    public static async Task CloudEnvListMethod(string cloudUrl)
     {
-        var build = new Build();
-        await build.CloudEnvListMethodInternal();
-    }
-
-    private async Task CloudEnvListMethodInternal()
-    {
-        var cloudClient = CreateVirtocloudClient(CloudUrl, await GetCloudTokenAsync());
+        var cloudClient = CreateVirtocloudClient(cloudUrl, await GetCloudTokenAsync());
         var envList = await cloudClient.EnvironmentsListAsync();
         Log.Information("There are {0} environments.", envList.Count);
         foreach (var env in envList)
@@ -485,15 +467,9 @@ internal partial class Build
         }
     }
 
-    public static async Task CloudEnvRestartMethod(string environmentName)
+    public static async Task CloudEnvRestartMethod(string cloudUrl, string environmentName)
     {
-        var build = new Build();
-        await build.CloudEnvRestartMethodInternal(environmentName);
-    }
-
-    private async Task CloudEnvRestartMethodInternal(string environmentName)
-    {
-        var cloudClient = CreateVirtocloudClient(CloudUrl, await GetCloudTokenAsync());
+        var cloudClient = CreateVirtocloudClient(cloudUrl, await GetCloudTokenAsync());
         var env = await cloudClient.EnvironmentsGetEnvironmentAsync(environmentName);
         env.NotNull($"Environment {environmentName} not found.");
 
@@ -503,31 +479,19 @@ internal partial class Build
         await cloudClient.EnvironmentsUpdateAsync(env);
     }
 
-    public static async Task CloudEnvLogsMethod(string environmentName, string filter, int tail, string resourceName)
+    public static async Task CloudEnvLogsMethod(string cloudUrl, string environmentName, string filter, int tail, string resourceName)
     {
-        var build = new Build();
-        await build.CloudEnvLogsMethodInternal(environmentName, filter, tail, resourceName);
-    }
-
-    private async Task CloudEnvLogsMethodInternal(string environmentName, string filter, int tail, string resourceName)
-    {
-        var cloudClient = CreateVirtocloudClient(CloudUrl, await GetCloudTokenAsync());
+        var cloudClient = CreateVirtocloudClient(cloudUrl, await GetCloudTokenAsync());
         var logs = await cloudClient.EnvironmentsGetEnvironmentLogsAsync(environmentName, filter,
             tail == 0 ? null : tail, resourceName);
         logs = string.Join(Environment.NewLine, logs.Split("\\n"));
         Console.WriteLine(logs);
     }
 
-    public static async Task CloudEnvStatusMethod(string environmentName, string healthStatus, string syncStatus)
-    {
-        var build = new Build();
-        await build.CloudEnvStatusMethodInternal(environmentName, healthStatus, syncStatus);
-    }
-
-    private async Task CloudEnvStatusMethodInternal(string environmentName, string healthStatus, string syncStatus)
+    public static async Task CloudEnvStatusMethod(string cloudUrl, string environmentName, string healthStatus, string syncStatus)
     {
         var isSuccess = false;
-        var cloudClient = new VirtoCloudClient(CloudUrl, await GetCloudTokenAsync());
+        var cloudClient = new VirtoCloudClient(cloudUrl, await GetCloudTokenAsync());
         for (var i = 0; i < AttemptsNumber; i++)
         {
             Log.Information("Attempt #{I}", i + 1);
@@ -553,17 +517,10 @@ internal partial class Build
         return expected == actual || string.IsNullOrEmpty(expected);
     }
 
-    public static async Task CloudEnvSetParameterMethod(string environmentName, string[] helmParameters,
+    public static async Task CloudEnvSetParameterMethod(string cloudUrl, string environmentName, string[] helmParameters,
         string organization)
     {
-        var build = new Build();
-        await build.CloudEnvSetParameterMethodInternal(environmentName, helmParameters, organization);
-    }
-
-    private async Task CloudEnvSetParameterMethodInternal(string environmentName, string[] helmParameters,
-        string organization)
-    {
-        var cloudClient = new VirtoCloudClient(CloudUrl, await GetCloudTokenAsync());
+        var cloudClient = new VirtoCloudClient(cloudUrl, await GetCloudTokenAsync());
 
         var helmParameterObjects = helmParameters?.Select(p =>
         {
@@ -609,15 +566,9 @@ internal partial class Build
         return false;
     }
 
-    public static async Task CloudEnvUpdateMethod(string manifest, string routesFile)
+    public static async Task CloudEnvUpdateMethod(string manifest, string routesFile, string appProject, string cloudUrl, string cloudToken = null)
     {
-        var build = new Build();
-        await build.CloudEnvUpdateMethodInternal(manifest, routesFile);
-    }
-
-    private async Task CloudEnvUpdateMethodInternal(string manifest, string routesFile)
-    {
-        var cloudClient = new VirtoCloudClient(CloudUrl, await GetCloudTokenAsync());
+        var cloudClient = new VirtoCloudClient(cloudUrl, cloudToken ?? await GetCloudTokenAsync());
         var rawYaml = await File.ReadAllTextAsync(manifest);
         string routesFileContent = null;
         if (!string.IsNullOrWhiteSpace(routesFile))
@@ -625,6 +576,6 @@ internal partial class Build
             routesFileContent = await File.ReadAllTextAsync(routesFile);
         }
 
-        await cloudClient.UpdateEnvironmentAsync(rawYaml, AppProject, routesFileContent);
+        await cloudClient.UpdateEnvironmentAsync(rawYaml, appProject, routesFileContent);
     }
 }
