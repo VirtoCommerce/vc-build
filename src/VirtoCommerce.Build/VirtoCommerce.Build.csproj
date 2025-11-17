@@ -22,7 +22,7 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <NukeTelemetryVersion>1</NukeTelemetryVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Copyright>Copyright © VirtoCommerce 2011-2024</Copyright>
+    <Copyright>Copyright © VirtoCommerce 2011-2025</Copyright>
     <PackageProjectUrl>https://github.com/VirtoCommerce/vc-build</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
@@ -65,7 +65,7 @@
     <PackageReference Include="VirtoCommerce.Platform.DistributedLock" Version="3.854.13" />
   </ItemGroup>
 
-  <ItemGroup> 
+  <ItemGroup>
     <NukeExternalFiles Include="**\*.*.ext" Exclude="bin\**;obj\**" />
     <Compile Remove="artifacts\**" />
     <Compile Remove="Properties\**" />

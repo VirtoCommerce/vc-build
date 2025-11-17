@@ -18,7 +18,6 @@
     <Authors>VirtoCommerce</Authors>
     <Title>VirtoCommerce build CLI</Title>
     <Description>Cross-platform  build automation system for VirtoCommerce projects</Description>
-    <PackageIconUrl>https://github.com/VirtoCommerce/vc-community/raw/master/NuGet/icon.png</PackageIconUrl>
     <PackageVersion>$(VersionPrefix)</PackageVersion>
     <PackageVersion Condition=" '$(VersionSuffix)' != ''">$(VersionPrefix)-$(VersionSuffix)</PackageVersion>
     <Description>Cross-platform  build automation system for VirtoCommerce projects</Description>
