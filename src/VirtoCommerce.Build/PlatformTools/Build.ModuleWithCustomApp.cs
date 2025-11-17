@@ -11,10 +11,10 @@ namespace VirtoCommerce.Build
 
         public Target CompressWithCustomApp => _ => _
             .DependsOn(Clean, WebPackBuild, BuildCustomApp, Test, Publish)
-            .Executes(() =>
+            .Executes(async () =>
             {
                 Log.Warning("{target} is deprecated. Use {actualTarget} instead.", nameof(CompressWithCustomApp), nameof(Compress));
-                CompressExecuteMethod();
+                await CompressExecuteMethod();
             });
 
         public Target BuildCustomApp => _ => _
