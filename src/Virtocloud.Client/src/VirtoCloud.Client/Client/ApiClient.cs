@@ -478,7 +478,7 @@ namespace VirtoCloud.Client.Client
                     _httpClientHandler.ClientCertificates.AddRange(configuration.ClientCertificates);
                 }
 
-                var cookieContainer = req.Properties.ContainsKey("CookieContainer") ? req.Properties["CookieContainer"] as List<Cookie> : null;
+                var cookieContainer = req.Options.TryGetValue(new HttpRequestOptionsKey<List<Cookie>>("CookieContainer"), out var container) ? container : null;
 
                 if (cookieContainer != null)
                 {
