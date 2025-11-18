@@ -2,6 +2,8 @@ using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Xml;
+using Nuke.Common.IO;
 using Octokit;
 
 namespace PlatformTools
@@ -72,6 +74,24 @@ namespace PlatformTools
             return string.IsNullOrEmpty(releaseTag)
                 ? _client.Repository.Release.GetLatest(_githubUser, moduleRepo)
                 : _client.Repository.Release.Get(_githubUser, moduleRepo, releaseTag);
+        }
+
+        internal static async Task<string> GetLatestPlatformVersion()
+        {
+            const string PlatformBuildPropsUrl = "https://raw.githubusercontent.com/VirtoCommerce/vc-platform/refs/heads/master/Directory.Build.props";
+            var response = await HttpTasks.HttpDownloadStringAsync(PlatformBuildPropsUrl);
+            var version = ParseVersionFromProps(response);
+            return version;
+        }
+
+        private static string ParseVersionFromProps(string rawXml)
+        {
+            var xmlDocument = new XmlDocument { PreserveWhitespace = true };
+            xmlDocument.LoadXml(rawXml);
+
+            var prefixNode = xmlDocument.GetElementsByTagName("VersionPrefix")[0];
+
+            return prefixNode?.InnerText;
         }
     }
 }
