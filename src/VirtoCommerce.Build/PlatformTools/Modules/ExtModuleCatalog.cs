@@ -34,7 +34,9 @@ namespace PlatformTools.Modules
                 else
                 {
                     var platformRelease = await GithubManager.GetPlatformRelease();
+                    PlatformVersion.CurrentVersion = SemanticVersion.Parse(platformRelease.TagName);
                 }
+
                 var client = new ExternalModulesClient(options, new CustomHttpClientFactory());
                 var logger = new LoggerFactory().CreateLogger<ExternalModuleCatalog>();
                 _catalog = new ExternalModuleCatalog(localCatalog, client, options, logger, Options.Create(new ModuleSequenceBoostOptions()));
