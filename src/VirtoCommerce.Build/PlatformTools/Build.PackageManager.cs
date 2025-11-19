@@ -293,15 +293,15 @@ namespace VirtoCommerce.Build
                  var platformAssetUrl = string.IsNullOrWhiteSpace(PlatformAssetUrl)
                      ? platformAssetUrlFromManifest
                      : PlatformAssetUrl;
-                 await InstallPlatformAsync(packageManifest?.PlatformVersion, platformAssetUrl);
+                 await InstallPlatformAsync(packageManifest?.PlatformVersion, platformAssetUrl, GitHubToken);
              });
 
-        private static async Task InstallPlatformAsync(string platformVersion, string platformAssetUrl)
+        private static async Task InstallPlatformAsync(string platformVersion, string platformAssetUrl, string token)
         {
             if (string.IsNullOrWhiteSpace(platformAssetUrl))
             {
                 Log.Information($"Installing platform {platformVersion}");
-                var platformRelease = await GithubManager.GetPlatformRelease(platformVersion);
+                var platformRelease = await GithubManager.GetPlatformRelease(token, platformVersion);
                 platformAssetUrl = platformRelease.Assets[0].BrowserDownloadUrl;
             }
             else

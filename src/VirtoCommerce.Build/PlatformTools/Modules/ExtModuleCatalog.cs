@@ -25,8 +25,18 @@ namespace PlatformTools.Modules
         {
             if (_catalog == null)
             {
-                var platformRelease = await GithubManager.GetPlatformRelease();
-                PlatformVersion.CurrentVersion = SemanticVersion.Parse(platformRelease.TagName); // workaround to see all modules in the external catalog
+                // workaround to see all modules in the external catalog
+                var platformLatestReleaseVersion = await GithubManager.GetLatestPlatformVersion();
+                if (platformLatestReleaseVersion != null)
+                {
+                    PlatformVersion.CurrentVersion = new SemanticVersion(new Version(platformLatestReleaseVersion));
+                }
+                else
+                {
+                    var platformRelease = await GithubManager.GetPlatformRelease();
+                    PlatformVersion.CurrentVersion = SemanticVersion.Parse(platformRelease.TagName);
+                }
+
                 var client = new ExternalModulesClient(options, new CustomHttpClientFactory());
                 var logger = new LoggerFactory().CreateLogger<ExternalModuleCatalog>();
                 _catalog = new ExternalModuleCatalog(localCatalog, client, options, logger, Options.Create(new ModuleSequenceBoostOptions()));
