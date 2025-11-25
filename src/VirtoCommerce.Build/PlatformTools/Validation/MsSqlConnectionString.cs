@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel;
-using System.Data.SqlClient;
 using System.Globalization;
+using Microsoft.Data.SqlClient;
 
 namespace PlatformTools.Validation
 {
@@ -40,10 +40,9 @@ namespace PlatformTools.Validation
         {
             try
             {
-                using (var conn = new SqlConnection(_connectionString))
-                {
-                    conn.Open();
-                }
+                using var connection = new SqlConnection();
+                connection.ConnectionString = _connectionString;
+                connection.Open();
             }
             catch (Exception ex)
             {

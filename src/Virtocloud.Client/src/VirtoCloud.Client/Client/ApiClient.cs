@@ -387,8 +387,8 @@ namespace VirtoCloud.Client.Client
 
             // TODO provide an alternative that allows cookies per request instead of per API client
             if (options.Cookies != null && options.Cookies.Count > 0)
-            {
-                request.Properties["CookieContainer"] = options.Cookies;
+            { 
+                request.Options.Set(new HttpRequestOptionsKey<List<Cookie>>("CookieContainer"), options.Cookies);
             }
 
             return request;
@@ -478,7 +478,7 @@ namespace VirtoCloud.Client.Client
                     _httpClientHandler.ClientCertificates.AddRange(configuration.ClientCertificates);
                 }
 
-                var cookieContainer = req.Properties.ContainsKey("CookieContainer") ? req.Properties["CookieContainer"] as List<Cookie> : null;
+                var cookieContainer = req.Options.TryGetValue(new HttpRequestOptionsKey<List<Cookie>>("CookieContainer"), out var container) ? container : null;
 
                 if (cookieContainer != null)
                 {

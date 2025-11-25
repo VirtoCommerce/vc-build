@@ -1257,9 +1257,9 @@ internal partial class Build : NukeBuild
     private static async Task PublishRelease(string owner, string repo, string token, string tag, string description,
         string artifactPath, bool prerelease)
     {
-        var tokenAuth = new Credentials(token);
+        var credentials = new Credentials(token);
 
-        var githubClient = new GitHubClient(new ProductHeaderValue("vc-build")) { Credentials = tokenAuth };
+        var githubClient = new GitHubClient(new ProductHeaderValue("vc-build")) { Credentials = credentials };
 
         var newRelease = new NewRelease(tag)
         {
