@@ -7,6 +7,9 @@ namespace VirtoCommerce.Build
 {
     internal partial class Build
     {
+        private static AbsolutePath AppsDirectory => WebProject?.Directory / "Apps";
+        private static AbsolutePath AppDirectory => WebProject?.Directory / "App";
+
         public static bool ThereAreCustomApps => IsModule && ModuleManifest?.Apps?.Length > 0;
 
         public Target CompressWithCustomApp => _ => _
@@ -22,26 +25,51 @@ namespace VirtoCommerce.Build
             .OnlyWhenDynamic(() => ThereAreCustomApps)
             .Executes(() =>
             {
-                if (WebProject != null && ModuleManifest.Apps.Length > 0)
-                {
-                    foreach (var app in ModuleManifest.Apps)
-                    {
-                        if (!(WebProject.Directory / "App" / "package.json").FileExists())
-                        {
-                            continue;
-                        }
+                var apps = ModuleManifest.Apps;
+                var yarn = ToolResolver.GetPathTool("yarn");
 
-                        var chmod = ToolResolver.GetPathTool("yarn");
-                        chmod.Invoke("install", WebProject.Directory / "App");
-                        chmod.Invoke("build", WebProject.Directory / "App");
-                        var sourceDirectory = WebProject.Directory / "App" / "dist";
-                        sourceDirectory.Copy(WebProject.Directory / "Content" / app.Id, ExistsPolicy.MergeAndOverwrite);
-                    }
-                }
-                else
+                foreach (var app in apps)
                 {
-                    Log.Information("Nothing to build.");
+                    var appFolder = ResolveAppFolder(app.Id, apps.Length > 1);
+                    if (appFolder == null)
+                    {
+                        Log.Warning("Skipping app {AppId}: no folder with package.json found.", app.Id);
+                        continue;
+                    }
+
+                    var distDirectory = appFolder / "dist";
+                    distDirectory.DeleteDirectory();
+                    Log.Information("Building custom app: {AppId} from {Folder}", app.Id, appFolder);
+                    yarn.Invoke("install", appFolder);
+                    yarn.Invoke("build", appFolder);
+                    var targetDirectory = WebProject.Directory / "Content" / app.Id;
+                    targetDirectory.DeleteDirectory();
+                    distDirectory.Copy(targetDirectory, ExistsPolicy.MergeAndOverwrite);
                 }
             });
+
+        private static AbsolutePath ResolveAppFolder(string appId, bool multipleApps)
+        {
+            // Multiple apps — only Apps/{id} is supported
+            if (multipleApps)
+            {
+                var folder = AppsDirectory / appId;
+                return (folder / "package.json").FileExists() ? folder : null;
+            }
+
+            // Single app — prefer Apps/{id}, fallback to legacy App/
+            var appsSubfolder = AppsDirectory / appId;
+            if ((appsSubfolder / "package.json").FileExists())
+            {
+                return appsSubfolder;
+            }
+
+            if ((AppDirectory / "package.json").FileExists())
+            {
+                return AppDirectory;
+            }
+
+            return null;
+        }
     }
 }
