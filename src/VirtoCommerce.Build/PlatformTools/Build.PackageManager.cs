@@ -351,7 +351,7 @@ namespace VirtoCommerce.Build
 
         private static string GetDiscoveryPath()
         {
-            if (DiscoveryPath.IsNullOrEmpty())
+            if (string.IsNullOrWhiteSpace(DiscoveryPath))
             {
                 var configuration = AppSettings.GetConfiguration(PlatformRootDirectory, AppsettingsPath);
                 var path = configuration.GetModulesDiscoveryPath();

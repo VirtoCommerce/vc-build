@@ -34,7 +34,6 @@ using Octokit;
 using Serilog;
 using Utils;
 using VirtoCommerce.Build.Utils;
-using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.Platform.Core.Modularity;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using Formatting = Newtonsoft.Json.Formatting;
@@ -75,11 +74,11 @@ internal partial class Build : NukeBuild
             var solutions = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.sln", SearchOption.TopDirectoryOnly);
             if (solutions.Length > 0)
             {
-                return SolutionModelTasks.ParseSolution(solutions[0]);
+                return solutions[0].ToAbsolutePath().ReadSolution();
             }
 
             Log.Warning("No solution files found in the current directory");
-            return new Solution();
+            return new Solution(new Microsoft.VisualStudio.SolutionPersistence.Model.SolutionModel());
         }
     }
 
@@ -706,7 +705,7 @@ internal partial class Build : NukeBuild
         {
             if (!manifest.VersionTag.IsNullOrEmpty() || !customVersionSuffix.IsNullOrEmpty())
             {
-                manifest.VersionTag = manifest.VersionTag.EmptyToNull() ?? CustomVersionSuffix;
+                manifest.VersionTag = Platform.Core.Common.StringExtensions.EmptyToNull(manifest.VersionTag) ?? CustomVersionSuffix;
 
                 var externalPrereleaseVersion =
                     externalManifest.Versions.FirstOrDefault(v => !v.VersionTag.IsNullOrEmpty());
@@ -1427,7 +1426,7 @@ internal partial class Build : NukeBuild
             var zipPath = await DownloadModuleZip(dependency, manifest);
             if (!string.IsNullOrEmpty(zipPath) && File.Exists(zipPath))
             {
-                result.AddRange(GetModuleBinaryFiles(zipPath));
+                result.UnionWith(GetModuleBinaryFiles(zipPath));
             }
         }
 
