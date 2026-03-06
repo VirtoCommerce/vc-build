@@ -65,6 +65,9 @@ internal partial class Build
         }
         set { cloudAuthProvider = value; }
     }
+
+    private const int MinTail = 100;
+    private const int MaxTail = 10000;
     [Parameter("Use Azure AD as SaaS Auth Provider")] public bool AzureAD = false;
     private string cloudAuthProvider = "GitHub";
     private string environmentName;
@@ -190,9 +193,15 @@ internal partial class Build
         var waitScriptPath = dockerBuildContext / "wait-for-it.sh";
 
         dockerBuildContext.CreateOrCleanDirectory();
+        if (!string.IsNullOrWhiteSpace(DockerfileUrl))
+        {
+            await HttpTasks.HttpDownloadFileAsync(DockerfileUrl, dockerfilePath);
+        }
 
-        await HttpTasks.HttpDownloadFileAsync(DockerfileUrl, dockerfilePath);
-        await HttpTasks.HttpDownloadFileAsync(WaitScriptUrl, waitScriptPath);
+        if (!string.IsNullOrWhiteSpace(WaitScriptUrl))
+        {
+            await HttpTasks.HttpDownloadFileAsync(WaitScriptUrl, waitScriptPath);
+        }
 
         var modulesSourcePath = Solution?.Path != null
             ? WebProject.Directory / "modules"
@@ -444,7 +453,7 @@ internal partial class Build
         .Requires(() => EnvironmentName)
         .Executes(async () =>
         {
-            Tail = Math.Clamp(Tail, 100, 10000);
+            Tail = Math.Clamp(Tail, MinTail, MaxTail);
             var cloudClient = CreateVirtocloudClient(CloudUrl, await GetCloudTokenAsync());
             var logs = await cloudClient.EnvironmentsGetEnvironmentLogsAsync(EnvironmentName, Filter, Tail);
             logs = string.Join(Environment.NewLine, logs.Split("\\n"));
