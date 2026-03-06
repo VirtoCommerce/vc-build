@@ -1,3 +1,4 @@
+using System.Linq;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
@@ -26,23 +27,24 @@ namespace VirtoCommerce.Build
             .Executes(() =>
             {
                 var apps = ModuleManifest.Apps;
+                var multipleApps = apps.Length > 1;
                 var yarn = ToolResolver.GetPathTool("yarn");
 
-                foreach (var app in apps)
+                foreach (var appId in apps.Select(a => a.Id))
                 {
-                    var appFolder = ResolveAppFolder(app.Id, apps.Length > 1);
+                    var appFolder = ResolveAppFolder(appId, multipleApps);
                     if (appFolder == null)
                     {
-                        Log.Warning("Skipping app {AppId}: no folder with package.json found.", app.Id);
+                        Log.Warning("Skipping app {AppId}: no folder with package.json found.", appId);
                         continue;
                     }
 
                     var distDirectory = appFolder / "dist";
                     distDirectory.DeleteDirectory();
-                    Log.Information("Building custom app: {AppId} from {Folder}", app.Id, appFolder);
+                    Log.Information("Building custom app: {AppId} from {Folder}", appId, appFolder);
                     yarn.Invoke("install", appFolder);
                     yarn.Invoke("build", appFolder);
-                    var targetDirectory = WebProject.Directory / "Content" / app.Id;
+                    var targetDirectory = WebProject.Directory / "Content" / appId;
                     targetDirectory.DeleteDirectory();
                     distDirectory.Copy(targetDirectory, ExistsPolicy.MergeAndOverwrite);
                 }
