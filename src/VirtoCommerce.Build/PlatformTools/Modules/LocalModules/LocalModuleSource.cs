@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 
 namespace PlatformTools.Modules.LocalModules;
-internal class Local : ModuleSource
+internal class LocalModuleSource : ModuleSource
 {
-    public override string Name { get; set; } = nameof(Local);
+    public override string Name { get; set; } = "Local";
     public List<LocalModuleItem> Modules { get; set; }
 }

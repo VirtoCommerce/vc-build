@@ -8,7 +8,7 @@ using Octokit;
 
 namespace PlatformTools
 {
-    internal static class GithubManager
+    internal static class GithubReleaseService
     {
         private static readonly string _githubUser = "virtocommerce";
         private static readonly string _platformRepo = "vc-platform";

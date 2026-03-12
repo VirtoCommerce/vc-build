@@ -2,7 +2,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace PlatformTools
 {
-    public static class AppSettingsExtension
+    public static class AppSettingsExtensions
     {
         public static string GetModulesDiscoveryPath(this IConfiguration configuration)
         {

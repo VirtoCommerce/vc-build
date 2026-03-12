@@ -22,7 +22,7 @@ namespace PlatformTools.Modules.Azure
         {
             var artifacts = (AzurePipelineArtifacts)source;
             var azureClient = new AzureDevClient(artifacts.Organization, _token);
-            var clientOptions = ExtModuleCatalog.GetOptions(_token, new List<string>() { "https://virtocommerce.com" });
+            var clientOptions = ExternalModuleCatalogFactory.GetOptions(_token, new List<string>() { "https://virtocommerce.com" });
             var downloadClient = new AzurePipelineArtifactsClient(clientOptions);
             foreach (var module in artifacts.Modules)
             {

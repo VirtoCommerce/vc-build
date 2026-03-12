@@ -2,7 +2,7 @@ using System.Net.Http;
 
 namespace PlatformTools.Modules
 {
-    class CustomHttpClientFactory : IHttpClientFactory
+    class SimpleHttpClientFactory : IHttpClientFactory
     {
         public HttpClient CreateClient(string name)
         {

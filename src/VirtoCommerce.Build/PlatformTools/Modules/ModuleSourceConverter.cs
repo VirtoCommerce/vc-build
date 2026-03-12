@@ -41,8 +41,8 @@ namespace PlatformTools.Modules
                 case nameof(GitlabJobArtifacts):
                     return JsonConvert.DeserializeObject<GitlabJobArtifacts>(jo.ToString(),
                         SpecifiedSubclassConversion);
-                case nameof(Local):
-                    return JsonConvert.DeserializeObject<Local>(jo.ToString(), SpecifiedSubclassConversion);
+                case nameof(LocalModuleSource):
+                    return JsonConvert.DeserializeObject<LocalModuleSource>(jo.ToString(), SpecifiedSubclassConversion);
                 default:
                     throw new TypeLoadException($"Unknown module source: {sourceName}");
             }
