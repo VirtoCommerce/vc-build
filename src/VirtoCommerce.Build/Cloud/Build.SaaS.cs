@@ -28,7 +28,7 @@ internal partial class Build
     [Parameter("Config file for Argo Application Service")]
     public string ArgoConfigFile { get; set; }
 
-    [Parameter("Path to the manifest of environment")] public string Manifest { get; set; }
+    [Parameter("Path to the manifest of the environment")] public string Manifest { get; set; }
     [Parameter("Routes file for the environment")] public string RoutesFile { get; set; }
 
     [Parameter("Array of Helm parameters")]
@@ -36,16 +36,16 @@ internal partial class Build
 
     [Parameter("Argo Application Name")] public string ArgoAppName { get; set; }
 
-    [Parameter("Health Status that need to be awaited")]
+    [Parameter("Health Status that needs to be awaited")]
     public string HealthStatus { get; set; }
 
-    [Parameter("SyncStatus that need to be awaited")]
+    [Parameter("SyncStatus that needs to be awaited")]
     public string SyncStatus { get; set; }
 
     [Parameter("Delay between requests in seconds")]
     public int Delay { get; set; } = 10;
 
-    [Parameter("Number of attempts before fail")]
+    [Parameter("Number of attempts before failing")]
     public int AttemptsNumber { get; set; } = 100;
 
     [Parameter("SaaS Portal")] public string CloudUrl { get; set; } = "https://portal.virtocommerce.cloud";
@@ -65,6 +65,9 @@ internal partial class Build
         }
         set { cloudAuthProvider = value; }
     }
+
+    private const int MinTail = 100;
+    private const int MaxTail = 10000;
     [Parameter("Use Azure AD as SaaS Auth Provider")] public bool AzureAD = false;
     private string cloudAuthProvider = "GitHub";
     private string environmentName;
@@ -80,10 +83,15 @@ internal partial class Build
     [Parameter("Organization name", Name = "Organization")] public string SaaSOrganizationName { get => _saasOrganizationName; set => _saasOrganizationName = value?.ToLowerInvariant(); }
 
 
-    [Parameter("Url to Dockerfile which will use to build the docker image in the CloudDeploy/CloudUp Target")]
-    public static string DockerfileUrl { get; set; } = "https://raw.githubusercontent.com/VirtoCommerce/vc-docker/feat/net8/linux/platform/Dockerfile";
-    [Parameter("Url to Wake-script which will use to build the docker image in the CloudDeploy/CloudUp Target")]
-    public static string WaitScriptUrl { get; set; } = "https://raw.githubusercontent.com/VirtoCommerce/vc-docker/feat/net8/linux/platform/wait-for-it.sh";
+    [Parameter("URL to Dockerfile to be used to build the Docker image in the CloudDeploy/CloudUp Target")]
+    public static string DockerfileUrl { get; set; }
+    [Parameter("URL to Wake-script to be used to build the Docker image in the CloudDeploy/CloudUp Target")]
+    public static string WaitScriptUrl { get; set; }
+
+    [Parameter("Tail size for logs of a cloud environment (value from 100 to 10000)")]
+    public static int Tail { get; set; } = 100;
+    [Parameter("Filter for logs of a cloud environment")]
+    public static string Filter { get; set; }
 
     public Target CloudEnvStatus => _ => _
         .Executes(async () =>
@@ -185,9 +193,15 @@ internal partial class Build
         var waitScriptPath = dockerBuildContext / "wait-for-it.sh";
 
         dockerBuildContext.CreateOrCleanDirectory();
+        if (!string.IsNullOrWhiteSpace(DockerfileUrl))
+        {
+            await HttpTasks.HttpDownloadFileAsync(DockerfileUrl, dockerfilePath);
+        }
 
-        await HttpTasks.HttpDownloadFileAsync(DockerfileUrl, dockerfilePath);
-        await HttpTasks.HttpDownloadFileAsync(WaitScriptUrl, waitScriptPath);
+        if (!string.IsNullOrWhiteSpace(WaitScriptUrl))
+        {
+            await HttpTasks.HttpDownloadFileAsync(WaitScriptUrl, waitScriptPath);
+        }
 
         var modulesSourcePath = Solution?.Path != null
             ? WebProject.Directory / "modules"
@@ -316,7 +330,7 @@ internal partial class Build
                 };
                 listener.Start();
 
-                Log.Information("Openning browser window");
+                Log.Information("Opening browser window");
                 var authUrl = $"{CloudUrl}/externalsignin?authenticationType={CloudAuthProvider}&returnUrl=/api/saas/token/{port}";
                 Process.Start(new ProcessStartInfo(authUrl) { UseShellExecute = true });
 
@@ -439,8 +453,9 @@ internal partial class Build
         .Requires(() => EnvironmentName)
         .Executes(async () =>
         {
+            Tail = Math.Clamp(Tail, MinTail, MaxTail);
             var cloudClient = CreateVirtocloudClient(CloudUrl, await GetCloudTokenAsync());
-            var logs = await cloudClient.EnvironmentsGetEnvironmentLogsAsync(EnvironmentName);
+            var logs = await cloudClient.EnvironmentsGetEnvironmentLogsAsync(EnvironmentName, Filter, Tail);
             logs = string.Join(Environment.NewLine, logs.Split("\\n"));
             Console.WriteLine(logs);
         });
