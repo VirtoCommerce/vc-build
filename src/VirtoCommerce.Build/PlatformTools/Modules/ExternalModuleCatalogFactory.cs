@@ -37,7 +37,7 @@ namespace PlatformTools.Modules
                     PlatformVersion.CurrentVersion = SemanticVersion.Parse(platformRelease.TagName);
                 }
 
-                var client = new ExternalModulesClient(options, new SimpleHttpClientFactory());
+                var client = new ExternalModulesClient(options, new HttpClientWithRetryPolicyFactory());
                 var logger = new LoggerFactory().CreateLogger<ExternalModuleCatalog>();
                 _catalog = new ExternalModuleCatalog(localCatalog, client, options, logger, Options.Create(new ModuleSequenceBoostOptions()));
                 _catalog.Load();

@@ -23,7 +23,7 @@ namespace PlatformTools.Modules
                 var extCatalogOptions = ExternalModuleCatalogFactory.GetOptions(authToken, manifestUrls);
                 var localModuleCatalog = LocalModuleCatalogFactory.GetCatalog(localCatalogOptions);
                 var externalModuleCatalog = await ExternalModuleCatalogFactory.GetCatalog(extCatalogOptions, localModuleCatalog);
-                var modulesClient = new ExternalModulesClient(extCatalogOptions, new SimpleHttpClientFactory());
+                var modulesClient = new ExternalModulesClient(extCatalogOptions, new HttpClientWithRetryPolicyFactory());
                 _moduleInstaller = new ModuleInstaller(externalModuleCatalog, modulesClient, fileManager, localCatalogOptions, fileSystem, zipFileWrapper);
             }
 
