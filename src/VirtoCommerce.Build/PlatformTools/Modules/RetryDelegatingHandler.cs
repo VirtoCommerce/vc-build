@@ -32,12 +32,14 @@ internal sealed class RetryDelegatingHandler : DelegatingHandler
 
         for (var attempt = 0; attempt <= _maxRetries; attempt++)
         {
-            var requestClone = CloneRequest(request, contentBuffer);
+            using var requestClone = CloneRequest(request, contentBuffer);
             try
             {
                 var response = base.Send(requestClone, cancellationToken);
                 if (!IsTransientStatusCode(response.StatusCode) || attempt == _maxRetries)
+                {
                     return response;
+                }
 
                 Log.Warning("Request to {Uri} returned {StatusCode}, retrying ({Attempt}/{Max})...",
                     request.RequestUri, (int)response.StatusCode, attempt + 1, _maxRetries);
@@ -70,7 +72,9 @@ internal sealed class RetryDelegatingHandler : DelegatingHandler
             {
                 var response = await base.SendAsync(requestClone, cancellationToken);
                 if (!IsTransientStatusCode(response.StatusCode) || attempt == _maxRetries)
+                {
                     return response;
+                }
 
                 Log.Warning("Request to {Uri} returned {StatusCode}, retrying ({Attempt}/{Max})...",
                     request.RequestUri, (int)response.StatusCode, attempt + 1, _maxRetries);
@@ -88,17 +92,17 @@ internal sealed class RetryDelegatingHandler : DelegatingHandler
         throw new InvalidOperationException("Unreachable");
     }
 
-    private static bool IsTransientStatusCode(HttpStatusCode statusCode) =>
-        statusCode is HttpStatusCode.RequestTimeout
+    private static bool IsTransientStatusCode(HttpStatusCode statusCode)
+    {
+        return statusCode is HttpStatusCode.RequestTimeout
                    or HttpStatusCode.TooManyRequests
-                   or HttpStatusCode.BadGateway
-                   or HttpStatusCode.ServiceUnavailable
                    or HttpStatusCode.GatewayTimeout;
+    }
 
     private static bool IsTransientException(Exception ex) =>
         ex is HttpRequestException or IOException;
 
-    private static HttpRequestMessage CloneRequest(HttpRequestMessage request, byte[]? contentBuffer)
+    private static HttpRequestMessage CloneRequest(HttpRequestMessage request, byte[] contentBuffer)
     {
         var clone = new HttpRequestMessage(request.Method, request.RequestUri)
         {
