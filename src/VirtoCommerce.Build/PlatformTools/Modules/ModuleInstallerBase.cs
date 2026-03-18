@@ -21,17 +21,5 @@ namespace PlatformTools.Modules
 
         protected abstract Task InnerInstall(ModuleSource source, IProgress<ProgressMessage> progress);
     }
-
-    public static class ProgressExtension
-    {
-        public static void ReportInfo(this IProgress<ProgressMessage> progress, string message)
-        {
-            progress.Report(new ProgressMessage { Level = ProgressMessageLevel.Info, Message = message });
-        }
-        public static void ReportError(this IProgress<ProgressMessage> progress, string message)
-        {
-            progress.Report(new ProgressMessage { Level = ProgressMessageLevel.Error, Message = message });
-        }
-    }
 }
 

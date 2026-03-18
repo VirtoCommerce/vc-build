@@ -11,7 +11,7 @@ using VirtoCommerce.Platform.Modules.External;
 
 namespace PlatformTools.Modules
 {
-    internal static class ExtModuleCatalog
+    internal static class ExternalModuleCatalogFactory
     {
         private static ExternalModuleCatalog _catalog;
 
@@ -26,18 +26,18 @@ namespace PlatformTools.Modules
             if (_catalog == null)
             {
                 // workaround to see all modules in the external catalog
-                var platformLatestReleaseVersion = await GithubManager.GetLatestPlatformVersion();
+                var platformLatestReleaseVersion = await GithubReleaseService.GetLatestPlatformVersion();
                 if (platformLatestReleaseVersion != null)
                 {
                     PlatformVersion.CurrentVersion = new SemanticVersion(new Version(platformLatestReleaseVersion));
                 }
                 else
                 {
-                    var platformRelease = await GithubManager.GetPlatformRelease();
+                    var platformRelease = await GithubReleaseService.GetPlatformRelease();
                     PlatformVersion.CurrentVersion = SemanticVersion.Parse(platformRelease.TagName);
                 }
 
-                var client = new ExternalModulesClient(options, new CustomHttpClientFactory());
+                var client = new ExternalModulesClient(options, new HttpClientWithRetryPolicyFactory());
                 var logger = new LoggerFactory().CreateLogger<ExternalModuleCatalog>();
                 _catalog = new ExternalModuleCatalog(localCatalog, client, options, logger, Options.Create(new ModuleSequenceBoostOptions()));
                 _catalog.Load();

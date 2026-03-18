@@ -4,7 +4,8 @@ namespace PlatformTools.Modules.Azure
 {
     internal class AzureUniversalPackages : ModuleSource
     {
-        public override string Name { get; set; } = nameof(AzureUniversalPackages);
+        public const string SourceName = nameof(AzureUniversalPackages);
+        public override string Name { get; set; } = SourceName;
         public string Organization { get; set; }
         public string Project { get; set; }
         public string Feed { get; set; }

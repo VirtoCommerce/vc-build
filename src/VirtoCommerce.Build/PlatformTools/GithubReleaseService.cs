@@ -8,7 +8,7 @@ using Octokit;
 
 namespace PlatformTools
 {
-    internal static class GithubManager
+    internal static partial class GithubReleaseService
     {
         private static readonly string _githubUser = "virtocommerce";
         private static readonly string _platformRepo = "vc-platform";
@@ -55,7 +55,7 @@ namespace PlatformTools
         /// <returns>The First Value is Owner, The Second is Repo Name</returns>
         public static Tuple<string, string> GetRepoFromUrl(string url)
         {
-            var regex = new Regex(@"http[s]{0,1}:\/\/github.com\/([A-z0-9]*)\/([A-z0-9\-]*)\/", RegexOptions.IgnoreCase);
+            var regex = RepoUrlRegex();
             var match = regex.Match(url);
             var groups = match.Groups;
             const int repoOwnerGroupIndex = 1;
@@ -93,5 +93,8 @@ namespace PlatformTools
 
             return prefixNode?.InnerText;
         }
+
+        [GeneratedRegex(@"http[s]{0,1}:\/\/github.com\/([A-z0-9]*)\/([A-z0-9\-]*)\/", RegexOptions.IgnoreCase, "ru-RU")]
+        private static partial Regex RepoUrlRegex();
     }
 }
