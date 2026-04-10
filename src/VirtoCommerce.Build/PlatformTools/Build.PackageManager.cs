@@ -156,7 +156,7 @@ namespace VirtoCommerce.Build
             {
                 var externalModule = externalModuleCatalog.Modules
                     .OfType<ManifestModuleInfo>()
-                    .FirstOrDefault(m => m.Id.EqualsInvariant(module.Id));
+                    .FirstOrDefault(m => m.Id.EqualsIgnoreCase(module.Id));
 
                 if (externalModule == null)
                 {
@@ -407,8 +407,8 @@ namespace VirtoCommerce.Build
                  // Remove modules that are no longer in the manifest
                  var modulesToRemove = alreadyInstalledModules
                      .Where(m => !githubReleases.Modules.Exists(module =>
-                         module.Id.EqualsInvariant(m.ModuleName) ||
-                         module.Id.EqualsInvariant(m.Id)) &&
+                         module.Id.EqualsIgnoreCase(m.ModuleName) ||
+                         module.Id.EqualsIgnoreCase(m.Id)) &&
                          !localModuleCatalog.IsModuleSymlinked(m.ModuleName) &&
                          !IsNonVirtoModuleInstalled(m, (MixedPackageManifest)packageManifest))
                      .ToList();
@@ -520,8 +520,8 @@ namespace VirtoCommerce.Build
             {
                 Log.Information($"Removing module {moduleToRemove.ModuleName} as it's no longer in the manifest");
                 var moduleToDelete = ((LocalCatalog)localModuleCatalog).Items.OfType<ManifestModuleInfo>().FirstOrDefault(m =>
-                    m.ModuleName.EqualsInvariant(moduleToRemove.ModuleName) ||
-                    m.Id.EqualsInvariant(moduleToRemove.ModuleName));
+                    m.ModuleName.EqualsIgnoreCase(moduleToRemove.ModuleName) ||
+                    m.Id.EqualsIgnoreCase(moduleToRemove.ModuleName));
                 var modulePath = moduleToDelete?.FullPhysicalPath;
                 if (Directory.Exists(modulePath))
                 {
@@ -836,7 +836,7 @@ namespace VirtoCommerce.Build
             await HttpTasks.HttpDownloadFileAsync(manifestUrl, outFile.ToAbsolutePath());
         }
 
-        private async static Task<ManifestBase> CreateManifestFromEnvironment(AbsolutePath platformPath, AbsolutePath discoveryPath)
+        private static async Task<ManifestBase> CreateManifestFromEnvironment(AbsolutePath platformPath, AbsolutePath discoveryPath)
         {
             var platformWebDllPath = platformPath / "VirtoCommerce.Platform.Web.dll";
             if (!File.Exists(platformWebDllPath))
