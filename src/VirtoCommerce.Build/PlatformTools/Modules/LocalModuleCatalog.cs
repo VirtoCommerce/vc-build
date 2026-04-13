@@ -24,7 +24,7 @@ namespace PlatformTools.Modules
                 var logger = new LoggerFactory().CreateLogger<LocalStorageModuleCatalog>();
                 var distributedLock = new InternalNoLockService(new LoggerFactory().CreateLogger<InternalNoLockService>());
                 var fileMetadataProvider = new FileMetadataProvider(options);
-                var fileCopyPolicy = new FileCopyPolicy(fileMetadataProvider);
+                var fileCopyPolicy = new FileCopyPolicy(fileMetadataProvider, options);
                 _catalog = new LocalCatalog(options, distributedLock, fileCopyPolicy, logger, Options.Create(new ModuleSequenceBoostOptions()));
                 _catalog.Load();
             }

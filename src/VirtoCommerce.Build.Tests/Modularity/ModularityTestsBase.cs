@@ -1,5 +1,8 @@
+using Microsoft.Extensions.Logging;
 using PlatformTools.Modules;
 using VirtoCommerce.Platform.Core.Common;
+using VirtoCommerce.Platform.Core.Modularity;
+using VirtoCommerce.Platform.Modules;
 
 namespace VirtoCommerce.Build.Tests.Modularity;
 
@@ -19,6 +22,14 @@ public abstract class ModularityTestsBase : IDisposable
         Directory.CreateDirectory(DiscoveryPath);
 
         PlatformVersion.CurrentVersion ??= SemanticVersion.Parse("3.1000.0");
+
+        ModuleBootstrapper.Instance ??= new ModuleBootstrapper(
+            new LoggerFactory(),
+            new LocalStorageModuleCatalogOptions
+            {
+                DiscoveryPath = DiscoveryPath,
+                ProbingPath = ProbingPath,
+            });
     }
 
     public void Dispose()
