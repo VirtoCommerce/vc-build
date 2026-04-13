@@ -2,11 +2,13 @@ using System.Net.Http;
 
 namespace PlatformTools.Modules
 {
-    class CustomHttpClientFactory : IHttpClientFactory
+    internal class CustomHttpClientFactory(HttpClient httpClient = null) : IHttpClientFactory
     {
+        private readonly HttpClient _httpClient = httpClient ?? new HttpClient();
+
         public HttpClient CreateClient(string name)
         {
-            return new HttpClient();
+            return _httpClient;
         }
     }
 }

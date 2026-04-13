@@ -32,6 +32,11 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="VirtoCommerce.Build.Tests" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Azure.Storage.Blobs" Version="12.23.0" />
     <PackageReference Include="Markdig" Version="0.24.0" />

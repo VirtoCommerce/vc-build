@@ -11,13 +11,13 @@ namespace PlatformTools.Modules
     {
         private static LocalCatalog _catalog;
 
-        public static ILocalModuleCatalog GetCatalog(string discoveryPath, string probingPath)
+        public static LocalCatalog GetCatalog(string discoveryPath, string probingPath)
         {
             var options = GetOptions(discoveryPath, probingPath);
             return GetCatalog(options);
         }
 
-        public static ILocalModuleCatalog GetCatalog(IOptions<LocalStorageModuleCatalogOptions> options)
+        public static LocalCatalog GetCatalog(IOptions<LocalStorageModuleCatalogOptions> options)
         {
             if (_catalog == null)
             {
@@ -46,6 +46,11 @@ namespace PlatformTools.Modules
             };
 
             return Options.Create(moduleCatalogOptions);
+        }
+
+        internal static void Reset()
+        {
+            _catalog = null;
         }
     }
 }

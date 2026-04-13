@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
@@ -22,8 +21,8 @@ namespace PlatformTools.Modules.Azure
         {
             var artifacts = (AzurePipelineArtifacts)source;
             var azureClient = new AzureDevClient(artifacts.Organization, _token);
-            var clientOptions = ExtModuleCatalog.GetOptions(_token, new List<string>() { "https://virtocommerce.com" });
-            var downloadClient = new AzurePipelineArtifactsClient(clientOptions);
+            var downloadClient = new AzurePipelineArtifactsClient(_token);
+
             foreach (var module in artifacts.Modules)
             {
                 progress.ReportInfo($"Installing {module.Id}");

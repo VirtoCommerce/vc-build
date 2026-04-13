@@ -21,7 +21,7 @@ namespace PlatformTools.Modules
             return GetCatalog(options, localCatalog);
         }
 
-        public static async Task<ExternalModuleCatalog> GetCatalog(IOptions<ExternalModuleCatalogOptions> options, ILocalModuleCatalog localCatalog)
+        public static async Task<ExternalModuleCatalog> GetCatalog(IOptions<ExternalModuleCatalogOptions> options, ILocalModuleCatalog localCatalog, ExternalModulesClient client = null)
         {
             if (_catalog == null)
             {
@@ -37,10 +37,20 @@ namespace PlatformTools.Modules
                     PlatformVersion.CurrentVersion = SemanticVersion.Parse(platformRelease.TagName);
                 }
 
-                var client = new ExternalModulesClient(options, new CustomHttpClientFactory());
+                client ??= new ExternalModulesClient(options, new CustomHttpClientFactory());
                 var logger = new LoggerFactory().CreateLogger<ExternalModuleCatalog>();
                 _catalog = new ExternalModuleCatalog(localCatalog, client, options, logger, Options.Create(new ModuleSequenceBoostOptions()));
                 _catalog.Load();
+
+                // When no manifest URL is configured, ExternalModuleCatalog.InnerLoad()
+                // returns early without merging installed modules. Add them explicitly.
+                if (options.Value.ModulesManifestUrl == null)
+                {
+                    foreach (var module in localCatalog.Modules)
+                    {
+                        _catalog.AddModule(module);
+                    }
+                }
             }
             else
             {
@@ -67,6 +77,11 @@ namespace PlatformTools.Modules
             }
 
             return Options.Create(options);
+        }
+
+        internal static void Reset()
+        {
+            _catalog = null;
         }
     }
 }
