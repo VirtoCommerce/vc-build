@@ -1,8 +1,8 @@
 using System;
 using System.IO;
-using System.IO.Compression;
 using System.Threading.Tasks;
 using VirtoCommerce.Platform.Core.Modularity;
+using VirtoCommerce.Platform.Modules;
 
 namespace PlatformTools.Modules.Azure
 {
@@ -40,7 +40,7 @@ namespace PlatformTools.Modules.Azure
                     }
                 }
                 progress.ReportInfo($"Extracting {zipName}");
-                ZipFile.ExtractToDirectory(zipDestination, moduleDestination);
+                ModulePackageInstaller.Install(zipDestination, moduleDestination, deleteZip: true);
                 progress.ReportInfo($"Successfully installed {module.Id}");
             }
         }

@@ -1,74 +1,59 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.Platform.Core.Modularity;
 using VirtoCommerce.Platform.Modules;
-using VirtoCommerce.Platform.Modules.External;
 
 namespace PlatformTools.Modules
 {
-    internal static class ExtModuleCatalog
+    public class ExtModuleCatalog
     {
-        private static ExternalModuleCatalog _catalog;
+        private static ExtModuleCatalog _catalog;
 
-        public static Task<ExternalModuleCatalog> GetCatalog(string authToken, ILocalModuleCatalog localCatalog, IList<string> manifestUrls)
+        public IList<ManifestModuleInfo> Modules { get; private set; }
+
+        public ExternalModuleCatalogOptions Options { get; private init; }
+
+        public static async Task<ExtModuleCatalog> GetCatalog(string authToken, IList<string> manifestUrls, LocalModuleCatalog localModuleCatalog, HttpClient httpClient = null)
         {
-            var options = GetOptions(authToken, manifestUrls);
-            return GetCatalog(options, localCatalog);
-        }
-
-        public static async Task<ExternalModuleCatalog> GetCatalog(IOptions<ExternalModuleCatalogOptions> options, ILocalModuleCatalog localCatalog, ExternalModulesClient client = null)
-        {
-            if (_catalog == null)
+            if (_catalog != null)
             {
-                // workaround to see all modules in the external catalog
-                var platformLatestReleaseVersion = await GithubManager.GetLatestPlatformVersion();
-                if (platformLatestReleaseVersion != null)
-                {
-                    PlatformVersion.CurrentVersion = new SemanticVersion(new Version(platformLatestReleaseVersion));
-                }
-                else
-                {
-                    var platformRelease = await GithubManager.GetPlatformRelease();
-                    PlatformVersion.CurrentVersion = SemanticVersion.Parse(platformRelease.TagName);
-                }
-
-                client ??= new ExternalModulesClient(options, new CustomHttpClientFactory());
-                var logger = new LoggerFactory().CreateLogger<ExternalModuleCatalog>();
-                _catalog = new ExternalModuleCatalog(localCatalog, client, options, logger, Options.Create(new ModuleSequenceBoostOptions()));
-                _catalog.Load();
-
-                // When no manifest URL is configured, ExternalModuleCatalog.InnerLoad()
-                // returns early without merging installed modules. Add them explicitly.
-                if (options.Value.ModulesManifestUrl == null)
-                {
-                    foreach (var module in localCatalog.Modules)
-                    {
-                        _catalog.AddModule(module);
-                    }
-                }
+                return _catalog;
             }
-            else
+
+            // Workaround to see all modules in the external catalog
+            var latestPlatformVersion = await GithubManager.GetLatestPlatformVersion();
+
+            httpClient ??= new HttpClient();
+            var options = CreateOptions(authToken, manifestUrls);
+            var externalModules = ModulePackageInstaller.LoadExternalModules(options, latestPlatformVersion, httpClient);
+
+            var installedModules = localModuleCatalog.Modules;
+            var modules = localModuleCatalog.Bootstrapper.MergeWithInstalled(externalModules, installedModules);
+
+
+            _catalog = new ExtModuleCatalog
             {
-                _catalog.Reload();
-            }
+                Options = options,
+                Modules = modules,
+            };
+
 
             return _catalog;
         }
 
-        public static IOptions<ExternalModuleCatalogOptions> GetOptions(string authToken, IList<string> manifestUrls)
+        private static ExternalModuleCatalogOptions CreateOptions(string authToken, IList<string> manifestUrls)
         {
             manifestUrls ??= new List<string>();
+
             var options = new ExternalModuleCatalogOptions
             {
                 AuthorizationToken = authToken,
                 IncludePrerelease = false,
                 AutoInstallModuleBundles = [],
-                ExtraModulesManifestUrls = manifestUrls.Select(m => new Uri(m)).ToArray(),
+                ExtraModulesManifestUrls = manifestUrls.Skip(1).Select(x => new Uri(x)).ToArray(),
             };
 
             if (manifestUrls.Count > 0)
@@ -76,7 +61,7 @@ namespace PlatformTools.Modules
                 options.ModulesManifestUrl = new Uri(manifestUrls[0]);
             }
 
-            return Options.Create(options);
+            return options;
         }
 
         internal static void Reset()

@@ -1,8 +1,4 @@
-using Microsoft.Extensions.Logging;
 using PlatformTools.Modules;
-using VirtoCommerce.Platform.Core.Common;
-using VirtoCommerce.Platform.Core.Modularity;
-using VirtoCommerce.Platform.Modules;
 
 namespace VirtoCommerce.Build.Tests.Modularity;
 
@@ -18,18 +14,6 @@ public abstract class ModularityTestsBase : IDisposable
         TestRoot = Path.Combine(Path.GetTempPath(), "vc-build-tests", Guid.NewGuid().ToString());
         DiscoveryPath = Path.Combine(TestRoot, "modules");
         ProbingPath = Path.Combine(TestRoot, "probing");
-
-        Directory.CreateDirectory(DiscoveryPath);
-
-        PlatformVersion.CurrentVersion ??= SemanticVersion.Parse("3.1000.0");
-
-        ModuleBootstrapper.Instance ??= new ModuleBootstrapper(
-            new LoggerFactory(),
-            new LocalStorageModuleCatalogOptions
-            {
-                DiscoveryPath = DiscoveryPath,
-                ProbingPath = ProbingPath,
-            });
     }
 
     public void Dispose()
@@ -43,17 +27,17 @@ public abstract class ModularityTestsBase : IDisposable
     }
 
 
-    protected LocalCatalog GetLocalModuleCatalog()
+    protected LocalModuleCatalog GetLocalModuleCatalog()
     {
         return LocalModuleCatalog.GetCatalog(DiscoveryPath, ProbingPath);
     }
 
-    protected void WriteManifest(string id, string version, string? assemblyFile = null, string[]? dependencies = null)
+    protected void WriteManifest(string id, string version, string platformVersion = "3.1000.0", string? assemblyFile = null, string[]? dependencies = null)
     {
-        WriteManifest(id, version, Path.Combine(DiscoveryPath, id), assemblyFile, dependencies);
+        WriteManifest(id, version, Path.Combine(DiscoveryPath, id), platformVersion, assemblyFile, dependencies);
     }
 
-    protected void WriteManifest(string id, string version, string directoryPath, string? assemblyFile = null, string[]? dependencies = null)
+    protected void WriteManifest(string id, string version, string directoryPath, string platformVersion = "3.1000.0", string? assemblyFile = null, string[]? dependencies = null)
     {
         Directory.CreateDirectory(directoryPath);
 

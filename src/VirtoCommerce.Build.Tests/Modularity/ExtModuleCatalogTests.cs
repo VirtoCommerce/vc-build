@@ -1,11 +1,7 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using Microsoft.Extensions.Options;
 using PlatformTools.Modules;
-using VirtoCommerce.Platform.Core.Modularity;
-using VirtoCommerce.Platform.Modules;
-using VirtoCommerce.Platform.Modules.External;
 
 namespace VirtoCommerce.Build.Tests.Modularity;
 
@@ -33,7 +29,7 @@ public class ExtModuleCatalogTests : ModularityTestsBase
 
         // Act
         var catalog = await GetExternalModuleCatalog("https://example.com/modules.json", manifestJson);
-        var modules = catalog.Modules.OfType<ManifestModuleInfo>().ToList();
+        var modules = catalog.Modules;
 
         // Assert
         Assert.Single(modules);
@@ -49,7 +45,7 @@ public class ExtModuleCatalogTests : ModularityTestsBase
 
         // Act
         var catalog = await GetExternalModuleCatalog("https://example.com/modules.json", manifestJson);
-        var modules = catalog.Modules.OfType<ManifestModuleInfo>().ToList();
+        var modules = catalog.Modules;
 
         // Assert
         Assert.Equal(2, modules.Count);
@@ -65,7 +61,7 @@ public class ExtModuleCatalogTests : ModularityTestsBase
 
         // Act
         var catalog = await GetExternalModuleCatalog();
-        var modules = catalog.Modules.OfType<ManifestModuleInfo>().ToList();
+        var modules = catalog.Modules;
 
         // Assert
         Assert.Single(modules);
@@ -99,21 +95,13 @@ public class ExtModuleCatalogTests : ModularityTestsBase
         return JsonSerializer.Serialize(manifests);
     }
 
-    private Task<ExternalModuleCatalog> GetExternalModuleCatalog(string? modulesManifestUrl = null, string? manifestJson = null)
+    private async Task<ExtModuleCatalog> GetExternalModuleCatalog(string? modulesManifestUrl = null, string? manifestJson = null)
     {
-        var options = new ExternalModuleCatalogOptions
-        {
-            ModulesManifestUrl = modulesManifestUrl is null ? null : new Uri(modulesManifestUrl),
-            ExtraModulesManifestUrls = [],
-            AutoInstallModuleBundles = [],
-        };
-
-        var optionsWrapper = Options.Create(options);
-
+        var manifestUrls = modulesManifestUrl is null ? null : new[] { modulesManifestUrl };
+        var localModuleCatalog = GetLocalModuleCatalog();
         var httpClient = CreateFakeHttpClient(manifestJson);
-        var client = new ExternalModulesClient(optionsWrapper, new CustomHttpClientFactory(httpClient));
 
-        var externalCatalog = ExtModuleCatalog.GetCatalog(optionsWrapper, GetLocalModuleCatalog(), client);
+        var externalCatalog = await ExtModuleCatalog.GetCatalog(authToken: null, manifestUrls, localModuleCatalog, httpClient);
 
         return externalCatalog;
     }

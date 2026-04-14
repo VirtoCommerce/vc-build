@@ -34,7 +34,7 @@ public class LocalModuleCatalogTests : ModularityTestsBase
 
         // Act
         var catalog = GetLocalModuleCatalog();
-        var modules = catalog.Modules.OfType<ManifestModuleInfo>().ToList();
+        var modules = catalog.Modules;
 
         // Assert
         Assert.Empty(modules);
@@ -47,7 +47,7 @@ public class LocalModuleCatalogTests : ModularityTestsBase
 
         // Act
         var catalog = GetLocalModuleCatalog();
-        var modules = catalog.Modules.OfType<ManifestModuleInfo>().ToList();
+        var modules = catalog.Modules;
 
         // Assert
         Assert.Empty(modules);
@@ -77,7 +77,7 @@ public class LocalModuleCatalogTests : ModularityTestsBase
 
         // Act
         var catalog = GetLocalModuleCatalog();
-        var modules = catalog.Modules.OfType<ManifestModuleInfo>().ToList();
+        var modules = catalog.Modules;
 
         // Assert
         Assert.Single(modules);
@@ -92,7 +92,7 @@ public class LocalModuleCatalogTests : ModularityTestsBase
 
         // Act
         var catalog = GetLocalModuleCatalog();
-        var modules = catalog.Modules.OfType<ManifestModuleInfo>().ToList();
+        var modules = catalog.Modules;
 
         // Assert
         Assert.Single(modules);
@@ -109,7 +109,7 @@ public class LocalModuleCatalogTests : ModularityTestsBase
 
         // Act
         var catalog = GetLocalModuleCatalog();
-        var modules = catalog.Modules.OfType<ManifestModuleInfo>().ToList();
+        var modules = catalog.Modules;
 
         // Assert
         Assert.Equal(3, modules.Count);
@@ -127,7 +127,7 @@ public class LocalModuleCatalogTests : ModularityTestsBase
 
         // Act
         var catalog = GetLocalModuleCatalog();
-        var modules = catalog.Modules.OfType<ManifestModuleInfo>().ToList();
+        var modules = catalog.Modules;
 
         // Assert
         var module = modules.First(x => x.Id == "TestModule");
@@ -142,7 +142,7 @@ public class LocalModuleCatalogTests : ModularityTestsBase
 
         // Act
         var catalog = GetLocalModuleCatalog();
-        var modules = catalog.Modules.OfType<ManifestModuleInfo>().ToList();
+        var modules = catalog.Modules;
 
         // Assert
         var module = modules.First(x => x.Id == "NoAssembly");
@@ -150,19 +150,19 @@ public class LocalModuleCatalogTests : ModularityTestsBase
     }
 
     [Fact]
-    public void GetCatalog_ModuleWithAssemblyFile_SetsRef()
+    public void GetCatalog_ModuleWithAssemblyFile_SetsAssemblyFile()
     {
         // Arrange
         WriteManifest("WithAssembly", "1.0.0", assemblyFile: "WithAssembly.dll");
 
         // Act
         var catalog = GetLocalModuleCatalog();
-        var modules = catalog.Modules.OfType<ManifestModuleInfo>().ToList();
+        var modules = catalog.Modules;
 
         // Assert
         var module = modules.First(x => x.Id == "WithAssembly");
-        Assert.NotNull(module.Ref);
-        Assert.Contains("WithAssembly.dll", module.Ref);
+        Assert.NotNull(module.AssemblyFile);
+        Assert.Contains("WithAssembly.dll", module.AssemblyFile);
     }
 
     [Fact]
@@ -174,9 +174,13 @@ public class LocalModuleCatalogTests : ModularityTestsBase
 
         // Act
         var catalog = GetLocalModuleCatalog();
+        var exists1 = Directory.Exists(ProbingPath);
+        catalog.RefreshProbingDirectory();
+        var exists2 = Directory.Exists(ProbingPath);
 
         // Assert
-        Assert.True(Directory.Exists(ProbingPath));
+        Assert.False(exists1);
+        Assert.True(exists2);
     }
 
     // --- Reload ---
@@ -187,7 +191,7 @@ public class LocalModuleCatalogTests : ModularityTestsBase
         // Arrange
         WriteManifest("ModuleA", "1.0.0");
         var catalog = GetLocalModuleCatalog();
-        var modules1 = catalog.Modules.OfType<ManifestModuleInfo>().ToList();
+        var modules1 = catalog.Modules;
         Assert.Single(modules1);
 
         // Add another module
@@ -195,7 +199,7 @@ public class LocalModuleCatalogTests : ModularityTestsBase
 
         // Act
         catalog.Reload();
-        var modules2 = catalog.Modules.OfType<ManifestModuleInfo>().ToList();
+        var modules2 = catalog.Modules;
 
         // Assert
         Assert.Equal(2, modules2.Count);
@@ -204,43 +208,57 @@ public class LocalModuleCatalogTests : ModularityTestsBase
     // --- Dependency validation ---
 
     [Fact]
-    public void IsDependenciesValid_NoDependencies_ReturnsTrue()
+    public void ValidateDependencies_NoDependencies_ReturnsTrue()
     {
         // Arrange
-        WriteManifest("ModuleA", "1.0.0");
+        WriteManifest("ModuleA", "1.0.0", platformVersion: "3.1000.0");
         var catalog = GetLocalModuleCatalog();
 
         // Act
-        var result = catalog.IsDependenciesValid();
+        var result = catalog.ValidateDependencies(platformVersion: "3.1000.0");
 
         // Assert
         Assert.True(result);
     }
 
     [Fact]
-    public void IsDependenciesValid_AllDependenciesSatisfied_ReturnsTrue()
+    public void ValidateDependencies_AllDependenciesSatisfied_ReturnsTrue()
     {
         // Arrange
-        WriteManifest("ModuleA", "1.0.0");
-        WriteManifest("ModuleB", "1.0.0", dependencies: ["ModuleA:1.0.0"]);
+        WriteManifest("ModuleA", "1.0.0", platformVersion: "3.1000.0");
+        WriteManifest("ModuleB", "1.0.0", platformVersion: "3.1000.0", dependencies: ["ModuleA:1.0.0"]);
         var catalog = GetLocalModuleCatalog();
 
         // Act
-        var result = catalog.IsDependenciesValid();
+        var result = catalog.ValidateDependencies(platformVersion: "3.1000.0");
 
         // Assert
         Assert.True(result);
     }
 
     [Fact]
-    public void IsDependenciesValid_MissingDependency_ReturnsFalse()
+    public void ValidateDependencies_MissingDependency_ReturnsFalse()
     {
         // Arrange
-        WriteManifest("ModuleB", "1.0.0", dependencies: ["ModuleA:1.0.0"]);
+        WriteManifest("ModuleB", "1.0.0", platformVersion: "3.1000.0", dependencies: ["ModuleA:1.0.0"]);
         var catalog = GetLocalModuleCatalog();
 
         // Act
-        var result = catalog.IsDependenciesValid();
+        var result = catalog.ValidateDependencies(platformVersion: "3.1000.0");
+
+        // Assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void ValidateDependencies_IncompatiblePlatform_ReturnsFalse()
+    {
+        // Arrange
+        WriteManifest("ModuleB", "1.0.0", platformVersion: "3.1000.0");
+        var catalog = GetLocalModuleCatalog();
+
+        // Act
+        var result = catalog.ValidateDependencies(platformVersion: "3.800.0");
 
         // Assert
         Assert.False(result);
