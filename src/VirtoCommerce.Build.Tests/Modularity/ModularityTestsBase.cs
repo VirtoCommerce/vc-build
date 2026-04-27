@@ -66,7 +66,7 @@ public abstract class ModularityTestsBase : IDisposable
                      <id>{id}</id>
                      <title>{id}</title>
                      <version>{version}</version>
-                     <platformVersion>3.1000.0</platformVersion>
+                     <platformVersion>{platformVersion}</platformVersion>
                      {dependenciesElement}
                      {assemblyElement}
                    </module>
