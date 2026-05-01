@@ -81,7 +81,7 @@ namespace VirtoCommerce.Build
                 : (ToolResolver.GetPathTool(CustomAppPackageManager), CustomAppInstallCommand, CustomAppBuildCommand);
         }
 
-        private static IReadOnlyDictionary<string, string> BuildCustomAppEnvironment()
+        private static Dictionary<string, string> BuildCustomAppEnvironment()
         {
             return new Dictionary<string, string>(EnvironmentInfo.Variables, StringComparer.OrdinalIgnoreCase)
             {
@@ -89,7 +89,7 @@ namespace VirtoCommerce.Build
             };
         }
 
-        private static void BuildSingleCustomApp(string appId, bool multipleApps, string outputFolder, Tool packageManagerTool, string installArguments, string buildArguments, IReadOnlyDictionary<string, string> environment)
+        private static void BuildSingleCustomApp(string appId, bool multipleApps, string outputFolder, Tool packageManagerTool, string installArguments, string buildArguments, Dictionary<string, string> environment)
         {
             var appFolder = ResolveAppFolder(appId, multipleApps);
             if (appFolder == null)
