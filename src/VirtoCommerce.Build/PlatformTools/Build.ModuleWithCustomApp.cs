@@ -40,50 +40,73 @@ namespace VirtoCommerce.Build
         public Target BuildCustomApp => _ => _
             .After(WebPackBuild)
             .OnlyWhenDynamic(() => ThereAreCustomApps)
-            .Executes(() =>
+            .Executes(BuildAllCustomApps);
+
+        private static void BuildAllCustomApps()
+        {
+            ValidateCustomAppParameters();
+            var (packageManagerTool, installArguments, buildArguments) = ResolveCustomAppCommands();
+            var outputFolder = string.IsNullOrWhiteSpace(CustomAppOutputFolder)
+                ? DefaultCustomAppOutputFolder
+                : CustomAppOutputFolder;
+            var environment = BuildCustomAppEnvironment();
+            var apps = ModuleManifest.Apps;
+            var multipleApps = apps.Length > 1;
+
+            foreach (var appId in apps.Select(application => application.Id))
             {
-                var apps = ModuleManifest.Apps;
-                var multipleApps = apps.Length > 1;
-                var outputFolder = string.IsNullOrWhiteSpace(CustomAppOutputFolder) ? DefaultCustomAppOutputFolder : CustomAppOutputFolder;
+                BuildSingleCustomApp(appId, multipleApps, outputFolder, packageManagerTool, installArguments, buildArguments, environment);
+            }
+        }
 
-                var packageManagerIsSet = !string.IsNullOrWhiteSpace(CustomAppPackageManager);
-                if (packageManagerIsSet)
-                {
-                    Assert.NotNullOrWhiteSpace(CustomAppInstallCommand, $"--custom-app-install-command is required when --custom-app-package-manager is set (got '{CustomAppPackageManager}').");
-                    Assert.NotNullOrWhiteSpace(CustomAppBuildCommand, $"--custom-app-build-command is required when --custom-app-package-manager is set (got '{CustomAppPackageManager}').");
-                }
-                else if (!string.IsNullOrWhiteSpace(CustomAppInstallCommand) || !string.IsNullOrWhiteSpace(CustomAppBuildCommand))
-                {
-                    Assert.Fail("--custom-app-package-manager is required when --custom-app-install-command or --custom-app-build-command is set (commands use package-manager-specific syntax that cannot be passed to ni).");
-                }
+        private static void ValidateCustomAppParameters()
+        {
+            if (!string.IsNullOrWhiteSpace(CustomAppPackageManager))
+            {
+                Assert.NotNullOrWhiteSpace(CustomAppInstallCommand, $"--custom-app-install-command is required when --custom-app-package-manager is set (got '{CustomAppPackageManager}').");
+                Assert.NotNullOrWhiteSpace(CustomAppBuildCommand, $"--custom-app-build-command is required when --custom-app-package-manager is set (got '{CustomAppPackageManager}').");
+                return;
+            }
 
-                var packageManagerTool = ToolResolver.GetPathTool(packageManagerIsSet ? CustomAppPackageManager : "npx");
-                var installArguments = packageManagerIsSet ? CustomAppInstallCommand : "-y @antfu/ni --frozen";
-                var buildArguments = packageManagerIsSet ? CustomAppBuildCommand : "-y -p @antfu/ni nr build";
-                var env = new Dictionary<string, string>(EnvironmentInfo.Variables, StringComparer.OrdinalIgnoreCase)
-                {
-                    ["COREPACK_ENABLE_DOWNLOAD_PROMPT"] = "0",
-                };
+            if (!string.IsNullOrWhiteSpace(CustomAppInstallCommand) || !string.IsNullOrWhiteSpace(CustomAppBuildCommand))
+            {
+                Assert.Fail("--custom-app-package-manager is required when --custom-app-install-command or --custom-app-build-command is set (commands use package-manager-specific syntax that cannot be passed to ni).");
+            }
+        }
 
-                foreach (var appId in apps.Select(a => a.Id))
-                {
-                    var appFolder = ResolveAppFolder(appId, multipleApps);
-                    if (appFolder == null)
-                    {
-                        Log.Warning("Skipping app {AppId}: no folder with package.json found.", appId);
-                        continue;
-                    }
+        private static (Tool tool, string installArguments, string buildArguments) ResolveCustomAppCommands()
+        {
+            return string.IsNullOrWhiteSpace(CustomAppPackageManager)
+                ? (ToolResolver.GetPathTool("npx"), "-y @antfu/ni --frozen", "-y -p @antfu/ni nr build")
+                : (ToolResolver.GetPathTool(CustomAppPackageManager), CustomAppInstallCommand, CustomAppBuildCommand);
+        }
 
-                    var distDirectory = appFolder / outputFolder;
-                    distDirectory.DeleteDirectory();
-                    Log.Information("Building custom app: {AppId} from {Folder} (output: {OutputFolder})", appId, appFolder, outputFolder);
-                    packageManagerTool.Invoke(installArguments, appFolder, env);
-                    packageManagerTool.Invoke(buildArguments, appFolder, env);
-                    var targetDirectory = WebProject.Directory / "Content" / appId;
-                    targetDirectory.DeleteDirectory();
-                    distDirectory.Copy(targetDirectory, ExistsPolicy.MergeAndOverwrite);
-                }
-            });
+        private static IReadOnlyDictionary<string, string> BuildCustomAppEnvironment()
+        {
+            return new Dictionary<string, string>(EnvironmentInfo.Variables, StringComparer.OrdinalIgnoreCase)
+            {
+                ["COREPACK_ENABLE_DOWNLOAD_PROMPT"] = "0",
+            };
+        }
+
+        private static void BuildSingleCustomApp(string appId, bool multipleApps, string outputFolder, Tool packageManagerTool, string installArguments, string buildArguments, IReadOnlyDictionary<string, string> environment)
+        {
+            var appFolder = ResolveAppFolder(appId, multipleApps);
+            if (appFolder == null)
+            {
+                Log.Warning("Skipping app {AppId}: no folder with package.json found.", appId);
+                return;
+            }
+
+            var distDirectory = appFolder / outputFolder;
+            distDirectory.DeleteDirectory();
+            Log.Information("Building custom app: {AppId} from {Folder} (output: {OutputFolder})", appId, appFolder, outputFolder);
+            packageManagerTool.Invoke(installArguments, appFolder, environment);
+            packageManagerTool.Invoke(buildArguments, appFolder, environment);
+            var targetDirectory = WebProject.Directory / "Content" / appId;
+            targetDirectory.DeleteDirectory();
+            distDirectory.Copy(targetDirectory, ExistsPolicy.MergeAndOverwrite);
+        }
 
         private static AbsolutePath ResolveAppFolder(string appId, bool multipleApps)
         {
