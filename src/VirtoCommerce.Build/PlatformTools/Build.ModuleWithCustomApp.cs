@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using Nuke.Common;
 using Nuke.Common.IO;
@@ -8,6 +10,20 @@ namespace VirtoCommerce.Build
 {
     internal partial class Build
     {
+        private const string DefaultCustomAppOutputFolder = "dist";
+
+        [Parameter("Package manager executable for custom apps (e.g. yarn, pnpm, npm, bun). When unset, uses ni via npx for auto-detection. When set, both --custom-app-install-command and --custom-app-build-command are required.", Name = "CustomAppPackageManager")]
+        public static string CustomAppPackageManager { get; set; }
+
+        [Parameter("Install command (passed to the package manager) for custom apps. Required when --custom-app-package-manager is set.", Name = "CustomAppInstallCommand")]
+        public static string CustomAppInstallCommand { get; set; }
+
+        [Parameter("Build command (passed to the package manager) for custom apps. Required when --custom-app-package-manager is set.", Name = "CustomAppBuildCommand")]
+        public static string CustomAppBuildCommand { get; set; }
+
+        [Parameter("Custom app build output folder, relative to the app folder. Default: 'dist'.", Name = "CustomAppOutputFolder")]
+        public static string CustomAppOutputFolder { get; set; }
+
         private static AbsolutePath AppsDirectory => WebProject?.Directory / "Apps";
         private static AbsolutePath AppDirectory => WebProject?.Directory / "App";
 
@@ -28,7 +44,26 @@ namespace VirtoCommerce.Build
             {
                 var apps = ModuleManifest.Apps;
                 var multipleApps = apps.Length > 1;
-                var yarn = ToolResolver.GetPathTool("yarn");
+                var outputFolder = string.IsNullOrWhiteSpace(CustomAppOutputFolder) ? DefaultCustomAppOutputFolder : CustomAppOutputFolder;
+
+                var packageManagerIsSet = !string.IsNullOrWhiteSpace(CustomAppPackageManager);
+                if (packageManagerIsSet)
+                {
+                    Assert.NotNullOrWhiteSpace(CustomAppInstallCommand, $"--custom-app-install-command is required when --custom-app-package-manager is set (got '{CustomAppPackageManager}').");
+                    Assert.NotNullOrWhiteSpace(CustomAppBuildCommand, $"--custom-app-build-command is required when --custom-app-package-manager is set (got '{CustomAppPackageManager}').");
+                }
+                else if (!string.IsNullOrWhiteSpace(CustomAppInstallCommand) || !string.IsNullOrWhiteSpace(CustomAppBuildCommand))
+                {
+                    Assert.Fail("--custom-app-package-manager is required when --custom-app-install-command or --custom-app-build-command is set (commands use package-manager-specific syntax that cannot be passed to ni).");
+                }
+
+                var packageManagerTool = ToolResolver.GetPathTool(packageManagerIsSet ? CustomAppPackageManager : "npx");
+                var installArguments = packageManagerIsSet ? CustomAppInstallCommand : "-y @antfu/ni --frozen";
+                var buildArguments = packageManagerIsSet ? CustomAppBuildCommand : "-y -p @antfu/ni nr build";
+                var env = new Dictionary<string, string>(EnvironmentInfo.Variables, StringComparer.OrdinalIgnoreCase)
+                {
+                    ["COREPACK_ENABLE_DOWNLOAD_PROMPT"] = "0",
+                };
 
                 foreach (var appId in apps.Select(a => a.Id))
                 {
@@ -39,11 +74,11 @@ namespace VirtoCommerce.Build
                         continue;
                     }
 
-                    var distDirectory = appFolder / "dist";
+                    var distDirectory = appFolder / outputFolder;
                     distDirectory.DeleteDirectory();
-                    Log.Information("Building custom app: {AppId} from {Folder}", appId, appFolder);
-                    yarn.Invoke("install", appFolder);
-                    yarn.Invoke("build", appFolder);
+                    Log.Information("Building custom app: {AppId} from {Folder} (output: {OutputFolder})", appId, appFolder, outputFolder);
+                    packageManagerTool.Invoke(installArguments, appFolder, env);
+                    packageManagerTool.Invoke(buildArguments, appFolder, env);
                     var targetDirectory = WebProject.Directory / "Content" / appId;
                     targetDirectory.DeleteDirectory();
                     distDirectory.Copy(targetDirectory, ExistsPolicy.MergeAndOverwrite);
