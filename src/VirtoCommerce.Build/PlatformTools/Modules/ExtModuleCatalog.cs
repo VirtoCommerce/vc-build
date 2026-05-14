@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Serilog;
 using VirtoCommerce.Platform.Core.Modularity;
 using VirtoCommerce.Platform.Modules;
 
@@ -28,7 +29,17 @@ namespace PlatformTools.Modules
 
             httpClient ??= new HttpClient();
             var options = CreateOptions(authToken, manifestUrls);
-            var externalModules = ModulePackageInstaller.LoadExternalModules(options, latestPlatformVersion, httpClient);
+
+            List<ManifestModuleInfo> externalModules;
+            try
+            {
+                externalModules = ModulePackageInstaller.LoadExternalModules(options, latestPlatformVersion, httpClient).ToList();
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Failed to load external modules manifest. Only locally installed modules will be available.");
+                externalModules = [];
+            }
 
             var installedModules = localModuleCatalog.Modules;
             var modules = localModuleCatalog.Bootstrapper.MergeWithInstalled(externalModules, installedModules);

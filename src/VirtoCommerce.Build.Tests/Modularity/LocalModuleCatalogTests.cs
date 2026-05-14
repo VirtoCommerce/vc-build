@@ -263,4 +263,115 @@ public class LocalModuleCatalogTests : ModularityTestsBase
         // Assert
         Assert.False(result);
     }
+
+    [Fact]
+    public void GetCatalog_ModuleWithDependencies_ParsesDependencyList()
+    {
+        // Arrange
+        WriteManifest("ModuleA", "1.0.0");
+        WriteManifest("ModuleB", "1.0.0", dependencies: ["ModuleA:1.0.0"]);
+
+        // Act
+        var catalog = GetLocalModuleCatalog();
+        var moduleB = catalog.Modules.First(x => x.Id == "ModuleB");
+
+        // Assert
+        Assert.NotEmpty(moduleB.Dependencies);
+        Assert.Contains(moduleB.Dependencies, d => d.Id == "ModuleA");
+    }
+
+    [Fact]
+    public void GetCatalog_ModuleWithPlatformVersion_ParsesPlatformVersion()
+    {
+        // Arrange
+        WriteManifest("ModuleA", "1.0.0", platformVersion: "3.999.0");
+
+        // Act
+        var catalog = GetLocalModuleCatalog();
+        var module = catalog.Modules.First(x => x.Id == "ModuleA");
+
+        // Assert
+        Assert.NotNull(module.PlatformVersion);
+        Assert.Equal("3.999.0", module.PlatformVersion.ToString());
+    }
+
+    [Fact]
+    public void ValidateDependencies_CircularDependency_ReturnsFalse()
+    {
+        // Arrange
+        WriteManifest("ModuleA", "1.0.0", platformVersion: "3.1000.0", dependencies: ["ModuleB:1.0.0"]);
+        WriteManifest("ModuleB", "1.0.0", platformVersion: "3.1000.0", dependencies: ["ModuleA:1.0.0"]);
+        var catalog = GetLocalModuleCatalog();
+
+        // Act
+        var result = catalog.ValidateDependencies(platformVersion: "3.1000.0");
+
+        // Assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void ValidateDependencies_MissingDependency_ModuleHasErrors()
+    {
+        // Arrange
+        WriteManifest("ModuleB", "1.0.0", platformVersion: "3.1000.0", dependencies: ["ModuleA:1.0.0"]);
+        var catalog = GetLocalModuleCatalog();
+
+        // Act
+        catalog.ValidateDependencies(platformVersion: "3.1000.0");
+
+        // Assert
+        var moduleB = catalog.Modules.First(x => x.Id == "ModuleB");
+        Assert.NotEmpty(moduleB.Errors);
+    }
+
+    [Fact]
+    public void ValidateDependencies_ErrorDoesNotBlockOtherModules()
+    {
+        // Arrange
+        WriteManifest("ModuleA", "1.0.0", platformVersion: "3.1000.0");
+        WriteManifest("ModuleB", "1.0.0", platformVersion: "3.1000.0", dependencies: ["Missing:1.0.0"]);
+        var catalog = GetLocalModuleCatalog();
+
+        // Act
+        catalog.ValidateDependencies(platformVersion: "3.1000.0");
+
+        // Assert
+        var moduleA = catalog.Modules.First(x => x.Id == "ModuleA");
+        Assert.Empty(moduleA.Errors);
+    }
+
+    [Fact]
+    public void RefreshProbingDirectory_CopiesAssembliesToProbingPath()
+    {
+        // Arrange
+        var moduleDir = Path.Combine(DiscoveryPath, "TestModule");
+        WriteManifest("TestModule", "1.0.0", directoryPath: moduleDir, assemblyFile: "TestModule.dll");
+
+        var dllSource = Path.Combine(moduleDir, "TestModule.dll");
+        File.WriteAllBytes(dllSource, [0x4D, 0x5A]); // MZ header
+
+        var catalog = GetLocalModuleCatalog();
+
+        // Act
+        catalog.RefreshProbingDirectory();
+
+        // Assert
+        Assert.True(Directory.Exists(ProbingPath));
+    }
+
+    [Fact]
+    public void RefreshProbingDirectory_IsIdempotent()
+    {
+        // Arrange
+        WriteManifest("TestModule", "1.0.0");
+        var catalog = GetLocalModuleCatalog();
+
+        // Act
+        catalog.RefreshProbingDirectory();
+        catalog.RefreshProbingDirectory();
+
+        // Assert
+        Assert.True(Directory.Exists(ProbingPath));
+    }
 }

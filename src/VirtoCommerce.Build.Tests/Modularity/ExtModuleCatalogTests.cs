@@ -11,11 +11,11 @@ public class ExtModuleCatalogTests : ModularityTestsBase
     public async Task GetCatalog_ReturnsSameInstance_OnSecondCall()
     {
         // Arrange
-        var manifestJson = CreateExternalManifestJson("TestModule", "1.0.0", "https://example.com/TestModule_1.0.0.zip");
+        var manifestJson = CreateCartManifestJson();
 
         // Act
-        var catalog1 = await GetExternalModuleCatalog("https://example.com/modules.json", manifestJson);
-        var catalog2 = await GetExternalModuleCatalog("https://example.com/modules.json", manifestJson);
+        var catalog1 = await GetExternalModuleCatalog("https://raw.githubusercontent.com/VirtoCommerce/vc-modules/refs/heads/master/modules_v3.json", manifestJson);
+        var catalog2 = await GetExternalModuleCatalog("https://raw.githubusercontent.com/VirtoCommerce/vc-modules/refs/heads/master/modules_v3.json", manifestJson);
 
         // Assert
         Assert.Same(catalog1, catalog2);
@@ -25,39 +25,39 @@ public class ExtModuleCatalogTests : ModularityTestsBase
     public async Task GetCatalog_LoadsExternalModules()
     {
         // Arrange
-        var manifestJson = CreateExternalManifestJson("ExternalModule", "1.0.0", "https://example.com/ExternalModule_1.0.0.zip");
+        var manifestJson = CreateCartManifestJson();
 
         // Act
-        var catalog = await GetExternalModuleCatalog("https://example.com/modules.json", manifestJson);
+        var catalog = await GetExternalModuleCatalog("https://raw.githubusercontent.com/VirtoCommerce/vc-modules/refs/heads/master/modules_v3.json", manifestJson);
         var modules = catalog.Modules;
 
         // Assert
         Assert.Single(modules);
-        Assert.Equal("ExternalModule", modules[0].Id);
+        Assert.Equal("VirtoCommerce.Cart", modules[0].Id);
     }
 
     [Fact]
     public async Task GetCatalog_MergesExternalWithLocal()
     {
         // Arrange
-        WriteManifest("LocalModule", "1.0.0");
-        var manifestJson = CreateExternalManifestJson("ExternalModule", "2.0.0", "https://example.com/ExternalModule_2.0.0.zip");
+        WriteManifest("VirtoCommerce.Cart", "3.1003.0");
+        var manifestJson = CreateInventoryManifestJson();
 
         // Act
-        var catalog = await GetExternalModuleCatalog("https://example.com/modules.json", manifestJson);
+        var catalog = await GetExternalModuleCatalog("https://raw.githubusercontent.com/VirtoCommerce/vc-modules/refs/heads/master/modules_v3.json", manifestJson);
         var modules = catalog.Modules;
 
         // Assert
         Assert.Equal(2, modules.Count);
-        Assert.Contains(modules, x => x.Id == "LocalModule" && x.IsInstalled);
-        Assert.Contains(modules, x => x.Id == "ExternalModule" && !x.IsInstalled);
+        Assert.Contains(modules, x => x.Id == "VirtoCommerce.Cart" && x.IsInstalled);
+        Assert.Contains(modules, x => x.Id == "VirtoCommerce.Inventory" && !x.IsInstalled);
     }
 
     [Fact]
     public async Task GetCatalog_NoManifestUrl_ReturnsOnlyInstalled()
     {
         // Arrange
-        WriteManifest("LocalModule", "1.0.0");
+        WriteManifest("VirtoCommerce.Cart", "3.1003.0");
 
         // Act
         var catalog = await GetExternalModuleCatalog();
@@ -65,54 +65,157 @@ public class ExtModuleCatalogTests : ModularityTestsBase
 
         // Assert
         Assert.Single(modules);
-        Assert.Equal("LocalModule", modules[0].Id);
+        Assert.Equal("VirtoCommerce.Cart", modules[0].Id);
     }
 
-
-    private static string CreateExternalManifestJson(string id, string version, string packageUrl)
+    [Fact]
+    public async Task GetCatalog_NoDuplicateModules_WhenModuleInBothSources()
     {
-        var manifest = new
-        {
-            Id = id,
-            Title = id,
-            Description = "Test",
-            Authors = new[] { "Test" },
-            Versions = new[]
-            {
-                new
-                {
-                    Version = version,
-                    VersionTag = "",
-                    PlatformVersion = "3.800.0",
-                    PackageUrl = packageUrl,
-                    ReleaseNotes = "",
-                }
-            }
-        };
+        // Arrange
+        WriteManifest("VirtoCommerce.Cart", "3.1003.0");
+        var manifestJson = CreateCartManifestJson();
 
-        var manifests = new[] { manifest };
+        // Act
+        var catalog = await GetExternalModuleCatalog("https://raw.githubusercontent.com/VirtoCommerce/vc-modules/refs/heads/master/modules_v3.json", manifestJson);
+        var modules = catalog.Modules;
 
-        return JsonSerializer.Serialize(manifests);
+        // Assert
+        var cartModules = modules.Where(x => x.Id == "VirtoCommerce.Cart").ToList();
+        Assert.Single(cartModules);
+        Assert.Equal("3.1003.0", cartModules[0].Version.ToString());
+        Assert.True(cartModules[0].IsInstalled);
     }
 
-    private async Task<ExtModuleCatalog> GetExternalModuleCatalog(string? modulesManifestUrl = null, string? manifestJson = null)
+    [Fact]
+    public async Task GetCatalog_HttpError_ReturnsOnlyInstalledModules()
+    {
+        // Arrange
+        WriteManifest("VirtoCommerce.Cart", "3.1003.0");
+
+        // Act
+        var catalog = await GetExternalModuleCatalog("https://raw.githubusercontent.com/VirtoCommerce/vc-modules/refs/heads/master/modules_v3.json", manifestJson: null, httpStatusCode: System.Net.HttpStatusCode.NotFound);
+        var modules = catalog.Modules;
+
+        // Assert
+        Assert.Single(modules);
+        Assert.Equal("VirtoCommerce.Cart", modules[0].Id);
+    }
+
+    [Fact]
+    public async Task GetCatalog_MultipleManifestUrls_LoadsAllModules()
+    {
+        // Arrange
+        var combinedJson = $"[{JsonSerializer.Deserialize<JsonElement[]>(CreateCartManifestJson())![0]},{JsonSerializer.Deserialize<JsonElement[]>(CreateInventoryManifestJson())![0]}]";
+
+        // Act
+        var catalog = await GetExternalModuleCatalog("https://raw.githubusercontent.com/VirtoCommerce/vc-modules/refs/heads/master/modules_v3.json", combinedJson);
+        var modules = catalog.Modules;
+
+        // Assert
+        Assert.Contains(modules, x => x.Id == "VirtoCommerce.Cart");
+        Assert.Contains(modules, x => x.Id == "VirtoCommerce.Inventory");
+    }
+
+    [Fact]
+    public async Task GetCatalog_ExternalModule_HasPackageUrl()
+    {
+        // Arrange
+        var manifestJson = CreateCartManifestJson();
+
+        // Act
+        var catalog = await GetExternalModuleCatalog(
+            "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/refs/heads/master/modules_v3.json",
+            manifestJson);
+        var module = catalog.Modules.First(x => x.Id == "VirtoCommerce.Cart");
+
+        // Assert: PackageUrl from catalog is mapped to Ref and is a valid zip URL
+        Assert.NotNull(module.Ref);
+        Assert.StartsWith("https://", module.Ref);
+        Assert.EndsWith(".zip", module.Ref);
+    }
+
+
+    private static string CreateCartManifestJson() =>
+        """
+        [
+          {
+            "Id": "VirtoCommerce.Cart",
+            "Title": "Shopping Cart",
+            "Description": "Shopping cart / checkout functionality",
+            "Authors": ["Virto Commerce"],
+            "Owners": ["Virto Commerce"],
+            "ProjectUrl": "https://github.com/VirtoCommerce/vc-module-cart",
+            "Tags": "shopping cart",
+            "Groups": ["commerce"],
+            "Versions": [
+              {
+                "Version": "3.1003.0",
+                "VersionTag": "",
+                "PlatformVersion": "3.1004.0",
+                "PackageUrl": "https://github.com/VirtoCommerce/vc-module-cart/releases/download/3.1003.0/VirtoCommerce.Cart_3.1003.0.zip",
+                "Dependencies": [
+                  { "Id": "VirtoCommerce.Assets",        "Version": "3.1000.0", "Optional": false },
+                  { "Id": "VirtoCommerce.Core",          "Version": "3.1000.0", "Optional": false },
+                  { "Id": "VirtoCommerce.Customer",      "Version": "3.1000.0", "Optional": false },
+                  { "Id": "VirtoCommerce.Notifications", "Version": "3.1000.0", "Optional": false },
+                  { "Id": "VirtoCommerce.Payment",       "Version": "3.1000.0", "Optional": false },
+                  { "Id": "VirtoCommerce.Search",        "Version": "3.1000.0", "Optional": true  },
+                  { "Id": "VirtoCommerce.Shipping",      "Version": "3.1000.0", "Optional": false },
+                  { "Id": "VirtoCommerce.Store",         "Version": "3.1000.0", "Optional": false }
+                ],
+                "ReleaseNotes": "First version."
+              }
+            ]
+          }
+        ]
+        """;
+
+    private static string CreateInventoryManifestJson() =>
+        """
+        [
+          {
+            "Id": "VirtoCommerce.Inventory",
+            "Title": "Inventory",
+            "Description": "Inventory management",
+            "Authors": ["Virto Commerce"],
+            "Owners": ["Virto Commerce"],
+            "ProjectUrl": "https://github.com/VirtoCommerce/vc-module-inventory",
+            "Tags": "inventory",
+            "Groups": ["commerce"],
+            "Versions": [
+              {
+                "Version": "3.1003.0",
+                "VersionTag": "",
+                "PlatformVersion": "3.1004.0",
+                "PackageUrl": "https://github.com/VirtoCommerce/vc-module-inventory/releases/download/3.1003.0/VirtoCommerce.Inventory_3.1003.0.zip",
+                "Dependencies": [
+                  { "Id": "VirtoCommerce.Core", "Version": "3.1000.0", "Optional": false }
+                ],
+                "ReleaseNotes": "First version."
+              }
+            ]
+          }
+        ]
+        """;
+
+    private async Task<ExtModuleCatalog> GetExternalModuleCatalog(string? modulesManifestUrl = null, string? manifestJson = null, HttpStatusCode httpStatusCode = HttpStatusCode.OK)
     {
         var manifestUrls = modulesManifestUrl is null ? null : new[] { modulesManifestUrl };
         var localModuleCatalog = GetLocalModuleCatalog();
-        var httpClient = CreateFakeHttpClient(manifestJson);
+        var httpClient = CreateFakeHttpClient(manifestJson, httpStatusCode);
 
         var externalCatalog = await ExtModuleCatalog.GetCatalog(authToken: null, manifestUrls, localModuleCatalog, httpClient);
 
         return externalCatalog;
     }
 
-    private static HttpClient CreateFakeHttpClient(string? responseJson)
+    private static HttpClient CreateFakeHttpClient(string? responseJson, HttpStatusCode statusCode = HttpStatusCode.OK)
     {
-        var handler = new FakeHttpMessageHandler(responseJson);
+        var handler = new FakeHttpMessageHandler(responseJson, statusCode);
         return new HttpClient(handler);
     }
 
-    private class FakeHttpMessageHandler(string? responseJson) : HttpMessageHandler
+    private class FakeHttpMessageHandler(string? responseJson, HttpStatusCode statusCode = HttpStatusCode.OK) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
@@ -121,7 +224,7 @@ public class ExtModuleCatalogTests : ModularityTestsBase
 
         protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            return new HttpResponseMessage(HttpStatusCode.OK)
+            return new HttpResponseMessage(statusCode)
             {
                 Content = responseJson is null ? null : new StringContent(responseJson, Encoding.UTF8, "application/json"),
             };
