@@ -93,7 +93,7 @@ public class ExtModuleCatalogTests : ModularityTestsBase
         WriteManifest("VirtoCommerce.Cart", "3.1003.0");
 
         // Act
-        var catalog = await GetExternalModuleCatalog("https://raw.githubusercontent.com/VirtoCommerce/vc-modules/refs/heads/master/modules_v3.json", manifestJson: null, httpStatusCode: System.Net.HttpStatusCode.NotFound);
+        var catalog = await GetExternalModuleCatalog("https://raw.githubusercontent.com/VirtoCommerce/vc-modules/refs/heads/master/modules_v3.json", manifestJson: null, httpStatusCode: HttpStatusCode.NotFound);
         var modules = catalog.Modules;
 
         // Assert
@@ -128,7 +128,7 @@ public class ExtModuleCatalogTests : ModularityTestsBase
             manifestJson);
         var module = catalog.Modules.First(x => x.Id == "VirtoCommerce.Cart");
 
-        // Assert: PackageUrl from catalog is mapped to Ref and is a valid zip URL
+        // Assert
         Assert.NotNull(module.Ref);
         Assert.StartsWith("https://", module.Ref);
         Assert.EndsWith(".zip", module.Ref);

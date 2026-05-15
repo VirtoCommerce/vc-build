@@ -347,9 +347,9 @@ public class LocalModuleCatalogTests : ModularityTestsBase
         // Arrange
         var moduleDir = Path.Combine(DiscoveryPath, "TestModule");
         WriteManifest("TestModule", "1.0.0", directoryPath: moduleDir, assemblyFile: "TestModule.dll");
-
-        var dllSource = Path.Combine(moduleDir, "TestModule.dll");
-        File.WriteAllBytes(dllSource, [0x4D, 0x5A]); // MZ header
+        var binDir = Path.Combine(moduleDir, "bin");
+        Directory.CreateDirectory(binDir);
+        File.WriteAllBytes(Path.Combine(binDir, "TestModule.dll"), [0x4D, 0x5A]); // MZ header
 
         var catalog = GetLocalModuleCatalog();
 
@@ -357,7 +357,7 @@ public class LocalModuleCatalogTests : ModularityTestsBase
         catalog.RefreshProbingDirectory();
 
         // Assert
-        Assert.True(Directory.Exists(ProbingPath));
+        Assert.True(File.Exists(Path.Combine(ProbingPath, "TestModule.dll")));
     }
 
     [Fact]
