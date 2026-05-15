@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Extensions;
@@ -21,6 +22,7 @@ using Serilog;
 using VirtoCommerce.Build.PlatformTools;
 using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.Platform.Core.Modularity;
+using VirtoCommerce.Platform.Modules;
 
 namespace VirtoCommerce.Build
 {
@@ -101,8 +103,11 @@ namespace VirtoCommerce.Build
         public Target InitPlatform => _ => _
              .Executes(() =>
              {
+                 // Copy files to the probing directory
                  var configuration = AppSettings.GetConfiguration(CurrentDirectory, AppsettingsPath);
-                 LocalModuleCatalog.GetCatalog(DiscoveryPath.EmptyToNull() ?? configuration.GetModulesDiscoveryPath(), ProbingPath);
+                 var discoveryPath = DiscoveryPath.EmptyToNull() ?? configuration.GetModulesDiscoveryPath();
+                 var localModuleCatalog = LocalModuleCatalog.GetCatalog(discoveryPath, ProbingPath);
+                 localModuleCatalog.RefreshProbingDirectory();
              });
 
         public Target Init => _ => _
@@ -119,11 +124,11 @@ namespace VirtoCommerce.Build
              .Executes(async () =>
              {
                  var packageManifest = await OpenOrCreateManifest(PackageManifestPath.ToAbsolutePath(), Edge);
-                 var githubModuleSources = PackageManager.GetGithubModuleManifests(packageManifest);
                  var modules = PackageManager.GetGithubModules(packageManifest);
 
+                 var githubModuleSources = PackageManager.GetGithubModuleManifests(packageManifest);
                  var localModuleCatalog = LocalModuleCatalog.GetCatalog(GetDiscoveryPath(), ProbingPath);
-                 var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubModuleSources);
+                 var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, githubModuleSources, localModuleCatalog);
 
                  if (Module?.Length > 0 && !PlatformParameter)
                  {
@@ -150,13 +155,12 @@ namespace VirtoCommerce.Build
                  PackageManager.ToFile(packageManifest, PackageManifestPath);
              });
 
-        private static void UpdateModules(string[] modulesArg, IModuleCatalog externalModuleCatalog, List<ModuleItem> modules)
+        private static void UpdateModules(string[] modulesArg, ExtModuleCatalog externalModuleCatalog, List<ModuleItem> modules)
         {
             foreach (var module in ParseModuleParameter(modulesArg))
             {
                 var externalModule = externalModuleCatalog.Modules
-                    .OfType<ManifestModuleInfo>()
-                    .FirstOrDefault(m => m.Id.EqualsInvariant(module.Id));
+                    .FirstOrDefault(m => m.Id.EqualsIgnoreCase(module.Id));
 
                 if (externalModule == null)
                 {
@@ -194,11 +198,10 @@ namespace VirtoCommerce.Build
             }
         }
 
-        private static void AddCommerceModules(IModuleCatalog externalModuleCatalog, List<ModuleItem> modules)
+        private static void AddCommerceModules(ExtModuleCatalog externalModuleCatalog, List<ModuleItem> modules)
         {
             Log.Information("Add group: commerce");
             var commerceModules = externalModuleCatalog.Modules
-                .OfType<ManifestModuleInfo>()
                 .Where(m => m.Groups.Contains("commerce"))
                 .Select(m => new ModuleItem(m.Id, m.Version.ToString()));
             modules.AddRange(commerceModules);
@@ -395,20 +398,20 @@ namespace VirtoCommerce.Build
                  }
 
                  var packageManifest = PackageManager.FromFile(PackageManifestPath);
-                 var moduleSources = PackageManager.GetModuleSources(packageManifest).Where(s => s is not GithubReleases).ToList();
-                 var githubReleases = PackageManager.GetGithubModulesSource(packageManifest);
                  var discoveryPath = GetDiscoveryPath();
+
+                 var githubReleases = PackageManager.GetGithubModulesSource(packageManifest);
                  var localModuleCatalog = LocalModuleCatalog.GetCatalog(discoveryPath, ProbingPath);
-                 var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubReleases.ModuleSources);
-                 var moduleInstaller = await ModuleInstallerFacade.GetModuleInstaller(discoveryPath, ProbingPath, GitHubToken, githubReleases.ModuleSources);
+                 var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, githubReleases.ModuleSources, localModuleCatalog);
+
                  var modulesToInstall = new List<ManifestModuleInfo>();
-                 var alreadyInstalledModules = localModuleCatalog.Modules.OfType<ManifestModuleInfo>().Where(m => m.IsInstalled || IsNonVirtoModuleInstalled(m, (MixedPackageManifest)packageManifest)).ToList();
+                 var alreadyInstalledModules = localModuleCatalog.Modules.Where(m => m.IsInstalled || IsNonVirtoModuleInstalled(m, (MixedPackageManifest)packageManifest)).ToList();
 
                  // Remove modules that are no longer in the manifest
                  var modulesToRemove = alreadyInstalledModules
                      .Where(m => !githubReleases.Modules.Exists(module =>
-                         module.Id.EqualsInvariant(m.ModuleName) ||
-                         module.Id.EqualsInvariant(m.Id)) &&
+                         module.Id.EqualsIgnoreCase(m.ModuleName) ||
+                         module.Id.EqualsIgnoreCase(m.Id)) &&
                          !localModuleCatalog.IsModuleSymlinked(m.ModuleName) &&
                          !IsNonVirtoModuleInstalled(m, (MixedPackageManifest)packageManifest))
                      .ToList();
@@ -419,35 +422,36 @@ namespace VirtoCommerce.Build
 
                  var progress = PlatformProgressHandler();
 
-                 SolveDependenciesIfRequested(externalModuleCatalog, modulesToInstall, alreadyInstalledModules);
-
-                 modulesToInstall.ForEach(module => module.DependsOn.Clear());
-                 moduleInstaller.Install(modulesToInstall, progress);
+                 if (modulesToInstall.Count > 0)
+                 {
+                     SolveDependenciesIfRequested(externalModuleCatalog, modulesToInstall, alreadyInstalledModules);
+                     ModulePackageInstaller.InstallModules(modulesToInstall, externalModuleCatalog.Modules, discoveryPath, externalModuleCatalog.Options, new HttpClient(), progress);
+                 }
 
                  Assert.False(ExitCode > 0, "Errors occurred while installing modules.");
 
+                 var moduleSources = PackageManager.GetModuleSources(packageManifest).Where(s => s is not GithubReleases);
                  foreach (var moduleSource in moduleSources)
                  {
                      var installer = GetModuleInstaller(moduleSource);
 
                      await installer.Install(moduleSource, progress);
                  }
-                 CleanZipArtifacts(discoveryPath);
+
                  localModuleCatalog.Reload();
+                 localModuleCatalog.RefreshProbingDirectory();
              });
 
         public Target ValidateDependencies => _ => _
              .OnlyWhenDynamic(() => !PlatformParameter && IsLocalBuild)
              .After(Backup, Update, Install, InstallPlatform, InstallModules)
              .Before(Rollback)
-             .Executes(async () =>
+             .Executes(() =>
              {
                  var packageManifest = PackageManager.FromFile(PackageManifestPath);
-                 var githubReleases = PackageManager.GetGithubModulesSource(packageManifest);
-                 var discoveryPath = GetDiscoveryPath();
-                 var localModuleCatalog = (LocalCatalog)LocalModuleCatalog.GetCatalog(discoveryPath, ProbingPath);
-                 await ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubReleases.ModuleSources);
-                 if (!localModuleCatalog.IsDependenciesValid() && SucceededTargets.Contains(Backup))
+                 var localModuleCatalog = LocalModuleCatalog.GetCatalog(GetDiscoveryPath(), ProbingPath);
+
+                 if (!localModuleCatalog.ValidateDependencies(packageManifest.PlatformVersion) && SucceededTargets.Contains(Backup))
                  {
                      ProceedWithErrorsOrFail();
                  }
@@ -468,14 +472,13 @@ namespace VirtoCommerce.Build
             }
         }
 
-        private static void SolveDependenciesIfRequested(Platform.Modules.ExternalModuleCatalog externalModuleCatalog, List<ManifestModuleInfo> modulesToInstall, List<ManifestModuleInfo> alreadyInstalledModules)
+        private static void SolveDependenciesIfRequested(ExtModuleCatalog externalModuleCatalog, List<ManifestModuleInfo> modulesToInstall, List<ManifestModuleInfo> alreadyInstalledModules)
         {
             if (!SkipDependencySolving && Edge)
             {
-                var missingModules = externalModuleCatalog
-                    .CompleteListWithDependencies(modulesToInstall)
+                var missingModules = ModuleBootstrapper.Instance
+                    .GetDependencies(modulesToInstall, externalModuleCatalog.Modules)
                     .Except(modulesToInstall)
-                    .OfType<ManifestModuleInfo>()
                     .Except(alreadyInstalledModules)
                     .ToList();
 
@@ -483,10 +486,10 @@ namespace VirtoCommerce.Build
             }
         }
 
-        private void AddVirtoModules(GithubReleases githubReleases, ILocalModuleCatalog localModuleCatalog, Platform.Modules.ExternalModuleCatalog externalModuleCatalog, List<ManifestModuleInfo> modulesToInstall, List<ManifestModuleInfo> alreadyInstalledModules)
+        private void AddVirtoModules(GithubReleases githubReleases, LocalModuleCatalog localModuleCatalog, ExtModuleCatalog externalModuleCatalog, List<ManifestModuleInfo> modulesToInstall, List<ManifestModuleInfo> alreadyInstalledModules)
         {
             foreach (var (module, externalModule) in from module in githubReleases.Modules
-                                                     let externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().FirstOrDefault(m => m.Id == module.Id)
+                                                     let externalModule = externalModuleCatalog.Modules.FirstOrDefault(m => m.Id == module.Id)
                                                      select (module, externalModule))
             {
                 if (externalModule == null)
@@ -514,18 +517,19 @@ namespace VirtoCommerce.Build
             }
         }
 
-        private static void RemoveModules(ILocalModuleCatalog localModuleCatalog, List<ManifestModuleInfo> modulesToRemove)
+        private static void RemoveModules(LocalModuleCatalog localModuleCatalog, List<ManifestModuleInfo> modulesToRemove)
         {
             foreach (var moduleToRemove in modulesToRemove)
             {
                 Log.Information($"Removing module {moduleToRemove.ModuleName} as it's no longer in the manifest");
-                var moduleToDelete = ((LocalCatalog)localModuleCatalog).Items.OfType<ManifestModuleInfo>().FirstOrDefault(m =>
-                    m.ModuleName.EqualsInvariant(moduleToRemove.ModuleName) ||
-                    m.Id.EqualsInvariant(moduleToRemove.ModuleName));
-                var modulePath = moduleToDelete?.FullPhysicalPath;
-                if (Directory.Exists(modulePath))
+
+                var moduleToDelete = localModuleCatalog.Modules.FirstOrDefault(m =>
+                    m.ModuleName.EqualsIgnoreCase(moduleToRemove.ModuleName) ||
+                    m.Id.EqualsIgnoreCase(moduleToRemove.ModuleName));
+
+                if (moduleToDelete != null)
                 {
-                    Directory.Delete(modulePath, true);
+                    ModulePackageInstaller.Uninstall(moduleToDelete.FullPhysicalPath);
                 }
             }
         }
@@ -579,13 +583,6 @@ namespace VirtoCommerce.Build
                     Log.Information(m.Message);
                 }
             });
-        }
-
-        private static void CleanZipArtifacts(string discoveryPath)
-        {
-            AbsolutePath absoluteDiscoveryPath = Path.GetFullPath(discoveryPath);
-            var zipFiles = absoluteDiscoveryPath.GlobFiles("*/*.zip");
-            zipFiles.ForEach(f => f.DeleteFile());
         }
 
         private static ManifestModuleInfo LoadModuleInfo(ModuleItem module, ManifestModuleInfo externalModule)
@@ -650,7 +647,7 @@ namespace VirtoCommerce.Build
              {
                  var discoveryPath = GetDiscoveryPath();
                  var packageManifest = PackageManager.FromFile(PackageManifestPath);
-                 var localModulesCatalog = LocalModuleCatalog.GetCatalog(discoveryPath, ProbingPath);
+                 var localModuleCatalog = LocalModuleCatalog.GetCatalog(discoveryPath, ProbingPath);
                  var githubModules = PackageManager.GetGithubModules(packageManifest);
                  ProbingPath.DeleteDirectory();
                  Module.ForEach(m => AbsolutePath.Create(Path.Combine(discoveryPath, m)).DeleteDirectory());
@@ -661,7 +658,7 @@ namespace VirtoCommerce.Build
                      var platformRelease = await GithubManager.GetPlatformRelease();
                      PlatformVersion.CurrentVersion = SemanticVersion.Parse(platformRelease.TagName);
                  }
-                 localModulesCatalog.Reload();
+                 localModuleCatalog.Reload();
              });
 
         public Target Update => _ => _
@@ -759,14 +756,14 @@ namespace VirtoCommerce.Build
         private static async Task<ManifestBase> UpdateEdgeModulesAsync(ManifestBase manifest)
         {
             var githubModules = PackageManager.GetGithubModules(manifest);
-            var githubModuleManifests = PackageManager.GetGithubModuleManifests(manifest);
 
+            var githubModuleManifests = PackageManager.GetGithubModuleManifests(manifest);
             var localModuleCatalog = LocalModuleCatalog.GetCatalog(GetDiscoveryPath(), ProbingPath);
-            var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubModuleManifests);
+            var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, githubModuleManifests, localModuleCatalog);
 
             foreach (var module in githubModules)
             {
-                var externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().FirstOrDefault(m => m.Id == module.Id);
+                var externalModule = externalModuleCatalog.Modules.FirstOrDefault(m => m.Id == module.Id);
 
                 if (externalModule == null)
                 {
@@ -836,7 +833,7 @@ namespace VirtoCommerce.Build
             await HttpTasks.HttpDownloadFileAsync(manifestUrl, outFile.ToAbsolutePath());
         }
 
-        private async static Task<ManifestBase> CreateManifestFromEnvironment(AbsolutePath platformPath, AbsolutePath discoveryPath)
+        private static async Task<ManifestBase> CreateManifestFromEnvironment(AbsolutePath platformPath, AbsolutePath discoveryPath)
         {
             var platformWebDllPath = platformPath / "VirtoCommerce.Platform.Web.dll";
             if (!File.Exists(platformWebDllPath))
@@ -847,9 +844,11 @@ namespace VirtoCommerce.Build
             var platformVersion = platformWebDllFileInfo.ProductVersion;
             var packageManifest = PackageManager.CreatePackageManifest(platformVersion);
             var githubModules = PackageManager.GetGithubModules(packageManifest);
+
             var githubModulesSource = PackageManager.GetGithubModulesSource(packageManifest);
-            var localModuleCatalog = (LocalCatalog)LocalModuleCatalog.GetCatalog(GetDiscoveryPath(), ProbingPath);
-            var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubModulesSource.ModuleSources);
+            var localModuleCatalog = LocalModuleCatalog.GetCatalog(GetDiscoveryPath(), ProbingPath);
+            var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, githubModulesSource.ModuleSources, localModuleCatalog);
+
             var modulesInCatalog = externalModuleCatalog.Modules.Where(m => !m.Ref.StartsWith("file://")).Select(m => m.ModuleName).ToList();
             var manifests = discoveryPath.GlobFiles("*/module.manifest");
             manifests.ForEach(m =>
@@ -894,10 +893,12 @@ namespace VirtoCommerce.Build
             var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
             var bundle = (MixedPackageManifest)PackageManager.CreatePackageManifest(platformRelease.TagName);
             var githubModules = PackageManager.GetGithubModules(manifest);
+
             var githubModuleManifests = PackageManager.GetGithubModuleManifests(manifest);
             var localModuleCatalog = LocalModuleCatalog.GetCatalog(GetDiscoveryPath(), ProbingPath);
-            var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, localModuleCatalog, githubModuleManifests);
-            var modules = await GetEdgeModuleVersions(githubModules, externalModuleCatalog);
+            var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, githubModuleManifests, localModuleCatalog);
+
+            var modules = GetEdgeModuleVersions(githubModules, externalModuleCatalog);
             var bundleGithubReleases = new GithubReleases
             {
                 ModuleSources = githubModuleManifests,
@@ -908,12 +909,12 @@ namespace VirtoCommerce.Build
             return bundle;
         }
 
-        private static Task<List<ModuleItem>> GetEdgeModuleVersions(List<ModuleItem> githubModules, IModuleCatalog externalModuleCatalog)
+        private static List<ModuleItem> GetEdgeModuleVersions(List<ModuleItem> githubModules, ExtModuleCatalog externalModuleCatalog)
         {
             var modules = new List<ModuleItem>();
             foreach (var module in githubModules)
             {
-                var externalModule = externalModuleCatalog.Modules.OfType<ManifestModuleInfo>().FirstOrDefault(m => m.Id == module.Id);
+                var externalModule = externalModuleCatalog.Modules.FirstOrDefault(m => m.Id == module.Id);
                 if (externalModule == null)
                 {
                     Log.Warning($"No module {module.Id} found in external catalog");
@@ -926,7 +927,7 @@ namespace VirtoCommerce.Build
                 }
                 modules.Add(new ModuleItem(module.Id, externalModule.Version.ToString()));
             }
-            return Task.FromResult(modules);
+            return modules;
         }
 
         private static async Task<MixedPackageManifest> GetStableBundleManifest()

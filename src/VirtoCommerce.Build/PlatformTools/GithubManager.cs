@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using Nuke.Common.IO;
 using Octokit;
+using VirtoCommerce.Platform.Core.Common;
 
 namespace PlatformTools
 {
@@ -41,7 +42,6 @@ namespace PlatformTools
             {
                 PageSize = 50,
                 PageCount = 1,
-                
             });
 
             var release = releases.Where(r => !r.Prerelease).OrderByDescending(r => new Version(r.TagName.Trim())).FirstOrDefault();
@@ -76,12 +76,19 @@ namespace PlatformTools
                 : _client.Repository.Release.Get(_githubUser, moduleRepo, releaseTag);
         }
 
-        internal static async Task<string> GetLatestPlatformVersion()
+        internal static async Task<SemanticVersion> GetLatestPlatformVersion()
         {
-            const string PlatformBuildPropsUrl = "https://raw.githubusercontent.com/VirtoCommerce/vc-platform/refs/heads/master/Directory.Build.props";
-            var response = await HttpTasks.HttpDownloadStringAsync(PlatformBuildPropsUrl);
+            const string platformBuildPropsUrl = "https://raw.githubusercontent.com/VirtoCommerce/vc-platform/refs/heads/master/Directory.Build.props";
+            var response = await HttpTasks.HttpDownloadStringAsync(platformBuildPropsUrl);
             var version = ParseVersionFromProps(response);
-            return version;
+
+            if (version.IsNullOrEmpty())
+            {
+                var platformRelease = await GetPlatformRelease();
+                version = platformRelease.TagName;
+            }
+
+            return SemanticVersion.Parse(version);
         }
 
         private static string ParseVersionFromProps(string rawXml)

@@ -1,51 +1,95 @@
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using Serilog;
+using Serilog.Extensions.Logging;
+using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.Platform.Core.Modularity;
-using VirtoCommerce.Platform.DistributedLock;
 using VirtoCommerce.Platform.Modules;
-using VirtoCommerce.Platform.Modules.Local;
 
 namespace PlatformTools.Modules
 {
-    internal static class LocalModuleCatalog
+    public class LocalModuleCatalog
     {
-        private static LocalCatalog _catalog;
+        private static LocalModuleCatalog _catalog;
 
-        public static ILocalModuleCatalog GetCatalog(string discoveryPath, string probingPath)
-        {
-            var options = GetOptions(discoveryPath, probingPath);
-            return GetCatalog(options);
-        }
+        public ModuleBootstrapper Bootstrapper { get; private init; }
 
-        public static ILocalModuleCatalog GetCatalog(IOptions<LocalStorageModuleCatalogOptions> options)
+        public IList<ManifestModuleInfo> Modules => Bootstrapper.GetModules();
+
+        public static LocalModuleCatalog GetCatalog(string discoveryPath, string probingPath)
         {
+            if (string.IsNullOrEmpty(discoveryPath))
+            {
+                throw new InvalidOperationException("The DiscoveryPath cannot be null or empty");
+            }
+
+            if (string.IsNullOrEmpty(probingPath))
+            {
+                throw new InvalidOperationException("The ProbingPath cannot cannot be null or empty");
+            }
+
             if (_catalog == null)
             {
-                var logger = new LoggerFactory().CreateLogger<LocalStorageModuleCatalog>();
-                var distributedLock = new InternalNoLockService(new LoggerFactory().CreateLogger<InternalNoLockService>());
-                var fileMetadataProvider = new FileMetadataProvider(options);
-                var fileCopyPolicy = new FileCopyPolicy(fileMetadataProvider);
-                _catalog = new LocalCatalog(options, distributedLock, fileCopyPolicy, logger, Options.Create(new ModuleSequenceBoostOptions()));
-                _catalog.Load();
+                var options = new LocalStorageModuleCatalogOptions
+                {
+                    DiscoveryPath = discoveryPath,
+                    ProbingPath = probingPath,
+                    RefreshProbingFolderOnStart = true,
+                };
+
+                var loggerFactory = new SerilogLoggerFactory(Log.Logger);
+                var bootstrapper = new ModuleBootstrapper(loggerFactory, options);
+
+                _catalog = new LocalModuleCatalog
+                {
+                    Bootstrapper = bootstrapper,
+                };
             }
-            else
-            {
-                _catalog.Reload();
-            }
+
+            _catalog.Reload();
+
+            ModuleBootstrapper.Instance = _catalog.Bootstrapper;
 
             return _catalog;
         }
 
-        public static IOptions<LocalStorageModuleCatalogOptions> GetOptions(string discoveryPath, string probingPath)
+        public void Reload()
         {
-            var moduleCatalogOptions = new LocalStorageModuleCatalogOptions
-            {
-                RefreshProbingFolderOnStart = true,
-                DiscoveryPath = discoveryPath,
-                ProbingPath = probingPath,
-            };
+            Bootstrapper.Discover();
+        }
 
-            return Options.Create(moduleCatalogOptions);
+        public bool ValidateDependencies(string platformVersion)
+        {
+            Bootstrapper.Validate(SemanticVersion.Parse(platformVersion));
+
+            var failedModules = Bootstrapper.GetFailedModules();
+            foreach (var module in failedModules)
+            {
+                foreach (var error in module.Errors)
+                {
+                    Log.Error("{moduleId}: {error}", module.Id, error);
+                }
+            }
+
+            if (failedModules.Count > 0)
+            {
+                Log.Error("Module validation failed. See the logs for more details.");
+                return false;
+            }
+
+            return true;
+        }
+
+        public void RefreshProbingDirectory()
+        {
+            Bootstrapper.InvalidateProbingFolder();
+            Bootstrapper.Copy(RuntimeInformation.ProcessArchitecture);
+        }
+
+        internal static void Reset()
+        {
+            _catalog = null;
         }
     }
 }

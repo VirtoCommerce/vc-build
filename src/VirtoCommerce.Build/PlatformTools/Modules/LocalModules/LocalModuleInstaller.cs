@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Extensions;
 using Nuke.Common.IO;
 using VirtoCommerce.Platform.Core.Modularity;
+using VirtoCommerce.Platform.Modules;
 
 namespace PlatformTools.Modules.LocalModules
 {
@@ -15,7 +16,7 @@ namespace PlatformTools.Modules.LocalModules
         {
             _modulesDirectory = modulesDirectory;
         }
-        protected override async Task InnerInstall(ModuleSource source, IProgress<ProgressMessage> progress)
+        protected override Task InnerInstall(ModuleSource source, IProgress<ProgressMessage> progress)
         {
             var moduleSource = (Local)source;
 
@@ -27,29 +28,23 @@ namespace PlatformTools.Modules.LocalModules
                 if (attributes.HasFlag(FileAttributes.Directory))
                 {
                     progress.ReportInfo($"Copying the module from the directory {module.Path}");
-                    await SetupModuleFromDirectory(module.Path, moduleDestination);
+                    SetupModuleFromDirectory(module.Path, moduleDestination);
                 }
                 else
                 {
                     progress.ReportInfo($"Extracting an archive {moduleSourceName}");
-                    await SetupModuleFromArchive(module.Path, moduleDestination);
+                    ModulePackageInstaller.Install(module.Path, moduleDestination, deleteZip: false);
                 }
                 progress.ReportInfo($"Successfully installed {moduleSourceName}");
             }
-        }
 
-        private static Task SetupModuleFromArchive(string src, string moduleDestination)
-        {
-            var absolutePath = src.ToAbsolutePath();
-            absolutePath.UnZipTo(moduleDestination.ToAbsolutePath());
             return Task.CompletedTask;
         }
 
-        private static Task SetupModuleFromDirectory(string src, string moduleDestination)
+        private static void SetupModuleFromDirectory(string src, string moduleDestination)
         {
             var absolutePath = src.ToAbsolutePath();
             absolutePath.Copy(moduleDestination.ToAbsolutePath(), ExistsPolicy.MergeAndOverwriteIfNewer);
-            return Task.CompletedTask;
         }
     }
 }

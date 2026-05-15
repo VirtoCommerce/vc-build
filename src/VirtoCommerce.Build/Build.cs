@@ -32,6 +32,7 @@ using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
 using Octokit;
 using Serilog;
+using Serilog.Events;
 using Utils;
 using VirtoCommerce.Build.Utils;
 using VirtoCommerce.Platform.Core.Modularity;
@@ -982,7 +983,7 @@ internal partial class Build : NukeBuild
         CheckHelpRequested(args);
 
         CreateNukeDirectory();
-        int exitCode = 0;
+        int exitCode;
 
         try
         {
@@ -1292,9 +1293,10 @@ internal partial class Build : NukeBuild
             .ConfigureConsole(this)
             .ConfigureInMemory(this)
             .ConfigureFiles(this)
+            .MinimumLevel.Override("VirtoCommerce.Platform.Modules", LogEventLevel.Information)
             .ConfigureLevel()
             .ConfigureFilter(this)
-            .WriteTo.ApplicationInsights(TelemetryClient, TelemetryConverter.Traces, Serilog.Events.LogEventLevel.Information)
+            .WriteTo.ApplicationInsights(TelemetryClient, TelemetryConverter.Traces, LogEventLevel.Information)
             .CreateLogger();
         base.OnBuildCreated();
     }
