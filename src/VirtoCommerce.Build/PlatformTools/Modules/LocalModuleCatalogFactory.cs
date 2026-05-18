@@ -26,7 +26,7 @@ namespace PlatformTools.Modules
 
             if (string.IsNullOrEmpty(probingPath))
             {
-                throw new InvalidOperationException("The ProbingPath cannot cannot be null or empty");
+                throw new InvalidOperationException("The ProbingPath cannot be null or empty");
             }
 
             if (_catalog == null)
