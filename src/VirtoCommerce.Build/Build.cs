@@ -890,7 +890,7 @@ internal partial class Build : NukeBuild
             }
 
             SonarScannerTasks.SonarScannerEnd(c => c
-                .SetFramework(framework)
+                //.SetFramework(framework)
                 .SetToken(SonarAuthToken));
         });
 
