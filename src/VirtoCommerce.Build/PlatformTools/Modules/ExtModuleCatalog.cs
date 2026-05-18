@@ -25,7 +25,7 @@ namespace PlatformTools.Modules
             }
 
             // Workaround to see all modules in the external catalog
-            var latestPlatformVersion = await GithubManager.GetLatestPlatformVersion();
+            var latestPlatformVersion = await GithubReleaseService.GetLatestPlatformVersion();
 
             httpClient ??= new HttpClient();
             var options = CreateOptions(authToken, manifestUrls);

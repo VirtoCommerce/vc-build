@@ -390,7 +390,7 @@ namespace VirtoCommerce.Build
         public Target InstallModules => _ => _
              .After(InstallPlatform)
              .OnlyWhenDynamic(() => !PlatformParameter)
-             .Executes((Func<Task>)(async () =>
+             .Executes(async () =>
              {
                  if (!RunningTargets.Contains(Install))
                  {
