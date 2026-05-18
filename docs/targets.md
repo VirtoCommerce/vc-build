@@ -498,10 +498,15 @@ Shows environment logs.
 
 ### Parameters
 - `EnvironmentName`: Environment name to show logs for (required)
+- `Tail`: Number of log lines to return (optional, value from 100 to 10000, defaults to 100)
+- `Filter`: Filter string to search within logs (optional)
 
 ### Usage
 ```console
 vc-build CloudEnvLogs -EnvironmentName <EnvName>
+vc-build CloudEnvLogs -EnvironmentName <EnvName> -Tail 500
+vc-build CloudEnvLogs -EnvironmentName <EnvName> -Filter "error"
+vc-build CloudEnvLogs -EnvironmentName <EnvName> -Tail 1000 -Filter "exception"
 ```
 ---
 ## CloudDown

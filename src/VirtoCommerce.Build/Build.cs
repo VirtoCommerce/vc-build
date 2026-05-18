@@ -341,6 +341,7 @@ internal partial class Build : NukeBuild
                 if (ThereAreCustomApps)
                 {
                     ignorePaths.Add(WebProject.Directory / "App");
+                    ignorePaths.Add(WebProject.Directory / "Apps");
                 }
             }
 

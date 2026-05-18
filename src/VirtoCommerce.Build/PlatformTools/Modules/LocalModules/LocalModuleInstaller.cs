@@ -18,7 +18,7 @@ namespace PlatformTools.Modules.LocalModules
         }
         protected override Task InnerInstall(ModuleSource source, IProgress<ProgressMessage> progress)
         {
-            var moduleSource = (Local)source;
+            var moduleSource = (LocalModuleSource)source;
 
             foreach (var module in moduleSource.Modules)
             {

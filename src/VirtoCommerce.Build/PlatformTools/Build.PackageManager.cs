@@ -113,7 +113,7 @@ namespace VirtoCommerce.Build
         public Target Init => _ => _
              .Executes(async () =>
              {
-                 var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
+                 var platformRelease = await GithubReleaseService.GetPlatformRelease(GitHubToken, VersionToInstall);
                  var packageManifest = PackageManager.CreatePackageManifest(platformRelease.TagName, platformRelease.Assets[0].BrowserDownloadUrl);
                  PackageManager.ToFile(packageManifest, PackageManifestPath);
              });
@@ -142,7 +142,7 @@ namespace VirtoCommerce.Build
                  {
                      var isValidVersion = Version.TryParse(VersionToInstall, out var _);
                      var releaseTag = isValidVersion ? VersionToInstall : null;
-                     var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, releaseTag);
+                     var platformRelease = await GithubReleaseService.GetPlatformRelease(GitHubToken, releaseTag);
                      packageManifest.PlatformVersion = platformRelease.TagName;
 
                      if (!isValidVersion)
@@ -304,7 +304,7 @@ namespace VirtoCommerce.Build
             if (string.IsNullOrWhiteSpace(platformAssetUrl))
             {
                 Log.Information($"Installing platform {platformVersion}");
-                var platformRelease = await GithubManager.GetPlatformRelease(token, platformVersion);
+                var platformRelease = await GithubReleaseService.GetPlatformRelease(token, platformVersion);
                 platformAssetUrl = platformRelease.Assets[0].BrowserDownloadUrl;
             }
             else
@@ -390,7 +390,7 @@ namespace VirtoCommerce.Build
         public Target InstallModules => _ => _
              .After(InstallPlatform)
              .OnlyWhenDynamic(() => !PlatformParameter)
-             .Executes(async () =>
+             .Executes((Func<Task>)(async () =>
              {
                  if (!RunningTargets.Contains(Install))
                  {
@@ -553,7 +553,7 @@ namespace VirtoCommerce.Build
                 AzureUniversalPackages azureUniversal => CheckModules(azureUniversal.Modules, m => m.Id, moduleDirectoryName),
                 GithubPrivateRepos githubPrivate => CheckModules(githubPrivate.Modules, m => m.Id, moduleDirectoryName),
                 GitlabJobArtifacts gitlabJob => CheckModules(gitlabJob.Modules, m => m.Id, moduleDirectoryName),
-                Local local => CheckModules(local.Modules, m => string.IsNullOrWhiteSpace(m.Id) ? Path.GetFileName(m.Path) : m.Id, moduleDirectoryName),
+                LocalModuleSource local => CheckModules(local.Modules, m => string.IsNullOrWhiteSpace(m.Id) ? Path.GetFileName(m.Path) : m.Id, moduleDirectoryName),
                 _ => false
             };
         }
@@ -638,7 +638,7 @@ namespace VirtoCommerce.Build
             GithubPrivateRepos => new GithubPrivateModulesInstaller(GitHubToken, GetDiscoveryPath()),
             AzureBlob _ => new AzureBlobModuleInstaller(AzureSasToken ?? AzureToken, GetDiscoveryPath()),
             GitlabJobArtifacts _ => new GitlabJobArtifactsModuleInstaller(GitLabServer, GitLabToken, GetDiscoveryPath()),
-            Local _ => new LocalModuleInstaller(GetDiscoveryPath()),
+            LocalModuleSource _ => new LocalModuleInstaller(GetDiscoveryPath()),
             _ => throw new NotImplementedException("Unknown module source"),
         };
 
@@ -655,7 +655,7 @@ namespace VirtoCommerce.Build
                  PackageManager.ToFile(packageManifest, PackageManifestPath);
                  if (PlatformVersion.CurrentVersion == null)
                  {
-                     var platformRelease = await GithubManager.GetPlatformRelease();
+                     var platformRelease = await GithubReleaseService.GetPlatformRelease();
                      PlatformVersion.CurrentVersion = SemanticVersion.Parse(platformRelease.TagName);
                  }
                  localModuleCatalog.Reload();
@@ -748,7 +748,7 @@ namespace VirtoCommerce.Build
         }
         private static async Task<ManifestBase> UpdateEdgePlatformAsync(ManifestBase manifest)
         {
-            var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
+            var platformRelease = await GithubReleaseService.GetPlatformRelease(GitHubToken, VersionToInstall);
             manifest.PlatformVersion = platformRelease.TagName;
             return manifest;
         }
@@ -803,7 +803,7 @@ namespace VirtoCommerce.Build
                 {
                     Log.Information("vc-package.json does not exist.");
                     Log.Information("Looking for the platform release");
-                    var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
+                    var platformRelease = await GithubReleaseService.GetPlatformRelease(GitHubToken, VersionToInstall);
                     result = PackageManager.CreatePackageManifest(platformRelease.TagName);
                 }
             }
@@ -890,7 +890,7 @@ namespace VirtoCommerce.Build
 
         private static async Task<MixedPackageManifest> GetEdgeBundleManifest(ManifestBase manifest)
         {
-            var platformRelease = await GithubManager.GetPlatformRelease(GitHubToken, VersionToInstall);
+            var platformRelease = await GithubReleaseService.GetPlatformRelease(GitHubToken, VersionToInstall);
             var bundle = (MixedPackageManifest)PackageManager.CreatePackageManifest(platformRelease.TagName);
             var githubModules = PackageManager.GetGithubModules(manifest);
 

@@ -25,24 +25,27 @@ namespace PlatformTools.Modules
             var sourceName = jo[nameof(ModuleSource.Name)].Value<string>();
             switch (sourceName)
             {
-                case nameof(GithubReleases):
+                case GithubReleases.SourceName:
                     return JsonConvert.DeserializeObject<GithubReleases>(jo.ToString(), SpecifiedSubclassConversion);
 
-                case nameof(AzurePipelineArtifacts):
+                case AzurePipelineArtifacts.SourceName:
                     return JsonConvert.DeserializeObject<AzurePipelineArtifacts>(jo.ToString(), SpecifiedSubclassConversion);
 
-                case nameof(AzureUniversalPackages):
+                case AzureUniversalPackages.SourceName:
                     return JsonConvert.DeserializeObject<AzureUniversalPackages>(jo.ToString(), SpecifiedSubclassConversion);
 
-                case nameof(GithubPrivateRepos):
+                case GithubPrivateRepos.SourceName:
                     return JsonConvert.DeserializeObject<GithubPrivateRepos>(jo.ToString(), SpecifiedSubclassConversion);
-                case nameof(AzureBlob):
+
+                case AzureBlob.SourceName:
                     return JsonConvert.DeserializeObject<AzureBlob>(jo.ToString(), SpecifiedSubclassConversion);
-                case nameof(GitlabJobArtifacts):
+
+                case GitlabJobArtifacts.SourceName:
                     return JsonConvert.DeserializeObject<GitlabJobArtifacts>(jo.ToString(),
                         SpecifiedSubclassConversion);
-                case nameof(Local):
-                    return JsonConvert.DeserializeObject<Local>(jo.ToString(), SpecifiedSubclassConversion);
+
+                case LocalModuleSource.SourceName:
+                    return JsonConvert.DeserializeObject<LocalModuleSource>(jo.ToString(), SpecifiedSubclassConversion);
                 default:
                     throw new TypeLoadException($"Unknown module source: {sourceName}");
             }
