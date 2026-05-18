@@ -870,24 +870,24 @@ internal partial class Build : NukeBuild
         .DependsOn(Compile)
         .Executes(() =>
         {
-            const string framework = "net5.0";
-            if (OperatingSystem.IsLinux())
-            {
-                const string sonarScript = "sonar-scanner";
-                var sonarScannerShPath = NuGetToolPathResolver.GetPackageExecutable("dotnet-sonarscanner",
-                        sonarScript, framework: framework)
-                    .Replace("netcoreapp2.0", "net5.0")
-                    .Replace("netcoreapp3.0", "net5.0");
-                var sonarScannerShRightPath = Directory.GetParent(sonarScannerShPath)?.Parent?.FullName ?? string.Empty;
-                var tmpFile = TemporaryDirectory / sonarScript;
-                sonarScannerShPath.ToAbsolutePath().Move(tmpFile, ExistsPolicy.FileOverwrite);
-                sonarScannerShRightPath.ToAbsolutePath().DeleteDirectory();
-                var sonarScriptDestinationPath = Path.Combine(sonarScannerShRightPath, sonarScript);
-                tmpFile.Move(sonarScriptDestinationPath);
-                Log.Information($"{sonarScript} path: {sonarScriptDestinationPath}");
-                var chmod = ToolResolver.GetPathTool("chmod");
-                chmod.Invoke($"+x {sonarScriptDestinationPath}");
-            }
+            //const string framework = "net5.0";
+            //if (OperatingSystem.IsLinux())
+            //{
+            //    const string sonarScript = "sonar-scanner";
+            //    var sonarScannerShPath = NuGetToolPathResolver.GetPackageExecutable("dotnet-sonarscanner",
+            //            sonarScript, framework: framework)
+            //        .Replace("netcoreapp2.0", "net5.0")
+            //        .Replace("netcoreapp3.0", "net5.0");
+            //    var sonarScannerShRightPath = Directory.GetParent(sonarScannerShPath)?.Parent?.FullName ?? string.Empty;
+            //    var tmpFile = TemporaryDirectory / sonarScript;
+            //    sonarScannerShPath.ToAbsolutePath().Move(tmpFile, ExistsPolicy.FileOverwrite);
+            //    sonarScannerShRightPath.ToAbsolutePath().DeleteDirectory();
+            //    var sonarScriptDestinationPath = Path.Combine(sonarScannerShRightPath, sonarScript);
+            //    tmpFile.Move(sonarScriptDestinationPath);
+            //    Log.Information($"{sonarScript} path: {sonarScriptDestinationPath}");
+            //    var chmod = ToolResolver.GetPathTool("chmod");
+            //    chmod.Invoke($"+x {sonarScriptDestinationPath}");
+            //}
 
             SonarScannerTasks.SonarScannerEnd(c => c
                 //.SetFramework(framework)
