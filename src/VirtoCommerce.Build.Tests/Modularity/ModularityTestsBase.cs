@@ -1,0 +1,85 @@
+using PlatformTools.Modules;
+
+namespace VirtoCommerce.Build.Tests.Modularity;
+
+[Collection("ModuleCatalogTests")]
+public abstract class ModularityTestsBase : IDisposable
+{
+    protected string TestRoot { get; }
+    protected string DiscoveryPath { get; set; }
+    protected string ProbingPath { get; set; }
+
+    protected ModularityTestsBase()
+    {
+        TestRoot = Path.Combine(Path.GetTempPath(), "vc-build-tests", Guid.NewGuid().ToString());
+        DiscoveryPath = Path.Combine(TestRoot, "modules");
+        ProbingPath = Path.Combine(TestRoot, "probing");
+    }
+
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
+        Reset();
+
+        if (Directory.Exists(TestRoot))
+        {
+            Directory.Delete(TestRoot, true);
+        }
+    }
+
+
+    protected LocalModuleCatalog GetLocalModuleCatalog()
+    {
+        return LocalModuleCatalog.GetCatalog(DiscoveryPath, ProbingPath);
+    }
+
+    protected void WriteManifest(string id, string version, string platformVersion = "3.1000.0", string? assemblyFile = null, string[]? dependencies = null)
+    {
+        WriteManifest(id, version, Path.Combine(DiscoveryPath, id), platformVersion, assemblyFile, dependencies);
+    }
+
+    protected static void WriteManifest(string id, string version, string directoryPath, string platformVersion = "3.1000.0", string? assemblyFile = null, string[]? dependencies = null)
+    {
+        Directory.CreateDirectory(directoryPath);
+
+        var assemblyElement = "";
+        var dependenciesElement = "";
+
+        if (!string.IsNullOrEmpty(assemblyFile))
+        {
+            assemblyElement = $"  <assemblyFile>{assemblyFile}</assemblyFile>";
+        }
+
+        if (dependencies != null)
+        {
+            var dependencyElements = string.Join("", dependencies.Select(x =>
+            {
+                var parts = x.Split(':');
+                return $"    <dependency id=\"{parts[0]}\" version=\"{parts[1]}\" />\n";
+            }));
+
+            dependenciesElement = $"<dependencies>\n{dependencyElements}  </dependencies>";
+        }
+
+        var xml = $"""
+                   <?xml version="1.0" encoding="utf-8"?>
+                   <module xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+                     <id>{id}</id>
+                     <title>{id}</title>
+                     <version>{version}</version>
+                     <version-tag></version-tag>
+                     <platformVersion>{platformVersion}</platformVersion>
+                     {dependenciesElement}
+                     {assemblyElement}
+                   </module>
+                   """;
+
+        var manifestPath = Path.Combine(directoryPath, "module.manifest");
+        File.WriteAllText(manifestPath, xml);
+    }
+
+    protected virtual void Reset()
+    {
+        LocalModuleCatalog.Reset();
+    }
+}

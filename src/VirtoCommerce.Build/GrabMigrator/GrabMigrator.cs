@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Microsoft.Data.SqlClient;
 using Nuke.Common;
 using Serilog;
 using VirtoCommerce.Platform.Core.Common;
@@ -16,7 +16,7 @@ namespace GrabMigrator
     /// <summary>
     ///     Grab-migrator target implementation
     /// </summary>
-    internal static class GrabMigrator
+    internal static partial class GrabMigrator
     {
         public static void Do(string configFilePath)
         {
@@ -36,7 +36,7 @@ namespace GrabMigrator
 
                         if (config?.Grab == true)
                         {
-                            sqlStatements = EnableGrabMode(configFilePath, config, sqlStatements);
+                            sqlStatements = EnableGrabMode(configFilePath, config);
                         }
 
                         if (config?.Apply == true)
@@ -121,11 +121,11 @@ namespace GrabMigrator
         {
             var connectionString = string.Empty;
 
-            if (config.ConnectionStringsRefs.ContainsKey(module))
+            if (config.ConnectionStringsRefs.TryGetValue(module, out var value))
             {
-                foreach (var moduleConnStringKey in config.ConnectionStringsRefs[module])
+                foreach (var moduleConnStringKey in value)
                 {
-                    connectionString = connectionStrings.ContainsKey(moduleConnStringKey) ? connectionStrings[moduleConnStringKey] : string.Empty;
+                    connectionString = connectionStrings.TryGetValue(moduleConnStringKey, out var connString) ? connString : string.Empty;
 
                     if (!string.IsNullOrEmpty(connectionString))
                     {
@@ -137,9 +137,8 @@ namespace GrabMigrator
             return connectionString;
         }
 
-        private static Dictionary<string, List<string>> EnableGrabMode(string configFilePath, Config config, Dictionary<string, List<string>> sqlStatements)
+        private static Dictionary<string, List<string>> EnableGrabMode(string configFilePath, Config config)
         {
-            sqlStatements ??= new Dictionary<string, List<string>>();
             OutBox("Grab mode");
 
             Out("Refresh connection strings references...");
@@ -177,8 +176,8 @@ namespace GrabMigrator
 
         private static void GrabConnectionStringsRefsFromModules(Dictionary<string, List<string>> refs, string migrationDirectory)
         {
-            var connKeyRegex = new Regex(@"\.GetConnectionString\(""(?<connkey>((?!GetConnectionString)[\w.])*)""\)", RegexOptions.Singleline);
-            var moduleRegex = new Regex(@"[\\\w^\.-]*\\(?<module>.+)\.Web");
+            var connKeyRegex = ConnectionKeyRegex();
+            var moduleRegex = ModuleRegex();
             var moduleFiles = Directory.GetFiles(migrationDirectory, "Module.cs", SearchOption.AllDirectories);
 
             foreach (var moduleFile in moduleFiles)
@@ -216,8 +215,8 @@ namespace GrabMigrator
         private static void GrabSqlStatementsWithEFTool(Dictionary<string, List<string>> sqlStatements, string migrationDirectory, Config config)
         {
             Directory.CreateDirectory(config.StatementsDirectory);
-            var moduleRegex = new Regex(@"[\\\w^\.-]*\\(?<module>.+)\\Migrations");
-            var migrationNameRegex = new Regex(@"\[Migration\(""(?<migration>.+)""\)\]");
+            var moduleRegex = ModuleMigrationsRegex();
+            var migrationNameRegex = MigrationNameRegex();
             string[] migrationFiles;
 
             if (config.GrabMode == GrabMode.V2V3)
@@ -245,7 +244,7 @@ namespace GrabMigrator
 
                 if (moduleName.EndsWith(".Data"))
                 {
-                    var moduleRegexData = new Regex(@"(?<module>.+)\.Data");
+                    var moduleRegexData = ModuleDataRegex();
                     moduleName = moduleRegexData.Match(moduleName).Groups["module"].Value;
                 }
 
@@ -293,7 +292,7 @@ namespace GrabMigrator
 
         private static List<string> SplitStatements(string statements)
         {
-            var statementsSplitRegex = new Regex(@"(?<statement>((?!\s*GO\s*).)+)\s*GO\s*", RegexOptions.Singleline);
+            var statementsSplitRegex = StatementsSplitRegex();
 
             var statementsMatches = statementsSplitRegex.Matches(statements);
 
@@ -323,5 +322,18 @@ namespace GrabMigrator
             Out(text);
             Out(new string('=', text.Length));
         }
+
+        [GeneratedRegex(@"\.GetConnectionString\(""(?<connkey>((?!GetConnectionString)[\w.])*)""\)", RegexOptions.Singleline)]
+        private static partial Regex ConnectionKeyRegex();
+        [GeneratedRegex(@"[\\\w^\.-]*\\(?<module>.+)\.Web")]
+        private static partial Regex ModuleRegex();
+        [GeneratedRegex(@"[\\\w^\.-]*\\(?<module>.+)\\Migrations")]
+        private static partial Regex ModuleMigrationsRegex();
+        [GeneratedRegex(@"\[Migration\(""(?<migration>.+)""\)\]")]
+        private static partial Regex MigrationNameRegex();
+        [GeneratedRegex(@"(?<module>.+)\.Data")]
+        private static partial Regex ModuleDataRegex();
+        [GeneratedRegex(@"(?<statement>((?!\s*GO\s*).)+)\s*GO\s*", RegexOptions.Singleline)]
+        private static partial Regex StatementsSplitRegex();
     }
 }

@@ -1,9 +1,9 @@
 using System;
 using System.IO;
-using System.IO.Compression;
 using System.Threading.Tasks;
 using Nuke.Common.IO;
 using VirtoCommerce.Platform.Core.Modularity;
+using VirtoCommerce.Platform.Modules;
 
 namespace PlatformTools.Modules.Gitlab;
 
@@ -28,7 +28,7 @@ internal class GitlabJobArtifactsModuleInstaller : ModuleInstallerBase
             progress.ReportInfo($"Downloading {module.Id}");
             var artifactZipPath = await _client.DownloadArtifact(module.Id, module.JobId, module.ArtifactName, moduleDestination);
             progress.ReportInfo($"Extracting {module.Id}");
-            ZipFile.ExtractToDirectory(artifactZipPath, moduleDestination);
+            ModulePackageInstaller.Install(artifactZipPath, moduleDestination, deleteZip: true);
             progress.ReportInfo($"Successfully installed {module.Id}");
         }
     }

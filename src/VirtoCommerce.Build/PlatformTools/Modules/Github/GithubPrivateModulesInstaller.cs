@@ -1,12 +1,12 @@
 using System;
 using System.IO;
-using System.IO.Compression;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Extensions;
 using Nuke.Common.IO;
 using Octokit;
 using VirtoCommerce.Platform.Core.Modularity;
+using VirtoCommerce.Platform.Modules;
 
 namespace PlatformTools.Modules.Github
 {
@@ -57,7 +57,7 @@ namespace PlatformTools.Modules.Github
                     return c;
                 });
                 progress.ReportInfo($"Extracting {module.Id}");
-                ZipFile.ExtractToDirectory(zipDestination, moduleDestination);
+                ModulePackageInstaller.Install(zipDestination, moduleDestination, deleteZip: true);
                 progress.ReportInfo($"Successfully installed {module.Id}");
             }
         }

@@ -18,11 +18,12 @@
     <RepositoryType>git</RepositoryType>
     <PackageReleaseNotes>Minor update</PackageReleaseNotes>
     <Nullable>annotations</Nullable>
+    <NoWarn>8073</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="JsonSubTypes" Version="2.0.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Polly" Version="8.1.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Polly" Version="8.6.6" />
   </ItemGroup>
 </Project>

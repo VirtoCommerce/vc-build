@@ -32,9 +32,9 @@ using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
 using Octokit;
 using Serilog;
+using Serilog.Events;
 using Utils;
 using VirtoCommerce.Build.Utils;
-using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.Platform.Core.Modularity;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using Formatting = Newtonsoft.Json.Formatting;
@@ -75,11 +75,11 @@ internal partial class Build : NukeBuild
             var solutions = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.sln", SearchOption.TopDirectoryOnly);
             if (solutions.Length > 0)
             {
-                return SolutionModelTasks.ParseSolution(solutions[0]);
+                return solutions[0].ToAbsolutePath().ReadSolution();
             }
 
             Log.Warning("No solution files found in the current directory");
-            return new Solution();
+            return new Solution(new Microsoft.VisualStudio.SolutionPersistence.Model.SolutionModel());
         }
     }
 
@@ -707,7 +707,7 @@ internal partial class Build : NukeBuild
         {
             if (!manifest.VersionTag.IsNullOrEmpty() || !customVersionSuffix.IsNullOrEmpty())
             {
-                manifest.VersionTag = manifest.VersionTag.EmptyToNull() ?? CustomVersionSuffix;
+                manifest.VersionTag = Platform.Core.Common.StringExtensions.EmptyToNull(manifest.VersionTag) ?? CustomVersionSuffix;
 
                 var externalPrereleaseVersion =
                     externalManifest.Versions.FirstOrDefault(v => !v.VersionTag.IsNullOrEmpty());
@@ -870,27 +870,7 @@ internal partial class Build : NukeBuild
         .DependsOn(Compile)
         .Executes(() =>
         {
-            const string framework = "net5.0";
-            if (OperatingSystem.IsLinux())
-            {
-                const string sonarScript = "sonar-scanner";
-                var sonarScannerShPath = NuGetToolPathResolver.GetPackageExecutable("dotnet-sonarscanner",
-                        sonarScript, framework: framework)
-                    .Replace("netcoreapp2.0", "net5.0")
-                    .Replace("netcoreapp3.0", "net5.0");
-                var sonarScannerShRightPath = Directory.GetParent(sonarScannerShPath)?.Parent?.FullName ?? string.Empty;
-                var tmpFile = TemporaryDirectory / sonarScript;
-                sonarScannerShPath.ToAbsolutePath().Move(tmpFile, ExistsPolicy.FileOverwrite);
-                sonarScannerShRightPath.ToAbsolutePath().DeleteDirectory();
-                var sonarScriptDestinationPath = Path.Combine(sonarScannerShRightPath, sonarScript);
-                tmpFile.Move(sonarScriptDestinationPath);
-                Log.Information($"{sonarScript} path: {sonarScriptDestinationPath}");
-                var chmod = ToolResolver.GetPathTool("chmod");
-                chmod.Invoke($"+x {sonarScriptDestinationPath}");
-            }
-
             SonarScannerTasks.SonarScannerEnd(c => c
-                .SetFramework(framework)
                 .SetToken(SonarAuthToken));
         });
 
@@ -984,7 +964,7 @@ internal partial class Build : NukeBuild
         CheckHelpRequested(args);
 
         CreateNukeDirectory();
-        int exitCode = 0;
+        int exitCode;
 
         try
         {
@@ -1294,9 +1274,10 @@ internal partial class Build : NukeBuild
             .ConfigureConsole(this)
             .ConfigureInMemory(this)
             .ConfigureFiles(this)
+            .MinimumLevel.Override("VirtoCommerce.Platform.Modules", LogEventLevel.Information)
             .ConfigureLevel()
             .ConfigureFilter(this)
-            .WriteTo.ApplicationInsights(TelemetryClient, TelemetryConverter.Traces, Serilog.Events.LogEventLevel.Information)
+            .WriteTo.ApplicationInsights(TelemetryClient, TelemetryConverter.Traces, LogEventLevel.Information)
             .CreateLogger();
         base.OnBuildCreated();
     }
@@ -1428,7 +1409,7 @@ internal partial class Build : NukeBuild
             var zipPath = await DownloadModuleZip(dependency, manifest);
             if (!string.IsNullOrEmpty(zipPath) && File.Exists(zipPath))
             {
-                result.AddRange(GetModuleBinaryFiles(zipPath));
+                result.UnionWith(GetModuleBinaryFiles(zipPath));
             }
         }
 

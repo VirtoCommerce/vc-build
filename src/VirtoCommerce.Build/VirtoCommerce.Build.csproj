@@ -2,7 +2,7 @@
   <PropertyGroup>
     <PackageId>VirtoCommerce.GlobalTool</PackageId>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <RollForward>LatestMajor</RollForward>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <RootNamespace></RootNamespace>
@@ -32,37 +32,39 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="Azure.Storage.Blobs" Version="12.23.0" />
-    <PackageReference Include="Markdig" Version="0.24.0" />
-    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.22.0" />
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.3" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="9.0.0" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Octokit" Version="13.0.1" />
-    <PackageReference Include="Serilog.Sinks.ApplicationInsights" Version="4.0.0" />
-    <PackageReference Include="Nuke.Common" Version="9.0.4" />
-    <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.170.0" />
-    <PackageReference Include="dotnet-sonarscanner" Version="9.1.0">
-      <ExcludeAssets>all</ExcludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.Build.Locator" Version="1.7.8" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.5" />
+    <InternalsVisibleTo Include="VirtoCommerce.Build.Tests" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ReportGenerator" Version="5.4.4">
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.27.0" />
+    <PackageReference Include="Markdig" Version="1.1.2" />
+    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.23.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.5" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.201" PrivateAssets="All" />
+    <PackageReference Include="Octokit" Version="14.0.0" />
+    <PackageReference Include="Serilog.Sinks.ApplicationInsights" Version="5.0.0" />
+    <PackageReference Include="Nuke.Common" Version="10.1.0" />
+    <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="20.256.2" />
+    <PackageReference Include="Microsoft.Build.Locator" Version="1.11.2" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.5" />
+    <PackageReference Include="ReportGenerator" Version="5.5.4">
       <ExcludeAssets>all</ExcludeAssets>
     </PackageReference>
-    <PackageReference Include="Swashbuckle.AspNetCore.Cli" Version="6.0.0">
-      <ExcludeAssets>all</ExcludeAssets>
-    </PackageReference>
-    <PackageReference Include="Virtocommerce.Platform.Core" Version="3.854.13" />
-    <PackageReference Include="VirtoCommerce.Platform.Data" Version="3.854.13" />
-    <PackageReference Include="VirtoCommerce.Platform.Modules" Version="3.854.13" />
-    <PackageReference Include="VirtoCommerce.Platform.DistributedLock" Version="3.854.13" />
+    <PackageReference Include="VirtoCommerce.Platform.Modules" Version="3.1025.0-alpha.13258-vcst-4901-vc-build" />
+  </ItemGroup>
+
+  <!-- Prevent transitive NuGet.Frameworks (from Nuke.Common -> NuGet.Packaging) from copying to output; MSBuild.Locator loads it at runtime (MSBL001) -->
+  <ItemGroup>
+    <PackageReference Include="NuGet.Frameworks" Version="*" ExcludeAssets="runtime" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageDownload Include="dotnet-sonarscanner" Version="[11.2.1]" />
+    <PackageDownload Include="Swashbuckle.AspNetCore.Cli" Version="[10.1.7]" />
   </ItemGroup>
 
   <ItemGroup>

@@ -251,7 +251,7 @@ internal partial class Build
                 var solutions = Directory.EnumerateFiles(solutionDir, "*.sln");
                 Assert.True(solutions.Count() == 1, $"Solutions found: {solutions.Count()}");
                 var solutionPath = solutions.FirstOrDefault();
-                var solution = SolutionModelTasks.ParseSolution(solutionPath);
+                var solution = solutionPath.ToAbsolutePath().ReadSolution();
                 var webProject = solution.AllProjects.First(p => p.Name.EndsWith(".Web"));
 
                 WebPackBuildMethod(webProject);

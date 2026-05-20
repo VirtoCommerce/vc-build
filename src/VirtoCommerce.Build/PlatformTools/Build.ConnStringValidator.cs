@@ -18,7 +18,7 @@ namespace VirtoCommerce.Build
              CheckAndUpdateConnectionString(AzureBlob);
          });
 
-        private void CheckAndUpdateConnectionString(ConnectionString connectionString)
+        private static void CheckAndUpdateConnectionString(ConnectionString connectionString)
         {
             if (!connectionString?.IsEmpty() ?? false)
             {
