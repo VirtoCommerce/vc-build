@@ -18,6 +18,7 @@ public abstract class ModularityTestsBase : IDisposable
 
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
         Reset();
 
         if (Directory.Exists(TestRoot))
@@ -37,7 +38,7 @@ public abstract class ModularityTestsBase : IDisposable
         WriteManifest(id, version, Path.Combine(DiscoveryPath, id), platformVersion, assemblyFile, dependencies);
     }
 
-    protected void WriteManifest(string id, string version, string directoryPath, string platformVersion = "3.1000.0", string? assemblyFile = null, string[]? dependencies = null)
+    protected static void WriteManifest(string id, string version, string directoryPath, string platformVersion = "3.1000.0", string? assemblyFile = null, string[]? dependencies = null)
     {
         Directory.CreateDirectory(directoryPath);
 
