@@ -51,7 +51,6 @@
     <PackageReference Include="Microsoft.Build.Locator" Version="1.11.2" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.5" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.9.1" />
     <PackageReference Include="ReportGenerator" Version="5.5.4">
       <ExcludeAssets>all</ExcludeAssets>
     </PackageReference>
