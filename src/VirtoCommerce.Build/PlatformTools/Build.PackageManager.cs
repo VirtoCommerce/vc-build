@@ -425,7 +425,8 @@ namespace VirtoCommerce.Build
                  if (modulesToInstall.Count > 0)
                  {
                      SolveDependenciesIfRequested(externalModuleCatalog, modulesToInstall, alreadyInstalledModules);
-                     ModulePackageInstaller.InstallModules(modulesToInstall, externalModuleCatalog.Modules, discoveryPath, externalModuleCatalog.Options, new HttpClient(), progress);
+                     using var httpClient = new HttpClient();
+                     ModulePackageInstaller.InstallModules(modulesToInstall, externalModuleCatalog.Modules, discoveryPath, externalModuleCatalog.Options, httpClient, progress);
                  }
 
                  Assert.False(ExitCode > 0, "Errors occurred while installing modules.");
