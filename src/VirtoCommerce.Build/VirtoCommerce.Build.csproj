@@ -54,7 +54,7 @@
     <PackageReference Include="ReportGenerator" Version="5.5.4">
       <ExcludeAssets>all</ExcludeAssets>
     </PackageReference>
-    <PackageReference Include="VirtoCommerce.Platform.Modules" Version="3.1025.0-alpha.13258-vcst-4901-vc-build" />
+    <PackageReference Include="VirtoCommerce.Platform.Modules" Version="3.1007.16" />
   </ItemGroup>
 
   <!-- Prevent transitive NuGet.Frameworks (from Nuke.Common -> NuGet.Packaging) from copying to output; MSBuild.Locator loads it at runtime (MSBL001) -->
