@@ -2,13 +2,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
 using Extensions;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
 using VirtoCommerce.Platform.Core.Modularity;
+using VirtoCommerce.Platform.Modules;
 
 namespace PlatformTools.Modules.Azure
 {
@@ -46,7 +46,7 @@ namespace PlatformTools.Modules.Azure
 
                 var envVars = new Dictionary<string, string>() { { "AZURE_DEVOPS_EXT_PAT", token } };
                 var shellScript = $"az {string.Join(' ', arguments)}";
-                foreach(DictionaryEntry systemEnvVariable in Environment.GetEnvironmentVariables())
+                foreach (DictionaryEntry systemEnvVariable in Environment.GetEnvironmentVariables())
                 {
                     envVars.TryAdd(systemEnvVariable.Key?.ToString(), systemEnvVariable.Value?.ToString());
                 }
@@ -58,10 +58,12 @@ namespace PlatformTools.Modules.Azure
                 {
                     progress.ReportError($"Can't download {module.Id} - {module.Version}");
                 }
-
-                progress.ReportInfo($"Extracting {zipPath}");
-                ZipFile.ExtractToDirectory(zipPath, moduleDestination);
-                progress.ReportInfo($"Successfully installed {module.Id}");
+                else
+                {
+                    progress.ReportInfo($"Extracting {zipPath}");
+                    ModulePackageInstaller.Install(zipPath, moduleDestination, deleteZip: true);
+                    progress.ReportInfo($"Successfully installed {module.Id}");
+                }
             }
 
             return Task.CompletedTask;

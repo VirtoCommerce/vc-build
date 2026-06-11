@@ -1,9 +1,9 @@
 using System;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
 using VirtoCommerce.Platform.Core.Modularity;
+using VirtoCommerce.Platform.Modules;
 using AzureBlobs = Azure.Storage.Blobs;
 
 namespace PlatformTools.Modules.Azure
@@ -45,7 +45,7 @@ namespace PlatformTools.Modules.Azure
                 var blobClient = containerClient.GetBlobClient(moduleBlobName);
                 blobClient.DownloadTo(zipPath);
                 progress.ReportInfo($"Extracting Blob {moduleBlobName}");
-                ZipFile.ExtractToDirectory(zipPath, moduleDestination, true);
+                ModulePackageInstaller.Install(zipPath, moduleDestination, deleteZip: true);
                 progress.ReportInfo($"Successfully installed {moduleBlobName}");
             }
             return Task.CompletedTask;

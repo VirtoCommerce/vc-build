@@ -1,35 +1,35 @@
 using System;
 using System.IO;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
-using Microsoft.Extensions.Options;
-using VirtoCommerce.Platform.Core.Modularity;
-using VirtoCommerce.Platform.Modules.External;
 
 namespace PlatformTools.Modules.Azure
 {
-    public class AzurePipelineArtifactsClient : IExternalModulesClient
+    public class AzurePipelineArtifactsClient
     {
-        private readonly ExternalModuleCatalogOptions _options;
+        private readonly string _authorizationToken;
 
-        public AzurePipelineArtifactsClient(IOptions<ExternalModuleCatalogOptions> options)
+        public AzurePipelineArtifactsClient(string authorizationToken)
         {
-            _options = options.Value;
+            _authorizationToken = authorizationToken;
         }
 
         public Stream OpenRead(Uri address)
         {
             var client = new HttpClient();
             var request = new HttpRequestMessage(HttpMethod.Get, address);
-            HttpResponseMessage response;
+
             try
             {
-                if (!string.IsNullOrEmpty(_options.AuthorizationToken))
+                if (!string.IsNullOrEmpty(_authorizationToken))
                 {
-                    var tokenEncoded = Convert.ToBase64String(Encoding.UTF8.GetBytes($":{_options.AuthorizationToken}"));
-                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic " + tokenEncoded);
+                    var tokenEncoded = Convert.ToBase64String(Encoding.UTF8.GetBytes($":{_authorizationToken}"));
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Basic", tokenEncoded);
                 }
-                response = client.Send(request);
+
+                var response = client.Send(request);
+
                 return response.Content.ReadAsStream();
             }
             finally
@@ -39,4 +39,3 @@ namespace PlatformTools.Modules.Azure
         }
     }
 }
-
