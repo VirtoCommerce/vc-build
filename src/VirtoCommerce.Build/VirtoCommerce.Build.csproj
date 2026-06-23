@@ -129,7 +129,7 @@
 
   <Target Name="NukePackPackageTools" BeforeTargets="GenerateNuspec" Condition="'$(PackAsTool)' == 'true'">
     <ItemGroup>
-      <_ToolPkg Include="@(PackageDownload)">
+      <_ToolPkg Include="@(PackageDownload);@(PackageReference)">
         <LowerId>$([System.String]::Copy('%(Identity)').ToLower())</LowerId>
         <LowerVersion>$([System.String]::Copy('%(Version)').Replace('[','').Replace(']','').ToLower())</LowerVersion>
       </_ToolPkg>
