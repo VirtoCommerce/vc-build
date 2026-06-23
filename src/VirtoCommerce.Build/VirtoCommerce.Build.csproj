@@ -125,6 +125,16 @@
     <ProjectReference Include="../../external/nuke/source/Nuke.SourceGenerators/Nuke.SourceGenerators.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../../external/nuke/source/Nuke.MSBuildTasks/Nuke.MSBuildTasks.csproj"
+                      ReferenceOutputAssembly="false"
+                      Private="false" />
   </ItemGroup>
-  
+
+  <!-- Replicate the NukePackPackageTools target normally imported via Nuke.Common NuGet package -->
+  <PropertyGroup>
+    <NukeTasksAssembly Condition="'$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)..\..\external\nuke\source\Nuke.MSBuildTasks\bin\$(Configuration)\net10.0\Nuke.MSBuildTasks.dll</NukeTasksAssembly>
+    <NukeTasksAssembly Condition="'$(MSBuildRuntimeType)' != 'Core'">$(MSBuildThisFileDirectory)..\..\external\nuke\source\Nuke.MSBuildTasks\bin\$(Configuration)\net472\Nuke.MSBuildTasks.dll</NukeTasksAssembly>
+  </PropertyGroup>
+  <Import Project="..\..\external\nuke\source\Nuke.MSBuildTasks\Nuke.MSBuildTasks.targets" />
+
 </Project>
