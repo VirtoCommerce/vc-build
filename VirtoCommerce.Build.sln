@@ -14,6 +14,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VirtoCloud.Client", "src\Vi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nuke.Common", "external\nuke\source\Nuke.Common\Nuke.Common.csproj", "{08CF18EA-A152-6DD5-C7E6-89F2FE81DE28}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nuke", "Nuke", "{152F623A-9DCA-465C-987C-C93EA11D61D0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nuke.Build", "external\nuke\source\Nuke.Build\Nuke.Build.csproj", "{E3589961-6949-934F-9FFB-38FCEE97CE10}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nuke.Build.Shared", "external\nuke\source\Nuke.Build.Shared\Nuke.Build.Shared.csproj", "{5B76A391-283F-95CE-36E2-2B1C8AC0E0D0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,9 +42,22 @@ Global
 		{08CF18EA-A152-6DD5-C7E6-89F2FE81DE28}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{08CF18EA-A152-6DD5-C7E6-89F2FE81DE28}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{08CF18EA-A152-6DD5-C7E6-89F2FE81DE28}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E3589961-6949-934F-9FFB-38FCEE97CE10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E3589961-6949-934F-9FFB-38FCEE97CE10}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E3589961-6949-934F-9FFB-38FCEE97CE10}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E3589961-6949-934F-9FFB-38FCEE97CE10}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B76A391-283F-95CE-36E2-2B1C8AC0E0D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B76A391-283F-95CE-36E2-2B1C8AC0E0D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B76A391-283F-95CE-36E2-2B1C8AC0E0D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B76A391-283F-95CE-36E2-2B1C8AC0E0D0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{08CF18EA-A152-6DD5-C7E6-89F2FE81DE28} = {152F623A-9DCA-465C-987C-C93EA11D61D0}
+		{E3589961-6949-934F-9FFB-38FCEE97CE10} = {152F623A-9DCA-465C-987C-C93EA11D61D0}
+		{5B76A391-283F-95CE-36E2-2B1C8AC0E0D0} = {152F623A-9DCA-465C-987C-C93EA11D61D0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {963A3769-831D-4063-97CC-89CAAA64A14A}

@@ -122,6 +122,9 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../external/nuke/source/Nuke.Common/Nuke.Common.csproj" />
+    <ProjectReference Include="../../external/nuke/source/Nuke.SourceGenerators/Nuke.SourceGenerators.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
   </ItemGroup>
   
 </Project>
