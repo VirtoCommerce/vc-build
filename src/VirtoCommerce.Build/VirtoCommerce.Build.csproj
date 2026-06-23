@@ -132,9 +132,16 @@
 
   <!-- Replicate the NukePackPackageTools target normally imported via Nuke.Common NuGet package -->
   <PropertyGroup>
+    <_NukeMSBuildTasksProject>$(MSBuildThisFileDirectory)..\..\external\nuke\source\Nuke.MSBuildTasks\Nuke.MSBuildTasks.csproj</_NukeMSBuildTasksProject>
     <NukeTasksAssembly Condition="'$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)..\..\external\nuke\source\Nuke.MSBuildTasks\bin\$(Configuration)\net10.0\Nuke.MSBuildTasks.dll</NukeTasksAssembly>
     <NukeTasksAssembly Condition="'$(MSBuildRuntimeType)' != 'Core'">$(MSBuildThisFileDirectory)..\..\external\nuke\source\Nuke.MSBuildTasks\bin\$(Configuration)\net472\Nuke.MSBuildTasks.dll</NukeTasksAssembly>
   </PropertyGroup>
   <Import Project="..\..\external\nuke\source\Nuke.MSBuildTasks\Nuke.MSBuildTasks.targets" />
+
+  <Target Name="EnsureNukeMSBuildTasksForPack" BeforeTargets="NukePackPackageTools">
+    <MSBuild Projects="$(_NukeMSBuildTasksProject)"
+             Targets="Build"
+             Properties="Configuration=$(Configuration);TargetFramework=net10.0" />
+  </Target>
 
 </Project>
