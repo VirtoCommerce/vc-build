@@ -1,9 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <AssemblyName>VirtoCloud.Client.Test</AssemblyName>
     <RootNamespace>VirtoCloud.Client.Test</RootNamespace>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <Nullable>annotations</Nullable>
   </PropertyGroup>
