@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -100,6 +101,9 @@ namespace VirtoCommerce.Build
         [Parameter("Current Directory")]
         public static AbsolutePath CurrentDirectory { get; set; } = RootDirectory;
 
+        [Parameter("Target process architecture (default: current process architecture)")]
+        public static Architecture? TargetArchitecture { get; set; }
+
         public Target InitPlatform => _ => _
              .Executes(() =>
              {
@@ -107,7 +111,7 @@ namespace VirtoCommerce.Build
                  var configuration = AppSettings.GetConfiguration(CurrentDirectory, AppsettingsPath);
                  var discoveryPath = DiscoveryPath.EmptyToNull() ?? configuration.GetModulesDiscoveryPath();
                  var localModuleCatalog = LocalModuleCatalog.GetCatalog(discoveryPath, ProbingPath);
-                 localModuleCatalog.RefreshProbingDirectory();
+                 localModuleCatalog.RefreshProbingDirectory(TargetArchitecture);
              });
 
         public Target Init => _ => _
@@ -440,7 +444,7 @@ namespace VirtoCommerce.Build
                  }
 
                  localModuleCatalog.Reload();
-                 localModuleCatalog.RefreshProbingDirectory();
+                 localModuleCatalog.RefreshProbingDirectory(TargetArchitecture);
              });
 
         public Target ValidateDependencies => _ => _
