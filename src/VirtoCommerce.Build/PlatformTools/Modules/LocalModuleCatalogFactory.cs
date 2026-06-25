@@ -81,10 +81,10 @@ namespace PlatformTools.Modules
             return true;
         }
 
-        public void RefreshProbingDirectory()
+        public void RefreshProbingDirectory(Architecture? architecture = null)
         {
             Bootstrapper.InvalidateProbingFolder();
-            Bootstrapper.Copy(RuntimeInformation.ProcessArchitecture);
+            Bootstrapper.Copy(architecture ?? RuntimeInformation.ProcessArchitecture);
         }
 
         internal static void Reset()
