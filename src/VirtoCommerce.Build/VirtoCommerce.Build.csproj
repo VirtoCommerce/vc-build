@@ -46,7 +46,6 @@
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.201" PrivateAssets="All" />
     <PackageReference Include="Octokit" Version="14.0.0" />
     <PackageReference Include="Serilog.Sinks.ApplicationInsights" Version="5.0.0" />
-    <PackageReference Include="Nuke.Common" Version="10.1.0" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="20.256.2" />
     <PackageReference Include="Microsoft.Build.Locator" Version="1.11.2" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
@@ -121,4 +120,26 @@
   <ItemGroup>
     <ProjectReference Include="..\Virtocloud.Client\src\VirtoCloud.Client\VirtoCloud.Client.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../external/nuke/source/Nuke.Common/Nuke.Common.csproj" />
+    <ProjectReference Include="../../external/nuke/source/Nuke.SourceGenerators/Nuke.SourceGenerators.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <Target Name="NukePackPackageTools" BeforeTargets="GenerateNuspec" Condition="'$(PackAsTool)' == 'true'">
+    <ItemGroup>
+      <_ToolPkg Include="@(PackageDownload);@(PackageReference)">
+        <LowerId>$([System.String]::Copy('%(Identity)').ToLower())</LowerId>
+        <LowerVersion>$([System.String]::Copy('%(Version)').Replace('[','').Replace(']','').ToLower())</LowerVersion>
+      </_ToolPkg>
+    </ItemGroup>
+    <ItemGroup>
+      <_PackageFiles Include="$(NuGetPackageRoot)%(_ToolPkg.LowerId)/%(_ToolPkg.LowerVersion)/tools/**"
+                     Condition="Exists('$(NuGetPackageRoot)%(_ToolPkg.LowerId)/%(_ToolPkg.LowerVersion)/tools/')">
+        <PackagePath>tools/$(TargetFramework)/any/%(_ToolPkg.Identity)/%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+      </_PackageFiles>
+    </ItemGroup>
+  </Target>
+
 </Project>
