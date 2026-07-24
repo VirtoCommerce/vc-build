@@ -1,0 +1,61 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <LangVersion>preview</LangVersion>
+    <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+    <NoWarn>CS1591;NU5129;NU5118;SYSLIB0050;SYSLIB0051</NoWarn>
+    <DefineConstants>$(DefineConstants);JETBRAINS_ANNOTATIONS</DefineConstants>
+    <DebugType>embedded</DebugType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Description>The AKEless Build System for C#/.NET</Description>
+    <Authors>Matthias Koch and contributors</Authors>
+    <Copyright>Copyright $([System.DateTime]::Now.Year) Maintainers of NUKE</Copyright>
+    <PackageTags>build automation continuous-integration tools orchestration</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://nuke.build</PackageProjectUrl>
+    <PackageIcon>icon.png</PackageIcon>
+<!--    <PackageReadmeFile>README.md</PackageReadmeFile>-->
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
+    <IsPackable>False</IsPackable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(IsPackable)' != 'False'">
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(_IsPacking)' == 'True'">
+    <None Include="..\..\icon.png" Pack="true" PackagePath="\" />
+<!--    <None Include="..\..\README.md" Pack="true" PackagePath="\" />-->
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
+    <PackageReference Include="coverlet.msbuild"  />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="GitHubActionsTestLogger" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+<!--    <PackageReference Include="TeamCity.VSTest.TestAdapter" />-->
+    <PackageReference Include="Verify.Xunit"  />
+    <PackageReference Include="Verify.DiffPlex"  />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\AssemblyInfo.cs" />
+  </ItemGroup>
+
+</Project>

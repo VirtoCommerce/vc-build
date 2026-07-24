@@ -22,10 +22,14 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    # id-token: write lets NuGet/login mint a short-lived OIDC key (Trusted Publishing).
+    # contents: write for the GitHub release step.
+    permissions:
+      contents: write
+      id-token: write
     env:
       SONAR_TOKEN: ${{secrets.SONAR_TOKEN}}
       GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
-      NUGET_KEY: ${{ secrets.NUGET_KEY }}
       BLOB_SAS: ${{ secrets.BLOB_TOKEN }}
 
     steps:
@@ -85,9 +89,21 @@ jobs:
         with:
           login: ${{secrets.SONAR_TOKEN}}
 
+      # Trusted Publishing: swap the GitHub OIDC token for a ~1h nuget.org key, minted right before push.
+      - name: NuGet login (OIDC -> temp API key)
+        if: ${{ (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') && github.event_name != 'workflow_dispatch' }}
+        id: nuget_login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          # nuget.org user that created the trust policy (shared service account). Hardcoded because
+          # private repos can't read org-level Actions variables in the current plan.
+          user: virto
+
       - name: Publish Nuget
         if: ${{ (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') && github.event_name != 'workflow_dispatch' }}
         uses: VirtoCommerce/vc-github-actions/publish-nuget@master
+        env:
+          NUGET_KEY: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
 
       - name: Release
         uses: softprops/action-gh-release@v2
