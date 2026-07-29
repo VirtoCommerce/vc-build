@@ -404,7 +404,7 @@ namespace GrabMigrator
 
         private static void RunEfMigrationsScript(Config config, string migrationFile, string moduleName, string migrationName, string statementsFilePath)
         {
-            var fileInfo = new FileInfo(migrationFile);
+            var workingDirectory = FindProjectDirectory(migrationFile);
 
             // Idempotent (self-guarding) script, unless a precise pending-only range was already resolved
             var idempotentArg = config.Idempotent && !config.PendingOnly ? "-i" : string.Empty;
@@ -415,7 +415,7 @@ namespace GrabMigrator
 
             var efTool = Process.Start(new ProcessStartInfo
             {
-                WorkingDirectory = fileInfo.Directory?.Parent?.Parent?.FullName ?? string.Empty,
+                WorkingDirectory = workingDirectory,
                 FileName = "dotnet",
                 Arguments = $"ef migrations script {migrationName} -o {statementsFilePath} {idempotentArg} {(config.VerboseEFTool ? "-v" : "")} {contextArg}",
             });
@@ -426,6 +426,23 @@ namespace GrabMigrator
             {
                 throw new InvalidOperationException($"dotnet-ef failed for module {moduleName} (exit code {efTool?.ExitCode.ToString() ?? "n/a"}).");
             }
+        }
+
+        private static string FindProjectDirectory(string migrationFile)
+        {
+            var directory = new FileInfo(migrationFile).Directory;
+
+            while (directory != null && directory.GetFiles("*.csproj").Length == 0)
+            {
+                directory = directory.Parent;
+            }
+
+            if (directory == null)
+            {
+                throw new InvalidOperationException($"Could not find a .csproj file above migration file '{migrationFile}'.");
+            }
+
+            return directory.FullName;
         }
 
         private static Dictionary<string, List<string>> ReadSavedStatements(string statementsDirectory)
