@@ -4,6 +4,7 @@ using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Data.SqlClient;
@@ -152,8 +153,94 @@ namespace GrabMigrator
 
             File.WriteAllText(configFilePath, JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true }));
 
+            var connectionStrings = ResolveConnectionStrings(config);
+
             Out("Looking for migrations in migration directories recursively...");
-            return GrabSqlStatements(config);
+            var sqlStatements = GrabSqlStatements(config, connectionStrings);
+
+            if (connectionStrings.Count > 0)
+            {
+                WriteDatabaseGrouping(config, sqlStatements, connectionStrings);
+            }
+            else
+            {
+                Out("Warning! PlatformConfigFile not set or not found - skipping per-database grouping report.");
+            }
+
+            return sqlStatements;
+        }
+
+        private static Dictionary<string, string> ResolveConnectionStrings(Config config)
+        {
+            if (string.IsNullOrEmpty(config.PlatformConfigFile) || !File.Exists(config.PlatformConfigFile))
+            {
+                return new Dictionary<string, string>();
+            }
+
+            Out("Read platform config file...");
+            return GrabConnectionStrings(config.PlatformConfigFile);
+        }
+
+        private static void WriteDatabaseGrouping(Config config, Dictionary<string, List<string>> sqlStatements, Dictionary<string, string> connectionStrings)
+        {
+            Out("Building per-database combined scripts and mapping report...");
+
+            var entries = new List<(string Module, string Server, string Database, List<string> Statements)>();
+
+            foreach (var (module, statements) in sqlStatements)
+            {
+                try
+                {
+                    var connectionString = GetConnectionString(config, connectionStrings, module).EmptyToNull() ?? connectionStrings.GetValueOrDefault("VirtoCommerce");
+
+                    if (string.IsNullOrEmpty(connectionString))
+                    {
+                        continue;
+                    }
+
+                    var builder = new SqlConnectionStringBuilder(connectionString);
+                    entries.Add((module, builder.DataSource, builder.InitialCatalog, statements));
+                }
+                catch (Exception exc)
+                {
+                    Out($"Warning! Could not resolve target database for module {module}: {exc.Message}");
+                }
+            }
+
+            var statementsDir = new DirectoryInfo(config.StatementsDirectory).FullName;
+
+            foreach (var group in entries.GroupBy(e => (e.Server, e.Database)))
+            {
+                var label = SanitizeFileName(string.IsNullOrEmpty(group.Key.Database) ? "database" : group.Key.Database);
+                var combinedPath = Path.Combine(statementsDir, $"_combined.{label}.sql");
+                var combined = string.Join($"{Environment.NewLine}GO{Environment.NewLine}", group.SelectMany(g => g.Statements));
+                File.WriteAllText(combinedPath, combined);
+            }
+
+            var sb = new StringBuilder();
+            sb.AppendLine("# Migration grab - database mapping");
+            sb.AppendLine();
+            sb.AppendLine("| Module | Server | Database |");
+            sb.AppendLine("|---|---|---|");
+
+            foreach (var entry in entries.OrderBy(e => e.Module, StringComparer.OrdinalIgnoreCase))
+            {
+                sb.AppendLine($"| {entry.Module} | {(string.IsNullOrEmpty(entry.Server) ? "(unknown)" : entry.Server)} | {(string.IsNullOrEmpty(entry.Database) ? "(unknown)" : entry.Database)} |");
+            }
+
+            File.WriteAllText(Path.Combine(statementsDir, "_databases.md"), sb.ToString());
+
+            var jsonModel = entries
+                .OrderBy(e => e.Module, StringComparer.OrdinalIgnoreCase)
+                .Select(e => new { module = e.Module, server = e.Server, database = e.Database })
+                .ToList();
+            File.WriteAllText(Path.Combine(statementsDir, "_databases.json"), JsonSerializer.Serialize(jsonModel, new JsonSerializerOptions { WriteIndented = true }));
+        }
+
+        private static string SanitizeFileName(string value)
+        {
+            var invalid = Path.GetInvalidFileNameChars();
+            return new string(value.Select(c => invalid.Contains(c) ? '_' : c).ToArray());
         }
 
         private static Dictionary<string, string> GrabConnectionStrings(string platformConfigFile)
@@ -200,19 +287,19 @@ namespace GrabMigrator
             }
         }
 
-        private static Dictionary<string, List<string>> GrabSqlStatements(Config config)
+        private static Dictionary<string, List<string>> GrabSqlStatements(Config config, Dictionary<string, string> connectionStrings)
         {
             var result = new Dictionary<string, List<string>>();
 
             foreach (var migrationDirectory in config.MigrationDirectories)
             {
-                GrabSqlStatementsWithEFTool(result, migrationDirectory, config);
+                GrabSqlStatementsWithEFTool(result, migrationDirectory, config, connectionStrings);
             }
 
             return result;
         }
 
-        private static void GrabSqlStatementsWithEFTool(Dictionary<string, List<string>> sqlStatements, string migrationDirectory, Config config)
+        private static void GrabSqlStatementsWithEFTool(Dictionary<string, List<string>> sqlStatements, string migrationDirectory, Config config, Dictionary<string, string> connectionStrings)
         {
             Directory.CreateDirectory(config.StatementsDirectory);
             var moduleRegex = ModuleMigrationsRegex();
@@ -231,10 +318,10 @@ namespace GrabMigrator
                 migrationFiles = migrationFiles.GroupBy(x => new FileInfo(x).Directory?.FullName).Select(x => x.FirstOrDefault()).ToArray();
             }
 
-            ProcessMigrations(sqlStatements, migrationDirectory, config, moduleRegex, migrationNameRegex, migrationFiles);
+            ProcessMigrations(sqlStatements, migrationDirectory, config, moduleRegex, migrationNameRegex, migrationFiles, connectionStrings);
         }
 
-        private static void ProcessMigrations(Dictionary<string, List<string>> sqlStatements, string migrationDirectory, Config config, Regex moduleRegex, Regex migrationNameRegex, string[] migrationFiles)
+        private static void ProcessMigrations(Dictionary<string, List<string>> sqlStatements, string migrationDirectory, Config config, Regex moduleRegex, Regex migrationNameRegex, string[] migrationFiles, Dictionary<string, string> connectionStrings)
         {
             Out($"Found {migrationFiles.Length} migrations in directory {migrationDirectory}");
 
@@ -248,30 +335,96 @@ namespace GrabMigrator
                     moduleName = moduleRegexData.Match(moduleName).Groups["module"].Value;
                 }
 
-                // Set migrations range to extract. Leave it empty for all migrations
-                var migrationName = config.GrabMode == GrabMode.V2V3
-                    ? $"0 {migrationNameRegex.Match(File.ReadAllText(migrationFile)).Groups["migration"].Value}"
-                    : string.Empty;
-
-                var statementsFilePath = Path.Combine(new DirectoryInfo(config.StatementsDirectory).FullName, $"{moduleName}.sql");
-
-                Out($"Extract migrations for module {moduleName}...");
-
-                // Run dotnet-ef to extract migrations in idempotent manner
-                var fileInfo = new FileInfo(migrationFile);
-
-                var efTool = Process.Start(new ProcessStartInfo
+                try
                 {
-                    WorkingDirectory = fileInfo.Directory?.Parent?.FullName ?? string.Empty,
-                    FileName = "dotnet",
-                    Arguments = $"ef migrations script {migrationName} -o {statementsFilePath} -i {(config.VerboseEFTool ? "-v" : "")}",
-                });
+                    // Set migrations range to extract. Leave it empty for all migrations
+                    var migrationName = ResolveMigrationRange(config, migrationNameRegex, migrationFile, moduleName, connectionStrings);
+                    var statementsFilePath = Path.Combine(new DirectoryInfo(config.StatementsDirectory).FullName, $"{moduleName}.sql");
 
-                efTool?.WaitForExit();
+                    Out($"Extract migrations for module {moduleName}...");
 
-                sqlStatements.Add(moduleName, SplitStatements(File.ReadAllText(statementsFilePath)));
+                    RunEfMigrationsScript(config, migrationFile, moduleName, migrationName, statementsFilePath);
 
-                Out("OK.");
+                    sqlStatements.Add(moduleName, SplitStatements(File.ReadAllText(statementsFilePath)));
+
+                    Out("OK.");
+                }
+                catch (Exception exc)
+                {
+                    Out($"Warning! Failed to grab migrations for module {moduleName}: {exc.Message}");
+                }
+            }
+        }
+
+        private static string ResolveMigrationRange(Config config, Regex migrationNameRegex, string migrationFile, string moduleName, Dictionary<string, string> connectionStrings)
+        {
+            if (config.GrabMode == GrabMode.V2V3)
+            {
+                return $"0 {migrationNameRegex.Match(File.ReadAllText(migrationFile)).Groups["migration"].Value}";
+            }
+
+            if (config.PendingOnly && connectionStrings.Count > 0)
+            {
+                var lastApplied = TryGetLastAppliedMigration(config, connectionStrings, moduleName);
+
+                if (lastApplied != null)
+                {
+                    return lastApplied;
+                }
+
+                Out($"Warning! Could not determine applied migrations for module {moduleName}; falling back to a full script.");
+            }
+
+            return string.Empty;
+        }
+
+        private static string TryGetLastAppliedMigration(Config config, Dictionary<string, string> connectionStrings, string moduleName)
+        {
+            var connectionString = GetConnectionString(config, connectionStrings, moduleName).EmptyToNull() ?? connectionStrings.GetValueOrDefault("VirtoCommerce");
+
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                return null;
+            }
+
+            try
+            {
+                using var connection = new SqlConnection(connectionString);
+                connection.Open();
+                using var command = connection.CreateCommand();
+                command.CommandText = "SELECT TOP 1 [MigrationId] FROM [__EFMigrationsHistory] ORDER BY [MigrationId] DESC";
+                return command.ExecuteScalar() as string;
+            }
+            catch (Exception exc)
+            {
+                Out($"Warning! Could not read migration history for module {moduleName}: {exc.Message}");
+                return null;
+            }
+        }
+
+        private static void RunEfMigrationsScript(Config config, string migrationFile, string moduleName, string migrationName, string statementsFilePath)
+        {
+            var fileInfo = new FileInfo(migrationFile);
+
+            // Idempotent (self-guarding) script, unless a precise pending-only range was already resolved
+            var idempotentArg = config.Idempotent && !config.PendingOnly ? "-i" : string.Empty;
+
+            var contextArg = config.ContextNames != null && config.ContextNames.TryGetValue(moduleName, out var contextName) && !string.IsNullOrEmpty(contextName)
+                ? $"--context {contextName}"
+                : string.Empty;
+
+            var efTool = Process.Start(new ProcessStartInfo
+            {
+                WorkingDirectory = fileInfo.Directory?.Parent?.Parent?.FullName ?? string.Empty,
+                FileName = "dotnet",
+                Arguments = $"ef migrations script {migrationName} -o {statementsFilePath} {idempotentArg} {(config.VerboseEFTool ? "-v" : "")} {contextArg}",
+            });
+
+            efTool?.WaitForExit();
+
+            if (efTool == null || efTool.ExitCode != 0)
+            {
+                throw new InvalidOperationException($"dotnet-ef failed for module {moduleName} (exit code {efTool?.ExitCode.ToString() ?? "n/a"}).");
             }
         }
 
