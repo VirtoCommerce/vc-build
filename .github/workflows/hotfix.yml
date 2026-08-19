@@ -26,7 +26,7 @@ jobs:
       envPAT: ${{ secrets.REPO_TOKEN }}
 
   get-metadata:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     outputs:
       changelog: ${{ steps.changelog.outputs.changelog }}
     steps:
@@ -109,7 +109,7 @@ jobs:
     needs:
       [publish-github-release]
     if: ${{ github.event.inputs.incrementPatch == 'true' }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
