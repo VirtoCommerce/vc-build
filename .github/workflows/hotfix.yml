@@ -113,6 +113,10 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        # Don't keep the runner's GITHUB_TOKEN extraheader: it outranks the global credential
+        # helper below, so the push would use GITHUB_TOKEN instead of REPO_TOKEN.
+        persist-credentials: false
 
     - name: Install VirtoCommerce.GlobalTool
       uses: VirtoCommerce/vc-github-actions/setup-vcbuild@master
