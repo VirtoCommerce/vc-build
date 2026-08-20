@@ -5,7 +5,7 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       VCBUILD_DISABLE_RELEASE_APPROVAL: "true"
     steps:
