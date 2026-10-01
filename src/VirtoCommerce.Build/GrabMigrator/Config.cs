@@ -56,5 +56,26 @@ namespace GrabMigrator
         ///     A map: module->connection string keys. Grabbed from sources and stored to config file in grab mode.
         /// </summary>
         public Dictionary<string, List<string>> ConnectionStringsRefs { get; set; } = new Dictionary<string, List<string>>();
+
+        /// <summary>
+        ///     A map: module->EF Core DbContext type name, passed as `--context` when grabbing that module's migrations.
+        ///     Modules not listed here are grabbed without `--context` (dotnet-ef auto-detects, which only works when
+        ///     the module's project has a single DbContext).
+        /// </summary>
+        public Dictionary<string, string> ContextNames { get; set; } = new Dictionary<string, string>();
+
+        /// <summary>
+        ///     Generate an idempotent (self-guarding, safe-to-run-against-any-state) script per module. Default true.
+        ///     Ignored when <see cref="PendingOnly" /> is true.
+        /// </summary>
+        public bool Idempotent { get; set; } = true;
+
+        /// <summary>
+        ///     Grab only migrations not yet applied to each module's target database (a delta), instead of a full
+        ///     script. Requires <see cref="PlatformConfigFile" /> to resolve connection strings; falls back to a full
+        ///     script (respecting <see cref="Idempotent" />) for a module whose database or migration history can't be
+        ///     read. Default false.
+        /// </summary>
+        public bool PendingOnly { get; set; } = false;
     }
 }
