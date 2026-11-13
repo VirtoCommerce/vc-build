@@ -123,10 +123,10 @@ public abstract partial class NukeBuild
         }
 
         var assemblyLocation = entryAssembly.Location;
-        var invokedLocation = Environment.GetCommandLineArgs().First();
-        Assert.True(assemblyLocation == string.Empty || assemblyLocation == invokedLocation);
+        if (assemblyLocation != string.Empty)
+            return assemblyLocation;
 
-        return assemblyLocation != string.Empty ? assemblyLocation : invokedLocation;
+        return Environment.ProcessPath ?? Environment.GetCommandLineArgs().First();
     }
 
     [CanBeNull]

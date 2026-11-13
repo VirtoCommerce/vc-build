@@ -1,0 +1,13 @@
+# Install the latest stable bundle and update to the edge
+rm -rf stable-to-edge && mkdir stable-to-edge && cd stable-to-edge && vc-build install -stable
+>>>2
+>>>= 0
+
+cd stable-to-edge && vc-build update -edge
+>>>2
+>>>= 0
+
+cd stable-to-edge && env -u GITHUB_ACTIONS vc-build ValidateDependencies
+>>> !/ERR/
+>>>2
+>>>= 0
