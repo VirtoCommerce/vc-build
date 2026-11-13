@@ -492,8 +492,8 @@ namespace VirtoCommerce.Build
             var processedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var addedModules = new List<ModuleItem>();
 
-            List<(ModuleIdentity Dependency, ManifestModuleInfo RequiredBy)> missingDependencies;
-            while ((missingDependencies = GetMissingDependencies(localModuleCatalog, processedIds)).Count > 0)
+            var missingDependencies = GetMissingDependencies(localModuleCatalog, processedIds);
+            while (missingDependencies.Count > 0)
             {
                 processedIds.UnionWith(missingDependencies.Select(x => x.Dependency.Id));
 
@@ -512,6 +512,9 @@ namespace VirtoCommerce.Build
 
                 using var httpClient = new HttpClient();
                 ModulePackageInstaller.InstallModules(newModules.Select(x => x.Info).ToList(), externalModuleCatalog.Modules, discoveryPath, externalModuleCatalog.Options, httpClient, progress);
+
+                // The installed dependencies can have their own new dependencies
+                missingDependencies = GetMissingDependencies(localModuleCatalog, processedIds);
             }
 
             if (addedModules.Count > 0)
@@ -806,7 +809,7 @@ namespace VirtoCommerce.Build
             return manifest;
         }
 
-        private async Task<ManifestBase> UpdateStableAsync(ManifestBase manifest, bool platformOnly, string bundleName)
+        private static async Task<ManifestBase> UpdateStableAsync(ManifestBase manifest, bool platformOnly, string bundleName)
         {
             var bundleTmpFilePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             await DownloadBundleManifest(bundleName, bundleTmpFilePath);
@@ -913,14 +916,14 @@ namespace VirtoCommerce.Build
                     continue;
                 }
 
-                foreach (var dependency in module.Dependencies.Where(d => !d.Optional && !knownIds.Contains(d.Id)))
+                foreach (var dependencyId in module.Dependencies.Where(d => !d.Optional && !knownIds.Contains(d.Id)).Select(d => d.Id))
                 {
-                    knownIds.Add(dependency.Id);
+                    knownIds.Add(dependencyId);
 
-                    var dependencyModule = externalModuleCatalog.Modules.FirstOrDefault(m => m.Id.EqualsOrdinalIgnoreCase(dependency.Id));
+                    var dependencyModule = externalModuleCatalog.Modules.FirstOrDefault(m => m.Id.EqualsOrdinalIgnoreCase(dependencyId));
                     if (dependencyModule == null)
                     {
-                        Log.Warning("Dependency {DependencyId} of {ModuleId} is not found in the external catalog", dependency.Id, module.Id);
+                        Log.Warning("Dependency {DependencyId} of {ModuleId} is not found in the external catalog", dependencyId, module.Id);
                         continue;
                     }
 

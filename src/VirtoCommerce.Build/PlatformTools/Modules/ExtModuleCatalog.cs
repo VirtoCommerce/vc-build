@@ -64,12 +64,12 @@ namespace PlatformTools.Modules
         /// </summary>
         private static void SetLocalModuleRefs(IList<ManifestModuleInfo> modules, IList<ManifestModuleInfo> installedModules)
         {
-            foreach (var module in modules.Where(m => installedModules.Any(i => ReferenceEquals(i, m))))
+            var localModules = modules.Where(m =>
+                !string.IsNullOrEmpty(m.FullPhysicalPath) && installedModules.Any(i => ReferenceEquals(i, m)));
+
+            foreach (var module in localModules)
             {
-                if (!string.IsNullOrEmpty(module.FullPhysicalPath))
-                {
-                    module.Ref = new Uri(module.FullPhysicalPath).AbsoluteUri;
-                }
+                module.Ref = new Uri(module.FullPhysicalPath).AbsoluteUri;
             }
         }
 
