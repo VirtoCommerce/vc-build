@@ -3,7 +3,7 @@
     <PackageId>VirtoCommerce.GlobalTool</PackageId>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
-    <RollForward>LatestMajor</RollForward>
+    <RollForward>Major</RollForward>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <RootNamespace></RootNamespace>
     <PackAsTool>true</PackAsTool>

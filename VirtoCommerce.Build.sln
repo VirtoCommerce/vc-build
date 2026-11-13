@@ -62,4 +62,12 @@ Global
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {963A3769-831D-4063-97CC-89CAAA64A14A}
 	EndGlobalSection
+	GlobalSection(RiderSharedRunConfigurations) = postSolution
+		File = external\nuke\.run\GlobalTool_ Secrets.run.xml
+		File = external\nuke\.run\GlobalTool_ GetConfiguration.run.xml
+		File = external\nuke\.run\GlobalTool_ Setup.run.xml
+		File = external\nuke\.run\Publish MSBuildTasks.run.xml
+		File = external\nuke\.run\Generate-Tools.run.xml
+		File = external\nuke\.run\Run MSBuildTasks.run.xml
+	EndGlobalSection
 EndGlobal

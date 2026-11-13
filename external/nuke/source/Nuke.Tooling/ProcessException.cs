@@ -9,8 +9,6 @@ using System.Runtime.Serialization;
 using System.Text;
 using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
-using Serilog;
-using Serilog.Events;
 
 namespace Nuke.Common.Tooling;
 
@@ -32,10 +30,12 @@ public class ProcessException : Exception
             messageBuilder.AppendLine("Error output:");
             errorOutput.ForEach(x => messageBuilder.Append(indentation).AppendLine(x.Text));
         }
-        else if (Log.IsEnabled(LogEventLevel.Verbose))
+
+        var standardOutput = process.Output.Where(x => x.Type == OutputType.Std).ToList();
+        if (standardOutput.Count > 0)
         {
             messageBuilder.AppendLine("Standard output:");
-            process.Output.ForEach(x => messageBuilder.Append(indentation).AppendLine(x.Text));
+            standardOutput.ForEach(x => messageBuilder.Append(indentation).AppendLine(x.Text));
         }
 
         return messageBuilder.ToString();
