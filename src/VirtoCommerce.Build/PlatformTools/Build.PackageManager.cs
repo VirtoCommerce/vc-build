@@ -53,6 +53,9 @@ namespace VirtoCommerce.Build
         [Parameter("Install params (install -module VirtoCommerce.Core:1.2.3)")]
         public static string[] Module { get; set; }
 
+        private static List<ModuleItem> _targetBundleModules;
+        private static string _originalManifestContent;
+
         [Parameter("Skip dependency solving")]
         public static bool SkipDependencySolving { get; set; } = true;
 
@@ -443,6 +446,12 @@ namespace VirtoCommerce.Build
                      await installer.Install(moduleSource, progress);
                  }
 
+                 // Update triggers InstallModules, so it has already succeeded here (RunningTargets contains only the current target)
+                 if (SucceededTargets.Contains(Update))
+                 {
+                     InstallNewDependencies(packageManifest, githubReleases, localModuleCatalog, externalModuleCatalog, discoveryPath, progress);
+                 }
+
                  localModuleCatalog.Reload();
                  localModuleCatalog.RefreshProbingDirectory(TargetArchitecture);
              });
@@ -475,6 +484,87 @@ namespace VirtoCommerce.Build
             {
                 Log.Warning("Proceeding with errors. This may lead to unexpected behavior.");
             }
+        }
+
+        private static void InstallNewDependencies(ManifestBase packageManifest, GithubReleases githubReleases, LocalModuleCatalog localModuleCatalog,
+            ExtModuleCatalog externalModuleCatalog, string discoveryPath, IProgress<ProgressMessage> progress)
+        {
+            var addedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var addedModules = new List<ModuleItem>();
+
+            while (true)
+            {
+                localModuleCatalog.Reload();
+                var installedIds = new HashSet<string>(localModuleCatalog.Modules.Select(m => m.Id), StringComparer.OrdinalIgnoreCase);
+
+                var newDependencies = localModuleCatalog.Modules
+                    .SelectMany(m => m.Dependencies.Where(d => !d.Optional && !installedIds.Contains(d.Id) && !addedIds.Contains(d.Id)).Select(d => (Dependency: d, RequiredBy: m)))
+                    .DistinctBy(x => x.Dependency.Id, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                if (newDependencies.Count == 0)
+                {
+                    break;
+                }
+
+                var modulesToInstall = new List<ManifestModuleInfo>();
+
+                foreach (var (dependency, requiredBy) in newDependencies)
+                {
+                    addedIds.Add(dependency.Id);
+
+                    var externalModule = externalModuleCatalog.Modules.FirstOrDefault(m => m.Id.EqualsOrdinalIgnoreCase(dependency.Id));
+                    if (externalModule == null || externalModule.Ref?.StartsWith("http") != true)
+                    {
+                        Log.Error("Dependency {DependencyId} of {ModuleId}:{ModuleVersion} is not found in the external catalog", dependency.Id, requiredBy.Id, requiredBy.Version);
+                        continue;
+                    }
+
+                    var version = _targetBundleModules?.Find(m => m.Id.EqualsOrdinalIgnoreCase(dependency.Id))?.Version ?? externalModule.Version.ToString();
+                    var moduleItem = new ModuleItem(externalModule.Id, version);
+
+                    Log.Warning("Adding dependency {DependencyId}:{DependencyVersion} required by {ModuleId}:{ModuleVersion} to the manifest {ManifestPath}",
+                        moduleItem.Id, moduleItem.Version, requiredBy.Id, requiredBy.Version, Path.GetFileName(PackageManifestPath));
+                    modulesToInstall.Add(LoadModuleInfo(moduleItem, externalModule));
+                    addedModules.Add(moduleItem);
+                }
+
+                if (modulesToInstall.Count == 0)
+                {
+                    break;
+                }
+
+                using var httpClient = new HttpClient();
+                ModulePackageInstaller.InstallModules(modulesToInstall, externalModuleCatalog.Modules, discoveryPath, externalModuleCatalog.Options, httpClient, progress);
+            }
+
+            if (addedModules.Count == 0)
+            {
+                return;
+            }
+
+            var backupPath = BackupOriginalManifest();
+            githubReleases.Modules.AddRange(addedModules);
+            PackageManager.ToFile(packageManifest, PackageManifestPath);
+
+            Log.Warning("The manifest {ManifestPath} was updated with new dependencies: {Dependencies}",
+                Path.GetFullPath(PackageManifestPath), string.Join(", ", addedModules.Select(m => $"{m.Id}:{m.Version}")));
+            if (backupPath != null)
+            {
+                Log.Warning("The original manifest is saved to {BackupPath}", backupPath);
+            }
+        }
+
+        private static string BackupOriginalManifest()
+        {
+            if (_originalManifestContent == null)
+            {
+                return null;
+            }
+
+            var backupPath = Path.GetFullPath($"{PackageManifestPath}.{DateTime.Now:yyyyMMdd-HHmmss}.bak");
+            File.WriteAllText(backupPath, _originalManifestContent);
+            return backupPath;
         }
 
         private static void SolveDependenciesIfRequested(ExtModuleCatalog externalModuleCatalog, List<ManifestModuleInfo> modulesToInstall, List<ManifestModuleInfo> alreadyInstalledModules)
@@ -672,6 +762,7 @@ namespace VirtoCommerce.Build
              .Executes(async () =>
              {
                  SkipDependencySolving = true;
+                 _originalManifestContent = File.Exists(PackageManifestPath) ? await File.ReadAllTextAsync(PackageManifestPath) : null;
                  var manifest = await OpenOrCreateManifest(PackageManifestPath.ToAbsolutePath(), Edge);
 
                  if (Edge)
@@ -741,6 +832,8 @@ namespace VirtoCommerce.Build
                 return Task.FromResult((ManifestBase)manifest); // for sonarQube
             }
 
+            _targetBundleModules = bundleGithubModules.Modules;
+
             foreach (var module in githubModules.Modules)
             {
                 var bundleModule = bundleGithubModules.Modules.Find(m => m.Id == module.Id);
@@ -786,6 +879,42 @@ namespace VirtoCommerce.Build
             }
 
             return manifest;
+        }
+
+        private static List<(ModuleItem Dependency, string RequiredBy)> GetNewRequiredDependencies(IEnumerable<ModuleItem> modules, ExtModuleCatalog externalModuleCatalog, LocalModuleCatalog localModuleCatalog)
+        {
+            var moduleIds = modules.Select(m => m.Id).ToList();
+            var knownIds = new HashSet<string>(moduleIds, StringComparer.OrdinalIgnoreCase);
+            knownIds.UnionWith(localModuleCatalog.Modules.Select(m => m.Id));
+
+            var result = new List<(ModuleItem, string)>();
+            var queue = new Queue<string>(moduleIds);
+
+            while (queue.TryDequeue(out var moduleId))
+            {
+                var module = externalModuleCatalog.Modules.FirstOrDefault(m => m.Id.EqualsOrdinalIgnoreCase(moduleId));
+                if (module == null)
+                {
+                    continue;
+                }
+
+                foreach (var dependency in module.Dependencies.Where(d => !d.Optional && !knownIds.Contains(d.Id)))
+                {
+                    knownIds.Add(dependency.Id);
+
+                    var dependencyModule = externalModuleCatalog.Modules.FirstOrDefault(m => m.Id.EqualsOrdinalIgnoreCase(dependency.Id));
+                    if (dependencyModule == null)
+                    {
+                        Log.Warning("Dependency {DependencyId} of {ModuleId} is not found in the external catalog", dependency.Id, module.Id);
+                        continue;
+                    }
+
+                    result.Add((new ModuleItem(dependencyModule.Id, dependencyModule.Version.ToString()), $"{module.Id}:{module.Version}"));
+                    queue.Enqueue(dependencyModule.Id);
+                }
+            }
+
+            return result;
         }
 
         private static async Task<ManifestBase> OpenOrCreateManifest(string packageManifestPath, bool isEdge)
@@ -881,6 +1010,10 @@ namespace VirtoCommerce.Build
                  var bundle = await GetBundleManifest(manifest);
                  ShowPlatformDiff(manifest, bundle);
                  ShowModulesDiff(manifest, bundle);
+                 if (Edge)
+                 {
+                     await ShowNewDependencies(manifest, bundle);
+                 }
                  await ConfirmUpdate();
              });
 
@@ -958,6 +1091,18 @@ namespace VirtoCommerce.Build
 
             Log.Information("\n=== Module Version Differences ===");
             ShowExistingModuleDiffs(manifestGithubModules, bundleGithubModules);
+        }
+
+        private static async Task ShowNewDependencies(ManifestBase manifest, MixedPackageManifest bundle)
+        {
+            var localModuleCatalog = LocalModuleCatalog.GetCatalog(GetDiscoveryPath(), ProbingPath);
+            var externalModuleCatalog = await ExtModuleCatalog.GetCatalog(GitHubToken, PackageManager.GetGithubModuleManifests(manifest), localModuleCatalog);
+            var newDependencies = GetNewRequiredDependencies(PackageManager.GetGithubModules(bundle), externalModuleCatalog, localModuleCatalog);
+
+            foreach (var (dependency, requiredBy) in newDependencies)
+            {
+                Log.Information("{DependencyId}: (new) -> {DependencyVersion}, required by {RequiredBy}", dependency.Id, dependency.Version, requiredBy);
+            }
         }
 
         private static void ShowExistingModuleDiffs(List<ModuleItem> manifestModules, List<ModuleItem> bundleModules)
