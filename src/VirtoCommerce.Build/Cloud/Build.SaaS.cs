@@ -467,7 +467,6 @@ internal partial class Build
     {
         var config = new VirtoCloud.Client.Client.Configuration();
         config.BasePath = url;
-        config.AccessToken = token;
         config.DefaultHeaders.Add("api_key", token);
         return new SaaSDeploymentApi(config);
     }
