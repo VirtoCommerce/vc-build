@@ -43,6 +43,7 @@ namespace PlatformTools.Modules
 
             var installedModules = localModuleCatalog.Modules;
             var modules = localModuleCatalog.Bootstrapper.MergeWithInstalled(externalModules, installedModules);
+            SetLocalModuleRefs(modules, installedModules);
 
 
             _catalog = new ExtModuleCatalog
@@ -53,6 +54,23 @@ namespace PlatformTools.Modules
 
 
             return _catalog;
+        }
+
+        /// <summary>
+        /// The merged catalog contains installed modules that are missing from the external catalog
+        /// or are newer than the external version (e.g. a hotfix from a bundle). ModuleBootstrapper.Discover()
+        /// doesn't set Ref for them (it's set only when the module assembly is loaded), while the callers rely on
+        /// the "file:///" prefix to detect local modules. Set it the way LocalStorageModuleCatalog used to.
+        /// </summary>
+        private static void SetLocalModuleRefs(IList<ManifestModuleInfo> modules, IList<ManifestModuleInfo> installedModules)
+        {
+            var localModules = modules.Where(m =>
+                !string.IsNullOrEmpty(m.FullPhysicalPath) && installedModules.Any(i => ReferenceEquals(i, m)));
+
+            foreach (var module in localModules)
+            {
+                module.Ref = new Uri(module.FullPhysicalPath).AbsoluteUri;
+            }
         }
 
         private static ExternalModuleCatalogOptions CreateOptions(string authToken, IList<string> manifestUrls)

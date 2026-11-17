@@ -11,12 +11,12 @@ on:
 
 jobs:
   test:
-    uses: VirtoCommerce/.github/.github/workflows/test-and-sonar.yml@v3.800.42
+    uses: VirtoCommerce/.github/.github/workflows/test-and-sonar.yml@v3.1000.1
     secrets:
       sonarToken: ${{ secrets.SONAR_TOKEN }}
 
   build:
-    uses: VirtoCommerce/.github/.github/workflows/build.yml@v3.800.42
+    uses: VirtoCommerce/.github/.github/workflows/build.yml@v3.1000.1
     with:
       uploadPackage: 'true'
       uploadDocker: 'false'
@@ -26,25 +26,25 @@ jobs:
       envPAT: ${{ secrets.REPO_TOKEN }}
 
   get-metadata:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     outputs:
       changelog: ${{ steps.changelog.outputs.changelog }}
     steps:
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
 
     - name: Get Changelog
       id: changelog
-      uses: VirtoCommerce/vc-github-actions/changelog-generator@master
+      uses: VirtoCommerce/.github/actions/changelog-generator@v3.1000.1
 
   # Trusted Publishing: mint the OIDC key and push in ONE job. needs get-metadata too, so a metadata
   # failure blocks the push (else the package publishes while publish-github-release is skipped).
   # The push can't move into the cross-repo publish-github.yml (job_workflow_ref mismatch — #6/#9).
   publish-nuget:
     needs: [build, test, get-metadata]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       id-token: write
@@ -52,9 +52,9 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
     steps:
       - name: Install VirtoCommerce.GlobalTool
-        uses: VirtoCommerce/vc-github-actions/setup-vcbuild@master
+        uses: VirtoCommerce/.github/actions/setup-vcbuild@v3.1000.1
 
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -85,7 +85,7 @@ jobs:
           user: virto
 
       - name: Publish Nuget
-        uses: VirtoCommerce/vc-github-actions/publish-nuget@master
+        uses: VirtoCommerce/.github/actions/publish-nuget@v3.1000.1
         with:
           skipString: 'Clean+Restore+Compile+Test+Pack'
         env:
@@ -95,7 +95,7 @@ jobs:
   publish-github-release:
     needs:
       [build, test, get-metadata, publish-nuget]
-    uses: VirtoCommerce/.github/.github/workflows/publish-github.yml@v3.800.42
+    uses: VirtoCommerce/.github/.github/workflows/publish-github.yml@v3.1000.1
     with:
       fullKey: ${{ needs.build.outputs.packageFullKey }}
       changeLog: '${{ needs.get-metadata.outputs.changeLog }}'
@@ -109,16 +109,20 @@ jobs:
     needs:
       [publish-github-release]
     if: ${{ github.event.inputs.incrementPatch == 'true' }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        # Don't keep the runner's GITHUB_TOKEN extraheader: it outranks the global credential
+        # helper below, so the push would use GITHUB_TOKEN instead of REPO_TOKEN.
+        persist-credentials: false
 
     - name: Install VirtoCommerce.GlobalTool
-      uses: VirtoCommerce/vc-github-actions/setup-vcbuild@master
+      uses: VirtoCommerce/.github/actions/setup-vcbuild@v3.1000.1
 
     - name: Setup Git Credentials
-      uses: VirtoCommerce/vc-github-actions/setup-git-credentials-github@master
+      uses: VirtoCommerce/.github/actions/setup-git-credentials-github@v3.1000.1
       with:
         githubToken: ${{ secrets.REPO_TOKEN }}
 

@@ -21,7 +21,7 @@ on:
 
 jobs:
   ci:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # id-token: write lets NuGet/login mint a short-lived OIDC key (Trusted Publishing).
     # contents: write for the GitHub release step.
     permissions:
@@ -34,7 +34,7 @@ jobs:
 
     steps:
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -44,29 +44,29 @@ jobs:
           dotnet tool install -g VirtoCommerce.GlobalTool --add-source ./src/VirtoCommerce.Build/artifacts
 
       - name: Set up Java 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: 'temurin'
           java-version: '17'
 
       - name: Get changelog
         id: changelog
-        uses: VirtoCommerce/vc-github-actions/changelog-generator@master
+        uses: VirtoCommerce/.github/actions/changelog-generator@v3.1000.1
 
       - name: Get Image Version
-        uses: VirtoCommerce/vc-github-actions/get-image-version@master
+        uses: VirtoCommerce/.github/actions/get-image-version@v3.1000.1
         id: image
         with:
           projectType: "platform"
 
       - name: Add version suffix
         if: ${{ github.ref != 'refs/heads/main' }}
-        uses: VirtoCommerce/vc-github-actions/add-version-suffix@master
+        uses: VirtoCommerce/.github/actions/add-version-suffix@v3.1000.1
         with:
           versionSuffix: ${{ steps.image.outputs.suffix }}
 
       - name: SonarCloud Begin
-        uses: VirtoCommerce/vc-github-actions/sonar-scanner-begin@master
+        uses: VirtoCommerce/.github/actions/sonar-scanner-begin@v3.1000.1
 
       - name: Build
         run: vc-build Compile
@@ -82,10 +82,10 @@ jobs:
             shelltest .
 
       - name: SonarCloud End
-        uses: VirtoCommerce/vc-github-actions/sonar-scanner-end@master
+        uses: VirtoCommerce/.github/actions/sonar-scanner-end@v3.1000.1
 
       - name: Quality Gate
-        uses: VirtoCommerce/vc-github-actions/sonar-quality-gate@master
+        uses: VirtoCommerce/.github/actions/sonar-quality-gate@v3.1000.1
         with:
           login: ${{secrets.SONAR_TOKEN}}
 
@@ -101,12 +101,12 @@ jobs:
 
       - name: Publish Nuget
         if: ${{ (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') && github.event_name != 'workflow_dispatch' }}
-        uses: VirtoCommerce/vc-github-actions/publish-nuget@master
+        uses: VirtoCommerce/.github/actions/publish-nuget@v3.1000.1
         env:
           NUGET_KEY: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
 
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         id: create_release
         if: ${{ (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') && github.event_name != 'workflow_dispatch' }}
         with:

@@ -134,6 +134,40 @@ public class ExtModuleCatalogTests : ModularityTestsBase
         Assert.EndsWith(".zip", module.Ref);
     }
 
+    [Fact]
+    public async Task GetCatalog_InstalledModuleNewerThanExternal_HasLocalRef()
+    {
+        // Arrange: e.g. a hotfix version installed from a bundle, not yet in modules_v3.json
+        WriteManifest("VirtoCommerce.Cart", "3.1003.2");
+        var manifestJson = CreateCartManifestJson();
+
+        // Act
+        var catalog = await GetExternalModuleCatalog("https://raw.githubusercontent.com/VirtoCommerce/vc-modules/refs/heads/master/modules_v3.json", manifestJson);
+        var module = catalog.Modules.Single(x => x.Id == "VirtoCommerce.Cart");
+
+        // Assert
+        Assert.Equal("3.1003.2", module.Version.ToString());
+        Assert.NotNull(module.Ref);
+        Assert.StartsWith("file:///", module.Ref);
+    }
+
+    [Fact]
+    public async Task GetCatalog_InstalledModuleMissingInExternal_HasLocalRef()
+    {
+        // Arrange
+        WriteManifest("VirtoCommerce.Cart", "3.1003.0");
+        var manifestJson = CreateInventoryManifestJson();
+
+        // Act
+        var catalog = await GetExternalModuleCatalog("https://raw.githubusercontent.com/VirtoCommerce/vc-modules/refs/heads/master/modules_v3.json", manifestJson);
+        var cart = catalog.Modules.Single(x => x.Id == "VirtoCommerce.Cart");
+        var inventory = catalog.Modules.Single(x => x.Id == "VirtoCommerce.Inventory");
+
+        // Assert
+        Assert.StartsWith("file:///", cart.Ref);
+        Assert.StartsWith("https://", inventory.Ref);
+    }
+
 
     private static string CreateCartManifestJson() =>
         """

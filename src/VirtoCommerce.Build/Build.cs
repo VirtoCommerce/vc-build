@@ -1040,10 +1040,35 @@ internal partial class Build : NukeBuild
 
     private static void RegisterMSBuildLocator()
     {
-        if (!MSBuildLocator.IsRegistered)
+        if (MSBuildLocator.IsRegistered)
+        {
+            return;
+        }
+
+        // Don't move the list to a static field: touching static state of Build would run NukeBuild's type initializer too early
+        string[] variableNames = ["MSBUILD_EXE_PATH", "MSBuildExtensionsPath", "MSBuildSDKsPath"];
+        var originalValues = variableNames.ToDictionary(x => x, Environment.GetEnvironmentVariable);
+
+        try
         {
             MSBuildLocator.RegisterDefaults();
+            InitializeMSBuild();
         }
+        finally
+        {
+            foreach (var (name, value) in originalValues)
+            {
+                Environment.SetEnvironmentVariable(name, value);
+            }
+        }
+    }
+
+    // Must be a separate non-inlined method: MSBuild types can't be referenced before MSBuildLocator registration
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static void InitializeMSBuild()
+    {
+        // Evaluate the MSBuild environment while the locator variables are still set
+        _ = new Microsoft.Build.Evaluation.ProjectCollection();
     }
 
     private static void ConvertDotNukeFile(AbsolutePath path)
