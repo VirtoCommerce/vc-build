@@ -135,6 +135,33 @@ public class LocalModuleCatalogTests : ModularityTestsBase
     }
 
     [Fact]
+    public void GetCatalog_RelativePaths_SetsAbsoluteFullPhysicalPath()
+    {
+        // Arrange
+        var moduleDirectory = Path.Combine(DiscoveryPath, "TestModule");
+        WriteManifest("TestModule", "1.0.0", directoryPath: moduleDirectory);
+        var cwd = Directory.GetCurrentDirectory();
+        Directory.CreateDirectory(TestRoot);
+
+        try
+        {
+            Directory.SetCurrentDirectory(TestRoot);
+
+            // Act
+            var catalog = global::PlatformTools.Modules.LocalModuleCatalog.GetCatalog("./modules", "./probing");
+            var module = catalog.Modules.First(x => x.Id == "TestModule");
+
+            // Assert
+            Assert.True(Path.IsPathRooted(module.FullPhysicalPath));
+            Assert.StartsWith("file:///", new Uri(module.FullPhysicalPath).AbsoluteUri);
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(cwd);
+        }
+    }
+
+    [Fact]
     public void GetCatalog_ModuleWithoutAssemblyFile_StateIsInitialized()
     {
         // Arrange

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 using Serilog;
 using Serilog.Extensions.Logging;
@@ -33,8 +34,8 @@ namespace PlatformTools.Modules
             {
                 var options = new LocalStorageModuleCatalogOptions
                 {
-                    DiscoveryPath = discoveryPath,
-                    ProbingPath = probingPath,
+                    DiscoveryPath = Path.GetFullPath(discoveryPath),
+                    ProbingPath = Path.GetFullPath(probingPath),
                     RefreshProbingFolderOnStart = true,
                 };
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -69,7 +70,7 @@ namespace PlatformTools.Modules
 
             foreach (var module in localModules)
             {
-                module.Ref = new Uri(module.FullPhysicalPath).AbsoluteUri;
+                module.Ref = new Uri(Path.GetFullPath(module.FullPhysicalPath)).AbsoluteUri;
             }
         }
 
