@@ -1,81 +1,116 @@
 name: Release hotfix
 
+# Manual release from any branch: same pipeline as main.yml on `main`,
+# but the version is taken from the `version` input instead of Directory.Build.props.
+
 on:
   workflow_dispatch:
     inputs:
-      incrementPatch:
-        description: 'Increment patch version.'
+      version:
+        description: 'Release version, e.g. 3.1003.1 or 3.1003.1-hotfix.1 (a "-suffix" makes it a prerelease).'
         required: true
+        type: string
+      makeLatest:
+        description: 'Mark the GitHub release as latest (ignored for prereleases).'
+        required: false
         default: true
         type: boolean
 
 jobs:
-  test:
-    uses: VirtoCommerce/.github/.github/workflows/test-and-sonar.yml@v3.1000.1
-    secrets:
-      sonarToken: ${{ secrets.SONAR_TOKEN }}
-
-  build:
-    uses: VirtoCommerce/.github/.github/workflows/build.yml@v3.1000.1
-    with:
-      uploadPackage: 'true'
-      uploadDocker: 'false'
-      forceVersionSuffix: 'false'
-      incrementPatch: ${{ github.event.inputs.incrementPatch }}
-    secrets:
-      envPAT: ${{ secrets.REPO_TOKEN }}
-
-  get-metadata:
+  release:
     runs-on: ubuntu-24.04
-    outputs:
-      changelog: ${{ steps.changelog.outputs.changelog }}
-    steps:
-
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        fetch-depth: 0
-
-    - name: Get Changelog
-      id: changelog
-      uses: VirtoCommerce/.github/actions/changelog-generator@v3.1000.1
-
-  # Trusted Publishing: mint the OIDC key and push in ONE job. needs get-metadata too, so a metadata
-  # failure blocks the push (else the package publishes while publish-github-release is skipped).
-  # The push can't move into the cross-repo publish-github.yml (job_workflow_ref mismatch — #6/#9).
-  publish-nuget:
-    needs: [build, test, get-metadata]
-    runs-on: ubuntu-24.04
+    # id-token: write lets NuGet/login mint a short-lived OIDC key (Trusted Publishing).
+    # contents: write for the GitHub release step.
     permissions:
-      contents: read
+      contents: write
       id-token: write
     env:
+      SONAR_TOKEN: ${{secrets.SONAR_TOKEN}}
       GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+      BLOB_SAS: ${{ secrets.BLOB_TOKEN }}
+
     steps:
-      - name: Install VirtoCommerce.GlobalTool
-        uses: VirtoCommerce/.github/actions/setup-vcbuild@v3.1000.1
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          persist-credentials: false
+          fetch-depth: 0
 
-      # Reuse the package built by the `build` job (same cache key/path it wrote).
-      - name: Get package from cache
-        id: restore-build
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          key: ${{ needs.build.outputs.packageFullKey }}
-          path: |
-            ${{ github.workspace }}/artifacts
-            ${{ github.workspace }}/publish
-
-      - name: Exit if cache not restored
-        if: steps.restore-build.outputs.cache-hit != 'true'
+      - name: Set version
+        id: version
+        shell: bash
         env:
-          FULL_KEY: ${{ needs.build.outputs.packageFullKey }}
+          VERSION: ${{ inputs.version }}
         run: |
-          echo "::error::Package cache not found for key ${FULL_KEY}"
-          exit 1
+          set -euo pipefail
+          VERSION="${VERSION#v}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
+            echo "::error::Invalid version '$VERSION'. Expected X.Y.Z or X.Y.Z-suffix"
+            exit 1
+          fi
+          if git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null; then
+            echo "::error::Tag $VERSION already exists"
+            exit 1
+          fi
 
+          PREFIX="${VERSION%%-*}"
+          SUFFIX=""
+          PRERELEASE=false
+          if [[ "$VERSION" == *-* ]]; then
+            SUFFIX="${VERSION#*-}"
+            PRERELEASE=true
+          fi
+
+          # Pin the version in Directory.Build.props (not committed) and drop the BuildNumber suffix rule.
+          sed -i \
+            -e "s|<VersionPrefix>.*</VersionPrefix>|<VersionPrefix>${PREFIX}</VersionPrefix>|" \
+            -e "s|<VersionSuffix></VersionSuffix>|<VersionSuffix>${SUFFIX}</VersionSuffix>|" \
+            -e "/<VersionSuffix Condition=/d" \
+            Directory.Build.props
+          grep -E '<Version(Prefix|Suffix)>' Directory.Build.props
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Install VirtoCommerce.GlobalTool
+        run: |
+          dotnet pack
+          dotnet tool install -g VirtoCommerce.GlobalTool --add-source ./src/VirtoCommerce.Build/artifacts
+
+      - name: Set up Java 17
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Get changelog
+        id: changelog
+        uses: VirtoCommerce/.github/actions/changelog-generator@v3.1000.1
+
+      - name: SonarCloud Begin
+        uses: VirtoCommerce/.github/actions/sonar-scanner-begin@v3.1000.1
+
+      - name: Build
+        run: vc-build Compile
+
+      - name: Unit Tests
+        run: vc-build Test -skip
+
+      - name: Shelltest
+        shell: bash
+        working-directory: shelltests
+        run: |
+            sudo apt install shelltestrunner
+            shelltest .
+
+      - name: SonarCloud End
+        uses: VirtoCommerce/.github/actions/sonar-scanner-end@v3.1000.1
+
+      - name: Quality Gate
+        uses: VirtoCommerce/.github/actions/sonar-quality-gate@v3.1000.1
+        with:
+          login: ${{secrets.SONAR_TOKEN}}
+
+      # Trusted Publishing: swap the GitHub OIDC token for a ~1h nuget.org key, minted right before push.
       - name: NuGet login (OIDC -> temp API key)
         id: nuget_login
         uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
@@ -86,49 +121,18 @@ jobs:
 
       - name: Publish Nuget
         uses: VirtoCommerce/.github/actions/publish-nuget@v3.1000.1
-        with:
-          skipString: 'Clean+Restore+Compile+Test+Pack'
         env:
           NUGET_KEY: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
 
-  # GitHub release only. forceNuget: false — the push is done by publish-nuget above.
-  publish-github-release:
-    needs:
-      [build, test, get-metadata, publish-nuget]
-    uses: VirtoCommerce/.github/.github/workflows/publish-github.yml@v3.1000.1
-    with:
-      fullKey: ${{ needs.build.outputs.packageFullKey }}
-      changeLog: '${{ needs.get-metadata.outputs.changeLog }}'
-      incrementPatch: ${{ github.event.inputs.incrementPatch }}
-      forceNuget: false
-
-    secrets:
-      envPAT: ${{ secrets.GITHUB_TOKEN }}
-
-  increment-version:
-    needs:
-      [publish-github-release]
-    if: ${{ github.event.inputs.incrementPatch == 'true' }}
-    runs-on: ubuntu-24.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        # Don't keep the runner's GITHUB_TOKEN extraheader: it outranks the global credential
-        # helper below, so the push would use GITHUB_TOKEN instead of REPO_TOKEN.
-        persist-credentials: false
-
-    - name: Install VirtoCommerce.GlobalTool
-      uses: VirtoCommerce/.github/actions/setup-vcbuild@v3.1000.1
-
-    - name: Setup Git Credentials
-      uses: VirtoCommerce/.github/actions/setup-git-credentials-github@v3.1000.1
-      with:
-        githubToken: ${{ secrets.REPO_TOKEN }}
-
-    - name: Increment Version
-      run: |
-        vc-build IncrementPatch
-        git add Directory.Build.props *module.manifest
-        git commit -m "ci: Auto IncrementPatch"
-        git push
+      - name: Release
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
+        id: create_release
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          # Tag the commit that was built, not the default branch head.
+          target_commitish: ${{ github.sha }}
+          body: ${{ steps.changelog.outputs.changelog }}
+          draft: false
+          prerelease: ${{ steps.version.outputs.prerelease == 'true' }}
+          make_latest: ${{ steps.version.outputs.prerelease != 'true' && inputs.makeLatest }}
+          files: artifacts/VirtoCommerce.GlobalTool.${{ steps.version.outputs.version }}.nupkg
