@@ -12,7 +12,7 @@ namespace PlatformTools.Modules
 {
     public class ModuleSourceConverter : JsonConverter
     {
-        private static JsonSerializerSettings SpecifiedSubclassConversion = new JsonSerializerSettings() { ContractResolver = new ModuleSourceSpecifiedConcreteClassConverter() };
+        private static readonly JsonSerializer _concreteSourceSerializer = JsonSerializer.Create(new JsonSerializerSettings { ContractResolver = new ModuleSourceSpecifiedConcreteClassConverter() });
 
         public override bool CanConvert(Type objectType)
         {
@@ -22,34 +22,21 @@ namespace PlatformTools.Modules
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             var jo = JObject.Load(reader);
-            var sourceName = jo[nameof(ModuleSource.Name)].Value<string>();
-            switch (sourceName)
+            var sourceName = jo.GetValue(nameof(ModuleSource.Name), StringComparison.OrdinalIgnoreCase)?.Value<string>();
+            var sourceType = sourceName switch
             {
-                case GithubReleases.SourceName:
-                    return JsonConvert.DeserializeObject<GithubReleases>(jo.ToString(), SpecifiedSubclassConversion);
+                GithubReleases.SourceName => typeof(GithubReleases),
+                AzurePipelineArtifacts.SourceName => typeof(AzurePipelineArtifacts),
+                AzureUniversalPackages.SourceName => typeof(AzureUniversalPackages),
+                GithubPrivateRepos.SourceName => typeof(GithubPrivateRepos),
+                AzureBlob.SourceName => typeof(AzureBlob),
+                GitlabJobArtifacts.SourceName => typeof(GitlabJobArtifacts),
+                LocalModuleSource.SourceName => typeof(LocalModuleSource),
+                _ => throw new TypeLoadException($"Unknown module source: {sourceName}"),
+            };
 
-                case AzurePipelineArtifacts.SourceName:
-                    return JsonConvert.DeserializeObject<AzurePipelineArtifacts>(jo.ToString(), SpecifiedSubclassConversion);
-
-                case AzureUniversalPackages.SourceName:
-                    return JsonConvert.DeserializeObject<AzureUniversalPackages>(jo.ToString(), SpecifiedSubclassConversion);
-
-                case GithubPrivateRepos.SourceName:
-                    return JsonConvert.DeserializeObject<GithubPrivateRepos>(jo.ToString(), SpecifiedSubclassConversion);
-
-                case AzureBlob.SourceName:
-                    return JsonConvert.DeserializeObject<AzureBlob>(jo.ToString(), SpecifiedSubclassConversion);
-
-                case GitlabJobArtifacts.SourceName:
-                    return JsonConvert.DeserializeObject<GitlabJobArtifacts>(jo.ToString(),
-                        SpecifiedSubclassConversion);
-
-                case LocalModuleSource.SourceName:
-                    return JsonConvert.DeserializeObject<LocalModuleSource>(jo.ToString(), SpecifiedSubclassConversion);
-                default:
-                    throw new TypeLoadException($"Unknown module source: {sourceName}");
-            }
-            throw new NotImplementedException();
+            // Convert the already read tokens instead of re-parsing their text, so values keep the reader's parse settings
+            return jo.ToObject(sourceType, _concreteSourceSerializer);
         }
 
         public override bool CanWrite

@@ -59,6 +59,9 @@ namespace VirtoCommerce.Build
         [Parameter("Skip dependency solving")]
         public static bool SkipDependencySolving { get; set; } = true;
 
+        [Parameter("Keep the modules order in vc-package.json instead of sorting them by Id")]
+        public static bool SkipModulesSorting { get; set; }
+
         [Parameter("Install the platform", Name = "Platform")]
         public static bool PlatformParameter { get; set; }
 
@@ -122,7 +125,7 @@ namespace VirtoCommerce.Build
              {
                  var platformRelease = await GithubReleaseService.GetPlatformRelease(GitHubToken, VersionToInstall);
                  var packageManifest = PackageManager.CreatePackageManifest(platformRelease.TagName, platformRelease.Assets[0].BrowserDownloadUrl);
-                 PackageManager.ToFile(packageManifest, PackageManifestPath);
+                 PackageManager.OverwriteFile(packageManifest, PackageManifestPath);
              });
 
         public Target Install => _ => _
@@ -159,7 +162,7 @@ namespace VirtoCommerce.Build
                      }
                  }
 
-                 PackageManager.ToFile(packageManifest, PackageManifestPath);
+                 SavePackageManifest(packageManifest);
              });
 
         private static void UpdateModules(string[] modulesArg, ExtModuleCatalog externalModuleCatalog, List<ModuleItem> modules)
@@ -554,11 +557,16 @@ namespace VirtoCommerce.Build
             return (moduleItem, LoadModuleInfo(moduleItem, externalModule));
         }
 
+        private static void SavePackageManifest(ManifestBase packageManifest)
+        {
+            PackageManager.ToFile(packageManifest, PackageManifestPath, sortModules: !SkipModulesSorting);
+        }
+
         private static void SaveNewDependencies(ManifestBase packageManifest, GithubReleases githubReleases, List<ModuleItem> addedModules)
         {
             var backupPath = BackupOriginalManifest();
             githubReleases.Modules.AddRange(addedModules);
-            PackageManager.ToFile(packageManifest, PackageManifestPath);
+            SavePackageManifest(packageManifest);
 
             Log.Warning("The manifest {ManifestPath} was updated with new dependencies: {Dependencies}",
                 Path.GetFullPath(PackageManifestPath), string.Join(", ", addedModules.Select(m => $"{m.Id}:{m.Version}")));
@@ -765,7 +773,7 @@ namespace VirtoCommerce.Build
                  ProbingPath.DeleteDirectory();
                  Module.ForEach(m => AbsolutePath.Create(Path.Combine(discoveryPath, m)).DeleteDirectory());
                  githubModules.RemoveAll(m => Module.Contains(m.Id));
-                 PackageManager.ToFile(packageManifest, PackageManifestPath);
+                 SavePackageManifest(packageManifest);
                  if (PlatformVersion.CurrentVersion == null)
                  {
                      var platformRelease = await GithubReleaseService.GetPlatformRelease();
@@ -792,7 +800,7 @@ namespace VirtoCommerce.Build
                      manifest = await UpdateStableAsync(manifest, PlatformParameter, BundleName);
                  }
 
-                 PackageManager.ToFile(manifest, PackageManifestPath);
+                 SavePackageManifest(manifest);
              });
 
         private static async Task<ManifestBase> UpdateEdgeAsync(ManifestBase manifest, bool platformOnly)
