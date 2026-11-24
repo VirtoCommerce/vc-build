@@ -176,10 +176,10 @@ namespace VirtoCommerce.Build.Tests
             var actual = JObject.Parse(File.ReadAllText(_path));
             Assert.Equal(
                 ["VirtoCommerce.Assets", "VirtoCommerce.Xapi_3.1000.0.zip"],
-                actual.SelectTokens("$.Sources[0].Modules[*]").Select(module => (string)module["Id"] ?? (string)module["BlobName"]));
+                actual.SelectTokens("$.Sources[0].Modules[*]").Select(module => (string?)module["Id"] ?? (string?)module["BlobName"]));
             Assert.Equal(
                 ["VirtoCommerce.Cart", "virtocommerce.Catalog", "VirtoCommerce.Core", "VirtoCommerce.SalesRep"],
-                actual.SelectTokens("$.Sources[1].Modules[*].Id").Select(id => (string)id));
+                actual.SelectTokens("$.Sources[1].Modules[*].Id").Select(id => (string?)id));
         }
 
         [Fact]
@@ -236,8 +236,8 @@ namespace VirtoCommerce.Build.Tests
             // Assert
             var actual = JObject.Parse(File.ReadAllText(_path));
             Assert.Equal(["PlatformVersion", "Custom", "ModuleSources", "Modules"], actual.Properties().Select(property => property.Name));
-            Assert.Equal("3.1101.0", (string)actual["PlatformVersion"]);
-            Assert.Equal(["VirtoCommerce.Cart", "VirtoCommerce.Core"], actual.SelectTokens("$.Modules[*].Id").Select(id => (string)id));
+            Assert.Equal("3.1101.0", (string?)actual["PlatformVersion"]);
+            Assert.Equal(["VirtoCommerce.Cart", "VirtoCommerce.Core"], actual.SelectTokens("$.Modules[*].Id").Select(id => (string?)id));
         }
 
         [Fact]
@@ -312,7 +312,7 @@ namespace VirtoCommerce.Build.Tests
             {
                 foreach (var modules in expected.SelectTokens("$.Sources[*].Modules").OfType<JArray>())
                 {
-                    modules.ReplaceAll(modules.OrderBy(module => (string)module["Id"] ?? (string)module["BlobName"], StringComparer.OrdinalIgnoreCase).ToList());
+                    modules.ReplaceAll(modules.OrderBy(module => (string?)module["Id"] ?? (string?)module["BlobName"], StringComparer.OrdinalIgnoreCase).ToList());
                 }
             }
 
@@ -321,7 +321,7 @@ namespace VirtoCommerce.Build.Tests
 
         private static JObject ParseVerbatim(string json)
         {
-            return JsonConvert.DeserializeObject<JObject>(json, _verbatimSettings);
+            return JsonConvert.DeserializeObject<JObject>(json, _verbatimSettings) ?? throw new InvalidOperationException("The JSON is not an object.");
         }
     }
 }

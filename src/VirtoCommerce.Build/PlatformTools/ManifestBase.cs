@@ -8,10 +8,13 @@ namespace VirtoCommerce.Build.PlatformTools
     {
         // Negative orders put these before all other properties (default order is -1) in newly created files;
         // existing files keep their own property order on save
-        [JsonProperty(Order = -3)]
+        private const int ManifestVersionOrder = -3;
+        private const int PlatformVersionOrder = -2;
+
+        [JsonProperty(Order = ManifestVersionOrder)]
         public string ManifestVersion { get; set; }
 
-        [JsonProperty(Order = -2)]
+        [JsonProperty(Order = PlatformVersionOrder)]
         public string PlatformVersion { get; set; }
 
         /// <summary>
