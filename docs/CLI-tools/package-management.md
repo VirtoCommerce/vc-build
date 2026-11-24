@@ -19,6 +19,8 @@ This command downloads and installs the platform or modules into the relevant fo
 ### Example of the vc-package.json file:
 ```console
 {
+  "ManifestVersion": "2.0",
+  "PlatformVersion": "3.216.0",
   "Sources": [
     {
       "Name": "GithubReleases",
@@ -99,13 +101,13 @@ This command downloads and installs the platform or modules into the relevant fo
         }
       ]
     }
-  ],
-  "ManifestVersion": "2.0",
-  "PlatformVersion": "3.216.0"
+  ]
 }
 ```
 
 The `vc-package.json` file is used to maintain the list of installed modules with their versions. This allows `vc-build` to easily restore the platform with modules on a different machine, such as a build server, without all those packages.
+
+When `vc-build` updates `vc-package.json`, it keeps properties it does not use (for example, `PlatformImage` and `PlatformImageTag`) with their values as written, and keeps the existing order of properties. The file is not rewritten when nothing has changed. Modules are sorted by `Id` whenever the file is changed; pass `-SkipModulesSorting` to keep their current order. The `Init` target replaces an existing file entirely.
 
 - `vc-build install (with no args)`
 

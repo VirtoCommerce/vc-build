@@ -20,6 +20,7 @@ Downloads and installs the platform or modules into the current folder. Versions
 ### Parameters
 - `PackageManifestPath`, `DiscoveryPath`, `ProbingPath`: Override paths.
 - `SkipDependencySolving`: Skip dependency solving.
+- `SkipModulesSorting`: Keep the modules order in `vc-package.json`. By default, modules are sorted by Id whenever the file is changed.
 - `GithubToken`, `AzureToken`, `GitLabToken`: Pass tokens for authorization.
 - `-Edge`: Install the latest available versions.
 - `Version`: Platform or module version to install (supports both stable and prerelease versions)
@@ -44,6 +45,7 @@ Updates platform and modules to the latest stable bundle or specified versions. 
 ### Parameters
 - `-Edge`: Update to the latest available versions instead of stable bundle
 - `-v`: Specify bundle name (default is "latest")
+- `SkipModulesSorting`: Keep the modules order in `vc-package.json`. By default, modules are sorted by Id whenever the file is changed.
 
 ### Usage
 ```console
@@ -71,6 +73,7 @@ Installs modules according to `vc-package.json` and solves dependencies.
 
 ### Parameters
 - `DiscoveryPath`: Override modules discovery path
+- `SkipModulesSorting`: Keep the modules order in `vc-package.json` when new dependencies are added to it. By default, modules are sorted by Id whenever the file is changed.
 
 ### Usage
 ```console
@@ -103,6 +106,7 @@ Removes specified modules.
 
 ### Parameters
 - `Module`: Array of module names to remove (required)
+- `SkipModulesSorting`: Keep the modules order in `vc-package.json`. By default, modules are sorted by Id whenever the file is changed.
 
 ### Usage
 ```console
