@@ -4,6 +4,13 @@
     "D:\\AK\\Code\\Projects\\VC3-DEV-CORE3\\vc-platform\\src\\VirtoCommerce.Platform.Data",
     "D:\\AK\\Code\\Projects\\VC3-DEV-CORE3\\vc-platform\\src\\VirtoCommerce.Platform.Security"
   ],
+  "PlatformConfigFile": "D:\\AK\\Code\\Projects\\VC3-DEV-CORE3\\vc-platform\\src\\VirtoCommerce.Platform.Web\\appsettings.json",
   "StatementsDirectory": "Statements",
   "GrabMode": "All",
+  "ContextNames": {
+    "VirtoCommerce.Platform": "PlatformDbContext",
+    "VirtoCommerce.Platform.Security": "SecurityDbContext"
+  },
+  "Idempotent": true,
+  "PendingOnly": false
 }
